@@ -2,7 +2,18 @@
 
 Todas as mudanças relevantes deste projeto serão documentadas aqui.
 
+As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técnica herdada do `modeloPHP`, anterior à identidade própria do Flickary.
+
 ## [Unreleased]
+
+### Changed
+
+- identidade técnica, configuração ativa, documentação e home inicial adaptadas para Flickary
+- layout base ajustado para português do Brasil e navegação mínima do produto
+
+### Removed
+
+- formulário e rota demonstrativos `POST /example` do starter
 
 ### Added
 

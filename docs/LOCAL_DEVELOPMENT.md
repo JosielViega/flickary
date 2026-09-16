@@ -36,6 +36,8 @@ Windows:       %USERPROFILE%\.modeloPHP\ports.json
 Linux/macOS:   ~/.modeloPHP/ports.json
 ```
 
+O nome histórico `.modeloPHP` é preservado deliberadamente porque o registro é compartilhado entre projetos derivados da mesma fundação. Renomeá-lo apenas para este projeto criaria uma segunda fonte de estado e poderia permitir reservas conflitantes.
+
 Ele contém apenas a versão do formato e associações entre caminhos absolutos normalizados e portas:
 
 ```json

@@ -1,8 +1,8 @@
-# Plano de estudo e revisão do modeloPHP
+# Plano de estudo e revisão do Flickary
 
 > Objetivo: permitir que o desenvolvedor compreenda este projeto de ponta a ponta, consiga explicar suas decisões técnicas e revise criticamente o código, inclusive código produzido por IA.
 
-Este é o guia permanente para compreender, revisar e evoluir o `modeloPHP`. Ele descreve o projeto que existe hoje: toda afirmação sobre comportamento deve ser confirmável no código, nos testes ou na execução dos comandos indicados.
+Este é o guia permanente para compreender, revisar e evoluir o Flickary e sua fundação técnica herdada do `modeloPHP`. Ele descreve o projeto que existe hoje: toda afirmação sobre comportamento deve ser confirmável no código, nos testes ou na execução dos comandos indicados.
 
 O guia é deliberadamente ativo. Em vez de apenas apresentar arquivos, ele propõe perguntas, exercícios, evidências e critérios de domínio. Deve ser atualizado sempre que uma mudança alterar arquitetura, fluxos, segurança, operação, testes ou implantação.
 
@@ -10,11 +10,11 @@ O guia é deliberadamente ativo. Em vez de apenas apresentar arquivos, ele prop�
 
 ## 1. Visão executiva
 
-O `modeloPHP` é um ponto de partida reutilizável para aplicações PHP 8.2 ou superior, sem framework web. Ele organiza uma aplicação HTTP com front controller, roteamento, controllers, views, sessão, proteção CSRF, validação, tratamento de erros, log e acesso PDO a MySQL. Também oferece ferramentas de linha de comando para configuração local, reserva de portas, migrations, validação e construção de um espelho de produção para HostGator.
+O Flickary parte de uma fundação reutilizável para aplicações PHP 8.2 ou superior, sem framework web. Ela organiza uma aplicação HTTP com front controller, roteamento, controllers, views, sessão, proteção CSRF, validação, tratamento de erros, log e acesso PDO a MySQL. Também oferece ferramentas de linha de comando para configuração local, reserva de portas, migrations, validação e construção de um espelho de produção para HostGator.
 
 O projeto usa Composer para dependências, autoload PSR-4 e automação. Em produção, depende de `vlucas/phpdotenv`; em desenvolvimento, usa PHPUnit. O fluxo HTTP entra por `public/index.php`, carrega `bootstrap/app.php`, registra `routes/web.php`, cria uma `Request`, despacha o `Router` e envia uma `Response`.
 
-Hoje o repositório demonstra infraestrutura e um fluxo de formulário, não um domínio completo. `app/Models`, `app/Repositories` e `app/Services` estão preparadas, mas não contêm classes de domínio. Também não há autenticação, autorização, usuários, pagamentos, integração externa ou upload implementados. A proteção Apache de `public/uploads` é uma defesa preparada, não uma funcionalidade de upload.
+Hoje o repositório oferece uma home inicial do Flickary e um health check, mas ainda não possui domínio funcional. `app/Models`, `app/Repositories` e `app/Services` estão preparadas, mas não contêm classes de domínio. Também não há autenticação, autorização, usuários, integração externa ou upload implementados. A proteção Apache de `public/uploads` é uma defesa preparada, não uma funcionalidade de upload.
 
 ### Tempo de estudo sugerido
 
@@ -210,7 +210,7 @@ Esta é a seção central. As fases são cumulativas: leitura sem explicação e
 
 **Exercícios:**
 
-1. Percorra `GET /`, `POST /example`, `GET /health` e rota inexistente.
+1. Percorra `GET /`, `GET /health`, uma combinação de método/caminho não registrada e uma rota inexistente.
 2. Associe cada teste à condição protegida.
 3. Confirme o comportamento quando o caminho só existe para outro método: hoje cai no fallback, sem 405 específico.
 4. Explique por que o override é limitado.
@@ -219,22 +219,21 @@ Esta é a seção central. As fases são cumulativas: leitura sem explicação e
 
 **Domínio:** prever handler e resposta de toda rota atual.
 
-### Fase 3 — Controllers, views e formulário
+### Fase 3 — Controllers, views e apresentação
 
 **Leia:** os dois controllers, `View.php`, layout, páginas, CSS e JavaScript.
 
-**Investigue:** dados de `index()`; campo CSRF e flashes; branches de `submitExample()`; Post/Redirect/Get; `realpath` e confinamento da view; buffer, layout e `EXTR_SKIP`; escape com `e()`; fragmentos internos `$content` e `$csrfField`; JSON de health.
+**Investigue:** dados de `index()`; `realpath` e confinamento da view; buffer, layout e `EXTR_SKIP`; escape com `e()`; fragmento interno `$content`; idioma e fallback de título do layout; JSON de health.
 
 **Exercícios:**
 
-1. Envie mensagem válida, curta e vazia.
-2. Observe o consumo único de flash após redirects.
-3. Envie HTML como mensagem e confirme que o valor não é ecoado nem persistido pelo fluxo demonstrativo; depois localize nos testes a garantia de escape de texto dinâmico.
-4. Confira corpo, status e Content-Type de `/health`.
-5. Acesse rota inexistente com caracteres especiais e confira escape.
-6. Adicione apenas mentalmente uma rota `/about` e liste todos os arquivos que precisariam ser alterados ou criados; não implemente.
+1. Confira o conteúdo e o idioma da home.
+2. Localize nos testes a garantia de escape de texto dinâmico.
+3. Confira corpo, status e Content-Type de `/health`.
+4. Acesse rota inexistente com caracteres especiais e confira escape.
+5. Adicione apenas mentalmente uma rota `/about` e liste todos os arquivos que precisariam ser alterados ou criados; não implemente.
 
-**Entregável:** sequência request -> sessão -> redirect -> segunda request.
+**Entregável:** sequência request -> router -> controller -> view/layout -> response.
 
 **Domínio:** explicar toda saída escapada e todo fragmento confiável.
 
@@ -271,28 +270,28 @@ Esta é a seção central. As fases são cumulativas: leitura sem explicação e
 
 ### Fase 6 — Sessão, CSRF, validação e confiança
 
-**Leia:** `Session.php`, `Csrf.php`, `Validator.php`, `HomeController.php`, home view e testes de CSRF, Validator e helpers.
+**Leia:** `Session.php`, `Csrf.php`, `Validator.php` e testes de CSRF, Validator e helpers.
 
-**Investigue:** sessão e flash; token hexadecimal de 32 bytes; `hash_equals`; CSRF antes da validação; regras `required`, `email`, `string`, `integer`, `min` e `max`; validação HTML versus servidor; escape XSS; ausência de autenticação/autorização.
+**Investigue:** sessão e flash; token hexadecimal de 32 bytes; `hash_equals`; regras `required`, `email`, `string`, `integer`, `min` e `max`; validação HTML versus servidor; escape XSS; ausência de autenticação/autorização. Esses componentes estão preservados para futuros fluxos reais, mas a home atual não executa ação mutável.
 
 **Exercícios:**
 
-1. Associe cada input à origem e validação.
-2. Envie token inválido e confirme 419.
-3. Explique por que `minlength` não substitui backend.
-4. Liste fronteiras de confiança nos quatro fluxos HTTP.
+1. Associe cada teste ao contrato de infraestrutura protegido.
+2. Explique a ordem CSRF, validação e autorização que uma futura ação mutável deverá seguir.
+3. Explique por que validação HTML não substitui backend.
+4. Liste as fronteiras de confiança nos fluxos HTTP atuais.
 
 **Entregável:** tabela entrada/validação/autorização/escape/falha, usando “não aplicável” corretamente.
 
-**Checklist:** consigo explicar o ciclo GET -> token -> POST -> verificação -> validação -> flash -> redirect -> GET; sei por que 419 é distinto de erro de validação; sei por que frontend não substitui backend.
+**Checklist:** consigo explicar separadamente sessão, CSRF, validação, autenticação, autorização e escape; sei por que frontend não substitui backend e por que infraestrutura disponível não significa funcionalidade implementada.
 
 **Domínio:** distinguir autenticação, autorização, CSRF, validação e escape.
 
 ### Fase 7 — Erros e logs
 
-**Leia:** `ErrorHandler.php`, `Logger.php`, bootstrap e páginas error/404.
+**Leia:** `ErrorHandler.php`, `Logger.php`, bootstrap e página 404.
 
-**Investigue:** erros convertidos em `ErrorException`; handler global; referência única; classe/arquivo/linha/trace no log; debug detalhado versus produção genérica; log diário; três caminhos distintos: fallback 404 usa view, CSRF inválido usa `pages/error.php` com 419 e exceção global gera HTML mínimo no handler com 500.
+**Investigue:** erros convertidos em `ErrorException`; handler global; referência única; classe/arquivo/linha/trace no log; debug detalhado versus produção genérica; log diário; fallback 404 com view e exceção global com HTML mínimo no handler e status 500.
 
 **Exercícios:** provoque exceção controlada em ambiente descartável; compare debug ligado/desligado; confira escrita em `storage/logs`; revise possível dado sensível antes de adicionar log.
 
@@ -328,6 +327,7 @@ Esta é a seção central. As fases são cumulativas: leitura sem explicação e
 | Teste | Componente | O que prova | O que não prova |
 |---|---|---|---|
 | `RouterTest` | Router/Request | rota dinâmica, fallback e override | servidor/rewrite/controller real |
+| `ApplicationRoutesTest` | rotas/controllers/views | home, health e ausência do POST demonstrativo | servidor Apache e navegador real |
 | `ValidatorTest` | Validator | sucesso e coleção de erros | formulário HTTP completo |
 | `CsrfTest` | Csrf/Session | formato e comparação do token | cookie no navegador |
 | `HelpersTest` | `e()` | escape HTML | todos os pontos de saída |
@@ -337,9 +337,9 @@ Esta é a seção central. As fases são cumulativas: leitura sem explicação e
 | `HostgatorDeployManifestTest` | Manifesto | allowlist e proteções | servidor remoto |
 | `HostgatorMirrorBuilderTest` | Builder | mirror e ausência de proibidos/dev packages | cópia/execução na HostGator |
 
-**Limites:** não há navegador E2E, MySQL de teste, aplicação completa via HTTP nem testes específicos de controllers, health, Database, ErrorHandler, Logger, Session, View ou comandos CLI completos.
+**Limites:** não há navegador E2E, MySQL de teste, aplicação completa via servidor HTTP nem testes específicos de Database, ErrorHandler, Logger, Session ou comandos CLI completos.
 
-**Classificação atual:** a suíte é majoritariamente unitária/de componente; `PortTest` integra com socket local e os testes de setup/registry/builder integram filesystem e artefato. Os testes do manifesto funcionam como contrato do pacote. Não há E2E de navegador.
+**Classificação atual:** a suíte é majoritariamente unitária/de componente; `ApplicationRoutesTest` integra rotas, controllers e views sem abrir servidor, `PortTest` integra com socket local e os testes de setup/registry/builder integram filesystem e artefato. Os testes do manifesto funcionam como contrato do pacote. Não há E2E de navegador.
 
 **Exercícios:** associe cada teste a uma regressão; marque cobertura por etapa dos fluxos; rode `test`, `lint` e `check`; proponha o próximo teste pelo maior risco.
 
@@ -439,22 +439,11 @@ Não invente autenticação/autorização. Use “não aplicável” ou “não 
 - **Orquestração:** front controller, Router e `HomeController::index()`.
 - **Confiança:** sem body; configuração e sessão mantêm seus contratos.
 - **Validação/identidade:** sem formulário, identidade ou recurso protegido.
-- **Estado:** consome flashes e gera/reutiliza CSRF na sessão.
+- **Estado:** não altera dados de negócio; a sessão permanece disponível pela fundação.
 - **Persistência:** sem banco ou integração.
-- **Saída:** home no layout, status 200.
+- **Saída:** placeholder inicial do Flickary no layout, status 200.
 - **Falha:** exceção vai ao ErrorHandler e gera 500.
-- **Cobertura:** Router, CSRF e escape têm testes; request HTTP, controller e view integrados não.
-
-### `POST /example`
-
-- **Entrada:** `_token` e `message`, ambos vindos do cliente.
-- **Orquestração:** `HomeController::submitExample()`.
-- **Validação:** CSRF primeiro; mensagem `required|string|min:2|max:120`.
-- **Identidade:** autenticação e autorização não existem/não são exigidas nesta demonstração.
-- **Estado:** lê token e grava erros de validação ou sucesso em flash; o formulário atual não preserva o valor enviado.
-- **Persistência:** nenhuma.
-- **Saída:** 419 no token inválido; 302 para `/` em erro de validação ou sucesso; GET seguinte consome flash.
-- **Cobertura:** componentes testados, mas sem integração controller/sessão/redirect.
+- **Cobertura:** `ApplicationRoutesTest` cobre rota, controller, view e layout sem abrir servidor; o smoke HTTP continua sendo verificação operacional.
 
 ### `GET /health`
 
@@ -463,7 +452,7 @@ Não invente autenticação/autorização. Use “não aplicável” ou “não 
 - **Orquestração:** `HealthController::index()`.
 - **Persistência:** não consulta banco; comprova liveness HTTP, não saúde MySQL.
 - **Saída:** JSON `{"status":"ok"}`, Content-Type JSON UTF-8 e 200.
-- **Lacuna:** sem teste específico; explicitar contrato antes de ampliá-lo.
+- **Cobertura:** `ApplicationRoutesTest` fixa status, corpo e Content-Type sem ampliar o contrato.
 
 ### Fallback 404
 
@@ -536,7 +525,7 @@ Ao final, una duplicatas, descarte hipóteses sem reprodução, classifique prio
 ### Prompt-base
 
 ```text
-Revise somente o fluxo [nome] no modeloPHP.
+Revise somente o fluxo [nome] no Flickary.
 Use os arquivos [lista], testes [lista] e execução [saída].
 Faça a passagem [A/B/C/D]. Não invente classes, rotas ou requisitos.
 Para cada achado, informe evidência, impacto, prioridade,
@@ -672,11 +661,11 @@ Teste contra regressão:
 
 Em diagnóstico, siga rota -> controller -> componentes -> testes -> execução -> documentação operacional.
 
-## Projetos derivados do modeloPHP
+## Flickary e a fundação herdada
 
-Ao usar **Use this template**, o novo repositório herdará este arquivo. Ele não deve ficar congelado descrevendo apenas o `modeloPHP`.
+O Flickary herdou este documento do `modeloPHP`, mas o guia deve acompanhar o comportamento real do produto. Convenções compartilhadas, como o registro `~/.modeloPHP/ports.json`, permanecem quando preservam compatibilidade entre projetos.
 
-Derive com requisito concreto: entidades/tabelas, migrations/seeds, repositories, services, autenticação/autorização, validações, integrações, upload/retenção, jobs/e-mail, observabilidade, health/readiness e runbooks do produto. Se o derivado adicionar Auth, login, tabela `users`, `UserRepository`, e-mail, Mercado Pago, upload ou administração, crie fases e fluxos específicos somente depois que esses elementos existirem.
+Evolua com requisito concreto: entidades/tabelas, migrations/seeds, repositories, services, autenticação/autorização, validações, integrações, upload/retenção, jobs/e-mail, observabilidade, health/readiness e runbooks do produto. Crie fases e fluxos específicos somente depois que esses elementos existirem.
 
 Antes de promover algo ao modelo base:
 
