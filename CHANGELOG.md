@@ -17,6 +17,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- fundação visual Cinematic Dark — Deep Blue com tokens, shell responsivo e navegação mobile/desktop
+- Home conceitual baseada em Passado · Presente · Futuro e página 404 integrada à identidade
 - Guia permanente `docs/PLANO_DE_ESTUDO_E_REVISAO.md` para estudo ativo, revisão por fluxo e evolução segura do modelo.
 - Atalho no README para iniciar o estudo estruturado do projeto.
 

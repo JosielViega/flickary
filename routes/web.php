@@ -18,8 +18,9 @@ $router->get('/', [$home, 'index']);
 $router->get('/health', [$health, 'index']);
 $router->fallback(static function (Request $request) use ($app): Response {
     return Response::html($app['view']->render('pages/404', [
-        'title' => 'Page not found',
+        'title' => 'Página não encontrada',
         'path' => $request->path(),
+        'currentRoute' => null,
     ]), 404);
 });
 

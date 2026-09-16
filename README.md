@@ -116,7 +116,7 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 
 ## Rotas atuais
 
-- `GET /` — placeholder inicial do Flickary;
+- `GET /` — Home visual inicial do Flickary;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;
 - demais combinações de método e caminho — página 404.
 

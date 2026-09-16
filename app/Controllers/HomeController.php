@@ -20,6 +20,7 @@ final class HomeController
         return Response::html($this->view->render('pages/home', [
             'title' => 'Flickary',
             'appName' => $this->appConfig['name'],
+            'currentRoute' => 'home',
         ]));
     }
 }

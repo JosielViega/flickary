@@ -17,9 +17,11 @@ final class ApplicationRoutesTest extends TestCase
 
         self::assertSame(200, $response->status());
         self::assertStringContainsString('<html lang="pt-BR">', $response->body());
-        self::assertStringContainsString('<h1>Flickary</h1>', $response->body());
+        self::assertStringContainsString('Flickary', $response->body());
+        self::assertStringContainsString('Sua história', $response->body());
         self::assertStringContainsString('Passado · Presente · Futuro', $response->body());
         self::assertStringNotContainsString('<form', $response->body());
+        self::assertStringNotContainsString('href="#"', $response->body());
     }
 
     public function testHealthRemainsSmallAndSafe(): void
@@ -36,6 +38,16 @@ final class ApplicationRoutesTest extends TestCase
         $response = $this->router()->dispatch($this->request('POST', '/example'));
 
         self::assertSame(404, $response->status());
+    }
+
+    public function testNotFoundPageUsesPortugueseFlickaryExperience(): void
+    {
+        $response = $this->router()->dispatch($this->request('GET', '/rota-inexistente'));
+
+        self::assertSame(404, $response->status());
+        self::assertStringContainsString('Página não encontrada', $response->body());
+        self::assertStringContainsString('Essa história ainda não está aqui.', $response->body());
+        self::assertStringContainsString('/rota-inexistente', $response->body());
     }
 
     private function router(): Router
