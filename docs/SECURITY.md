@@ -23,9 +23,11 @@ Estas regras são requisitos do projeto, não sugestões:
 19. Não versionar logs e evitar dados pessoais ou secrets neles.
 20. Não versionar uploads de usuários e impedir execução de scripts no diretório.
 
-## Sessão e autenticação futura
+## Sessão e autenticação
 
-Regenerar o ID da sessão após login e mudança de privilégio. Não guardar senha, segredo externo ou token reutilizável em cookie. Um futuro “remember me” deve usar token aleatório, armazenado de forma segura, com expiração e revogação.
+O núcleo de autenticação guarda na sessão somente o ID interno positivo de `users`. Ele não conhece provedores externos. Login e logout regeneram o identificador da sessão; logout remove apenas o estado autenticado, preservando CSRF e flash messages da sessão atual. Não guardar senha, segredo externo ou token reutilizável em cookie. Um futuro “remember me” deve usar token aleatório, armazenado de forma segura, com expiração e revogação.
+
+Esse núcleo ainda não oferece login ao usuário final. O fluxo que futuramente resolver uma identidade externa deverá validar a conta no servidor antes de estabelecer a sessão Flickary.
 
 ## Contas e identidades externas
 

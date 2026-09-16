@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\ErrorHandler;
@@ -49,6 +50,7 @@ $session->start([
     'use_strict_mode' => true,
     'use_only_cookies' => true,
 ]);
+$auth = new Auth($session);
 
 return [
     'config' => $appConfig,
@@ -56,6 +58,7 @@ return [
     'router' => new Router(),
     'view' => new View($root . '/resources/views'),
     'session' => $session,
+    'auth' => $auth,
     'csrf' => new Csrf($session),
     'validator' => new Validator(),
     'database' => new Database($databaseConfig),

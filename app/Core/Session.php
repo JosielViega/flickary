@@ -40,6 +40,17 @@ final class Session
         unset($_SESSION[$key]);
     }
 
+    public function regenerate(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        if (!session_regenerate_id(true)) {
+            throw new \RuntimeException('Unable to regenerate the session ID.');
+        }
+    }
+
     public function flash(string $type, string $message): void
     {
         $_SESSION['_flash'][$type][] = $message;
