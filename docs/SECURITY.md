@@ -27,6 +27,10 @@ Estas regras são requisitos do projeto, não sugestões:
 
 Regenerar o ID da sessão após login e mudança de privilégio. Não guardar senha, segredo externo ou token reutilizável em cookie. Um futuro “remember me” deve usar token aleatório, armazenado de forma segura, com expiração e revogação.
 
+## Contas e identidades externas
+
+A conta interna e as identidades externas permanecem separadas no banco. A fundação persiste somente o provedor e seu identificador de usuário; não armazena tokens OAuth, respostas brutas ou perfis sociais. Uma futura vinculação entre provedores não deve confiar apenas na igualdade de e-mail e precisará de confirmação segura do usuário.
+
 ## Produção
 
 Configure `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE=true`, HTTPS e permissões mínimas. O usuário recebe erro genérico com referência; detalhes ficam em `storage/logs`. Proteja também logs e backups no servidor.

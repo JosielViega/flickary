@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual é um baseline técnico seguro e ainda não implementa autenticação, catálogo, integrações externas ou recursos sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual é um baseline técnico seguro com a fundação persistente de contas, mas ainda não implementa autenticação, catálogo, integrações externas ou recursos sociais.
 
 ## Stack
 
@@ -67,7 +67,13 @@ composer port:release
 
 `composer check` valida o manifesto Composer, executa o lint dos arquivos PHP do projeto e roda os testes automatizados.
 
-`composer migrate` executa migrations SQL ainda não registradas. Neste estágio não existe schema de domínio do Flickary.
+`composer migrate` executa migrations SQL ainda não registradas. O schema atual contém somente a fundação de contas descrita abaixo.
+
+## Fundação de contas
+
+As migrations definem a conta interna em `users`, o perfil 1:1 em `user_profiles` e as identidades de provedores em `user_external_identities`. A separação mantém a identidade Flickary independente de Google, Facebook ou qualquer outro provedor.
+
+Esta etapa não implementa autenticação, Google Login, Facebook Login ou login local por senha. Também não cria usuários de demonstração nem armazena tokens OAuth.
 
 ## Porta local
 
