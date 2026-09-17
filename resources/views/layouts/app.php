@@ -9,6 +9,7 @@ declare(strict_types=1);
 /** @var null|\App\Core\Csrf $csrf */
 
 $homeIsActive = ($currentRoute ?? null) === 'home';
+$profileIsActive = ($currentRoute ?? null) === 'profile';
 $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
 <!doctype html>
@@ -78,10 +79,17 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                     <svg aria-hidden="true"><use href="#icon-chart"/></svg>
                     <span>Estatísticas</span>
                 </span>
-                <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
-                    <svg aria-hidden="true"><use href="#icon-user"/></svg>
-                    <span>Perfil</span>
-                </span>
+                <?php if ($isAuthenticated): ?>
+                    <a class="nav-item<?= $profileIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileIsActive ? ' aria-current="page"' : '' ?>>
+                        <svg aria-hidden="true"><use href="#icon-user"/></svg>
+                        <span>Perfil</span>
+                    </a>
+                <?php else: ?>
+                    <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar seu perfil">
+                        <svg aria-hidden="true"><use href="#icon-user"/></svg>
+                        <span>Perfil</span>
+                    </span>
+                <?php endif; ?>
                 <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
                     <svg aria-hidden="true"><use href="#icon-users"/></svg>
                     <span>Social</span>
@@ -141,10 +149,17 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                 <svg aria-hidden="true"><use href="#icon-bookmark"/></svg>
                 <span>Minha Lista</span>
             </span>
-            <span class="bottom-nav__item is-disabled" aria-disabled="true">
-                <svg aria-hidden="true"><use href="#icon-user"/></svg>
-                <span>Perfil</span>
-            </span>
+            <?php if ($isAuthenticated): ?>
+                <a class="bottom-nav__item<?= $profileIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileIsActive ? ' aria-current="page"' : '' ?>>
+                    <svg aria-hidden="true"><use href="#icon-user"/></svg>
+                    <span>Perfil</span>
+                </a>
+            <?php else: ?>
+                <span class="bottom-nav__item is-disabled" aria-disabled="true">
+                    <svg aria-hidden="true"><use href="#icon-user"/></svg>
+                    <span>Perfil</span>
+                </span>
+            <?php endif; ?>
         </nav>
     </div>
 </body>

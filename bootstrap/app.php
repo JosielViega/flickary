@@ -76,6 +76,7 @@ return [
     'pending_google_onboarding' => new PendingGoogleOnboarding($session),
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
+    'profiles' => $profiles,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

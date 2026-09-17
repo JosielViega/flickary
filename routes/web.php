@@ -8,6 +8,7 @@ use App\Controllers\HomeController;
 use App\Controllers\LoginController;
 use App\Controllers\LogoutController;
 use App\Controllers\OnboardingController;
+use App\Controllers\ProfileController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -42,6 +43,13 @@ $onboarding = new OnboardingController(
     $app['account_creator'],
 );
 $logout = new LogoutController($app['auth'], $app['csrf']);
+$profile = new ProfileController(
+    $app['view'],
+    $app['auth'],
+    $app['csrf'],
+    $app['session'],
+    $app['profiles'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -50,6 +58,8 @@ $router->post('/auth/google', static fn (): Response => $googleAuth->handle($app
 $router->get('/onboarding/username', [$onboarding, 'show']);
 $router->post('/onboarding/username', static fn (): Response => $onboarding->store($app['request']));
 $router->post('/logout', static fn (): Response => $logout->handle($app['request']));
+$router->get('/perfil', [$profile, 'show']);
+$router->post('/perfil', static fn (): Response => $profile->update($app['request']));
 $router->get('/health', [$health, 'index']);
 $router->fallback(static function (Request $request) use ($app): Response {
     return Response::html($app['view']->render('pages/404', [

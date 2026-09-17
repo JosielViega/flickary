@@ -17,6 +17,7 @@ use App\Core\Request;
 use App\Core\Router;
 use App\Core\Session;
 use App\Core\View;
+use App\Profiles\ProfileStore;
 use PHPUnit\Framework\TestCase;
 
 final class ApplicationRoutesTest extends TestCase
@@ -117,11 +118,27 @@ final class ApplicationRoutesTest extends TestCase
         self::assertSame(200, $response->status());
         self::assertStringContainsString('method="post" action="/logout"', $response->body());
         self::assertStringContainsString('name="_token"', $response->body());
+        self::assertStringContainsString('href="/perfil"', $response->body());
         self::assertStringNotContainsString('href="/login"', $response->body());
 
         $logoutRequest = $this->request('GET', '/logout');
         $logoutResponse = $this->router($logoutRequest, true)->dispatch($logoutRequest);
         self::assertSame(404, $logoutResponse->status());
+    }
+
+    public function testProfileRouteRedirectsVisitorAndRendersAuthenticatedOwner(): void
+    {
+        $visitorRequest = $this->request('GET', '/perfil');
+        $visitor = $this->router($visitorRequest)->dispatch($visitorRequest);
+        self::assertSame(302, $visitor->status());
+        self::assertSame('/login', $visitor->headers()['Location']);
+
+        $_SESSION = [];
+        $authenticatedRequest = $this->request('GET', '/perfil');
+        $authenticated = $this->router($authenticatedRequest, true)->dispatch($authenticatedRequest);
+        self::assertSame(200, $authenticated->status());
+        self::assertStringContainsString('Route Profile', $authenticated->body());
+        self::assertStringContainsString('href="/perfil" aria-current="page"', $authenticated->body());
     }
 
     private function router(Request $request, bool $authenticated = false): Router
@@ -165,6 +182,28 @@ final class ApplicationRoutesTest extends TestCase
                 public function createFromGoogle(GoogleIdentity $identity, string $username): AccountCreationResult
                 {
                     return AccountCreationResult::usernameTaken();
+                }
+            },
+            'profiles' => new class implements ProfileStore {
+                public function findByUserId(int $userId): ?array
+                {
+                    return [
+                        'username' => 'route.profile',
+                        'display_name' => 'Route Profile',
+                        'bio' => null,
+                        'avatar_url' => null,
+                        'cover_url' => null,
+                        'is_private' => 0,
+                        'created_at' => '2026-09-17 10:00:00',
+                    ];
+                }
+
+                public function updateProfile(
+                    int $userId,
+                    string $displayName,
+                    ?string $bio,
+                    bool $isPrivate,
+                ): void {
                 }
             },
         ];

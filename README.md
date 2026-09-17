@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas e Google Login com onboarding inicial de username. Catálogo, Facebook Login e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, Google Login com onboarding inicial de username e perfil próprio autenticado com edição básica. Catálogo, perfil público, Facebook Login e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -136,6 +136,7 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /login` — entrada explícita com Google Identity Services;
 - `POST /auth/google` — valida a resposta server-side do Google;
 - `GET|POST /onboarding/username` — conclui uma nova conta com username;
+- `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
 - `POST /logout` — encerra a sessão com proteção CSRF;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;
 - demais combinações de método e caminho — página 404.
