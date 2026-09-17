@@ -12,8 +12,6 @@ use PDOException;
 
 final class AccountOnboardingService implements AccountCreator
 {
-    private const PROVIDER = 'google';
-
     public function __construct(
         private readonly Database $database,
         private readonly UserRepository $users,
@@ -22,14 +20,14 @@ final class AccountOnboardingService implements AccountCreator
     ) {
     }
 
-    public function createFromGoogle(GoogleIdentity $identity, string $username): AccountCreationResult
+    public function createFromExternalIdentity(ExternalIdentity $identity, string $username): AccountCreationResult
     {
         $email = $identity->emailVerified ? $identity->email : null;
         $connection = $this->database->connection();
         $connection->beginTransaction();
 
         try {
-            $existingUserId = $this->externalIdentities->findUserId(self::PROVIDER, $identity->subject);
+            $existingUserId = $this->externalIdentities->findUserId($identity->provider, $identity->providerUserId);
             if ($existingUserId !== null) {
                 $connection->rollBack();
                 return AccountCreationResult::identityExists($existingUserId);
@@ -51,7 +49,7 @@ final class AccountOnboardingService implements AccountCreator
                 $identity->displayName ?? $username,
                 $identity->avatarUrl,
             );
-            $this->externalIdentities->create($userId, self::PROVIDER, $identity->subject);
+            $this->externalIdentities->create($userId, $identity->provider, $identity->providerUserId);
             $connection->commit();
 
             return AccountCreationResult::created($userId);
@@ -69,11 +67,11 @@ final class AccountOnboardingService implements AccountCreator
     }
 
     private function resolveConcurrentConflict(
-        GoogleIdentity $identity,
+        ExternalIdentity $identity,
         string $username,
         ?string $email,
     ): AccountCreationResult {
-        $existingUserId = $this->externalIdentities->findUserId(self::PROVIDER, $identity->subject);
+        $existingUserId = $this->externalIdentities->findUserId($identity->provider, $identity->providerUserId);
         if ($existingUserId !== null) {
             return AccountCreationResult::identityExists($existingUserId);
         }

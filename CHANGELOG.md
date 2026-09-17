@@ -24,6 +24,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 - núcleo de autenticação por sessão independente de provedores, com rotação de ID no login e logout
 - Google Login server-side com onboarding de username, criação transacional de conta e logout protegido por CSRF
 - perfil próprio autenticado com identidade visual cinematográfica, edição de display name, bio e preferência de privacidade
+- Facebook Login server-side com Graph API v26.0, state de uso único, appsecret_proof e onboarding compartilhado entre provedores
+- conexão segura de Facebook à conta autenticada, com idempotência, detecção de conflito e seção de contas conectadas no perfil
 - Guia permanente `docs/PLANO_DE_ESTUDO_E_REVISAO.md` para estudo ativo, revisão por fluxo e evolução segura do modelo.
 - Atalho no README para iniciar o estudo estruturado do projeto.
 

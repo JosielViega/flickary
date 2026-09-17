@@ -6,5 +6,5 @@ namespace App\Authentication;
 
 interface AccountCreator
 {
-    public function createFromGoogle(GoogleIdentity $identity, string $username): AccountCreationResult;
+    public function createFromExternalIdentity(ExternalIdentity $identity, string $username): AccountCreationResult;
 }

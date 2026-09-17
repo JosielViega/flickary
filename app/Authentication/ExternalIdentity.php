@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Authentication;
 
-final readonly class GoogleIdentity
+readonly class ExternalIdentity
 {
     public function __construct(
-        public string $subject,
+        public string $provider,
+        public string $providerUserId,
         public ?string $email,
         public bool $emailVerified,
         public ?string $displayName,

@@ -14,7 +14,9 @@ use App\Core\View;
 use App\Validation\Validator;
 use App\Authentication\AccountOnboardingService;
 use App\Authentication\GoogleApiIdentityVerifier;
-use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\FacebookGraphClient;
+use App\Authentication\FacebookOAuthState;
+use App\Authentication\PendingExternalOnboarding;
 use App\Authentication\UsernamePolicy;
 use App\Repositories\ExternalIdentityRepository;
 use App\Repositories\UserProfileRepository;
@@ -63,6 +65,7 @@ $database = new Database($databaseConfig);
 $users = new UserRepository($database);
 $profiles = new UserProfileRepository($database);
 $externalIdentities = new ExternalIdentityRepository($database);
+$facebookConfig = $authConfig['facebook'];
 
 return [
     'config' => $appConfig,
@@ -73,7 +76,14 @@ return [
     'session' => $session,
     'auth' => $auth,
     'google_identity_verifier' => new GoogleApiIdentityVerifier($authConfig['google']['client_id']),
-    'pending_google_onboarding' => new PendingGoogleOnboarding($session),
+    'pending_external_onboarding' => new PendingExternalOnboarding($session),
+    'facebook_oauth_state' => new FacebookOAuthState($session),
+    'facebook_identity_provider' => new FacebookGraphClient(
+        $facebookConfig['app_id'],
+        $facebookConfig['app_secret'],
+        $facebookConfig['redirect_uri'],
+        $facebookConfig['graph_version'],
+    ),
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,

@@ -6,6 +6,8 @@ declare(strict_types=1);
 /** @var array $form */
 /** @var array $errors */
 /** @var array $messages */
+/** @var array $connectedProviders */
+/** @var bool $facebookEnabled */
 
 $displayName = (string) $profile['display_name'];
 $username = (string) $profile['username'];
@@ -20,6 +22,9 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
 <section class="profile-page" aria-labelledby="profile-title">
     <?php foreach (($messages['success'] ?? []) as $message): ?>
         <p class="form-alert form-alert--success profile-feedback" role="status"><?= e((string) $message) ?></p>
+    <?php endforeach; ?>
+    <?php foreach (($messages['error'] ?? []) as $message): ?>
+        <p class="form-alert form-alert--error profile-feedback" role="alert"><?= e((string) $message) ?></p>
     <?php endforeach; ?>
 
     <article class="profile-hero">
@@ -161,6 +166,36 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
                 <button class="button button--primary button--wide" type="submit">Salvar alterações</button>
                 <p class="profile-form__scope">Username, e-mail, avatar e capa não são alterados nesta etapa.</p>
             </form>
+        </section>
+
+        <section class="profile-connections" aria-labelledby="profile-connections-title">
+            <div>
+                <p class="eyebrow">Contas conectadas</p>
+                <h2 id="profile-connections-title">Seus caminhos de acesso.</h2>
+                <p>Conecte provedores com segurança para acessar a mesma identidade Flickary.</p>
+            </div>
+            <ul class="connection-list">
+                <li>
+                    <span class="connection-provider"><b aria-hidden="true">G</b> Google</span>
+                    <strong class="connection-state<?= in_array('google', $connectedProviders, true) ? ' is-connected' : '' ?>">
+                        <?= in_array('google', $connectedProviders, true) ? 'Conectada' : 'Não conectada' ?>
+                    </strong>
+                </li>
+                <li>
+                    <span class="connection-provider"><b aria-hidden="true">f</b> Facebook</span>
+                    <?php if (in_array('facebook', $connectedProviders, true)): ?>
+                        <strong class="connection-state is-connected">Conectada</strong>
+                    <?php elseif ($facebookEnabled): ?>
+                        <form method="post" action="/perfil/conexoes/facebook">
+                            <?= $csrf->field() ?>
+                            <button class="connection-action" type="submit">Conectar</button>
+                        </form>
+                    <?php else: ?>
+                        <strong class="connection-state">Indisponível</strong>
+                    <?php endif; ?>
+                </li>
+            </ul>
+            <p class="profile-connections__privacy">Mostramos apenas os provedores conectados. Identificadores externos e tokens nunca são exibidos.</p>
         </section>
     </div>
 </section>

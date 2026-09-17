@@ -16,6 +16,7 @@ final class LoginController
         private readonly Auth $auth,
         private readonly Session $session,
         private readonly array $googleConfig,
+        private readonly array $facebookConfig,
     ) {
     }
 
@@ -26,12 +27,15 @@ final class LoginController
         }
 
         $clientId = trim((string) ($this->googleConfig['client_id'] ?? ''));
+        $facebookEnabled = trim((string) ($this->facebookConfig['app_id'] ?? '')) !== ''
+            && trim((string) ($this->facebookConfig['app_secret'] ?? '')) !== '';
 
         return Response::html($this->view->render('pages/login', [
             'title' => 'Entrar · Flickary',
             'googleEnabled' => $clientId !== '',
             'googleClientId' => $clientId,
             'googleLoginUri' => (string) ($this->googleConfig['login_uri'] ?? ''),
+            'facebookEnabled' => $facebookEnabled,
             'messages' => $this->session->consumeFlash(),
         ], 'layouts/auth'));
     }

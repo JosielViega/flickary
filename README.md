@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, Google Login com onboarding inicial de username e perfil próprio autenticado com edição básica. Catálogo, perfil público, Facebook Login e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, login com Google e Facebook, onboarding inicial de username, conexão segura de um segundo provedor e perfil próprio autenticado com edição básica. Catálogo, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -73,7 +73,7 @@ composer port:release
 
 As migrations definem a conta interna em `users`, o perfil 1:1 em `user_profiles` e as identidades de provedores em `user_external_identities`. A separação mantém a identidade Flickary independente de Google, Facebook ou qualquer outro provedor.
 
-O Google Login resolve contas pela identidade externa verificada e cria novos usuários somente após a escolha de username. Não existe Facebook Login nem login local por senha. Também não há usuários de demonstração ou persistência de tokens OAuth.
+Google e Facebook resolvem contas exclusivamente pelo par `provider + provider_user_id` verificado e criam novos usuários somente após a escolha de username. Não existe login local por senha. Também não há usuários de demonstração ou persistência de tokens OAuth.
 
 ## Google Login
 
@@ -84,6 +84,21 @@ GOOGLE_CLIENT_ID=
 ```
 
 Sem essa configuração, Home e `/health` continuam disponíveis e `/login` exibe um estado amigável. O e-mail não identifica a conta Google e nunca causa vinculação automática; somente o claim `sub` verificado é usado como identidade externa.
+
+## Facebook Login
+
+O fluxo usa Authorization Code server-side com Graph API `v26.0`, `state` aleatório de uso único por dez minutos e `appsecret_proof` nas consultas de perfil. Configure no app da Meta o URI de redirecionamento exato derivado de `APP_URL` e estas variáveis:
+
+```env
+FACEBOOK_APP_ID=
+FACEBOOK_APP_SECRET=
+```
+
+Para o ambiente local padrão, o callback é `http://localhost:8010/auth/facebook/callback`. Em outro host ou porta, ele acompanha `APP_URL`. O app solicita somente o perfil básico (`id`, `name`, `picture`); e-mail do Facebook é deliberadamente ignorado e nunca é usado para encontrar ou vincular contas.
+
+Na área **Perfil → Contas conectadas**, um usuário autenticado pode conectar Facebook à conta Flickary atual. O estado OAuth fica vinculado ao ID interno da sessão; uma identidade já pertencente a outra conta é recusada. Não há desconexão nesta etapa.
+
+Sem as duas credenciais Facebook, o botão aparece como indisponível de forma amigável e Google, Home, perfil e `/health` continuam funcionando.
 
 ## Porta local
 
@@ -133,10 +148,13 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 ## Rotas atuais
 
 - `GET /` — Home visual inicial do Flickary;
-- `GET /login` — entrada explícita com Google Identity Services;
+- `GET /login` — entrada explícita com Google Identity Services e Facebook Login;
 - `POST /auth/google` — valida a resposta server-side do Google;
+- `GET /auth/facebook` — inicia o Authorization Code Flow do Facebook para visitantes;
+- `GET /auth/facebook/callback` — valida `state`, troca o código no servidor e resolve a identidade Facebook;
 - `GET|POST /onboarding/username` — conclui uma nova conta com username;
 - `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
+- `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `POST /logout` — encerra a sessão com proteção CSRF;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;
 - demais combinações de método e caminho — página 404.

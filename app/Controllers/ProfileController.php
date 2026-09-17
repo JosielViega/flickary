@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Authentication\ConnectedProviderReader;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
@@ -20,6 +21,8 @@ final class ProfileController
         private readonly Csrf $csrf,
         private readonly Session $session,
         private readonly ProfileStore $profiles,
+        private readonly ConnectedProviderReader $providers,
+        private readonly bool $facebookEnabled,
     ) {
     }
 
@@ -30,9 +33,13 @@ final class ProfileController
             return $resolved;
         }
 
-        [, $profile] = $resolved;
+        [$userId, $profile] = $resolved;
 
-        return $this->page($profile, messages: $this->session->consumeFlash());
+        return $this->page(
+            $profile,
+            providers: $this->providers->providersForUser($userId),
+            messages: $this->session->consumeFlash(),
+        );
     }
 
     public function update(Request $request): Response
@@ -48,13 +55,20 @@ final class ProfileController
             return $this->page(
                 $profile,
                 errors: ['form' => 'Sua sessão de formulário expirou. Atualize a página e tente novamente.'],
+                providers: $this->providers->providersForUser($userId),
                 status: 403,
             );
         }
 
         [$form, $errors] = $this->validatedForm($request);
         if ($errors !== []) {
-            return $this->page($profile, form: $form, errors: $errors, status: 422);
+            return $this->page(
+                $profile,
+                form: $form,
+                errors: $errors,
+                providers: $this->providers->providersForUser($userId),
+                status: 422,
+            );
         }
 
         $this->profiles->updateProfile(
@@ -153,6 +167,7 @@ final class ProfileController
         ?array $form = null,
         array $errors = [],
         array $messages = [],
+        array $providers = [],
         int $status = 200,
     ): Response {
         return Response::html($this->view->render('pages/profile', [
@@ -168,6 +183,8 @@ final class ProfileController
             ],
             'errors' => $errors,
             'messages' => $messages,
+            'connectedProviders' => $providers,
+            'facebookEnabled' => $this->facebookEnabled,
         ]), $status);
     }
 

@@ -6,8 +6,8 @@ namespace App\Controllers;
 
 use App\Authentication\AccountCreationResult;
 use App\Authentication\AccountCreator;
-use App\Authentication\GoogleIdentity;
-use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\ExternalIdentity;
+use App\Authentication\PendingExternalOnboarding;
 use App\Authentication\UsernamePolicy;
 use App\Core\Auth;
 use App\Core\Csrf;
@@ -23,7 +23,7 @@ final class OnboardingController
         private readonly Auth $auth,
         private readonly Csrf $csrf,
         private readonly Session $session,
-        private readonly PendingGoogleOnboarding $pendingOnboarding,
+        private readonly PendingExternalOnboarding $pendingOnboarding,
         private readonly UsernamePolicy $usernamePolicy,
         private readonly AccountCreator $accountCreator,
     ) {
@@ -37,7 +37,7 @@ final class OnboardingController
 
         $identity = $this->pendingOnboarding->current();
         if ($identity === null) {
-            return $this->restartGoogleLogin();
+            return $this->restartLogin();
         }
 
         return $this->form($identity);
@@ -51,7 +51,7 @@ final class OnboardingController
 
         $identity = $this->pendingOnboarding->current();
         if ($identity === null) {
-            return $this->restartGoogleLogin(303);
+            return $this->restartLogin(303);
         }
 
         if (!$this->csrf->verify($request->input('_token'))) {
@@ -64,7 +64,7 @@ final class OnboardingController
             return $this->form($identity, $username ?? '', $validationError, 422);
         }
 
-        $result = $this->accountCreator->createFromGoogle($identity, $username);
+        $result = $this->accountCreator->createFromExternalIdentity($identity, $username);
 
         if (in_array($result->status, [AccountCreationResult::CREATED, AccountCreationResult::IDENTITY_EXISTS], true)) {
             if ($result->userId === null) {
@@ -94,7 +94,7 @@ final class OnboardingController
     }
 
     private function form(
-        GoogleIdentity $identity,
+        ExternalIdentity $identity,
         string $username = '',
         ?string $error = null,
         int $status = 200,
@@ -108,9 +108,9 @@ final class OnboardingController
         ], 'layouts/auth'), $status);
     }
 
-    private function restartGoogleLogin(int $status = 302): Response
+    private function restartLogin(int $status = 302): Response
     {
-        $this->session->flash('error', 'Inicie novamente o acesso com Google para continuar.');
+        $this->session->flash('error', 'Inicie novamente o acesso com Google ou Facebook para continuar.');
 
         return Response::redirect('/login', $status);
     }

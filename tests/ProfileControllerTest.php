@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Controllers\ProfileController;
+use App\Authentication\ConnectedProviderReader;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
@@ -63,6 +64,9 @@ final class ProfileControllerTest extends TestCase
         self::assertStringContainsString('Histórias &lt;script&gt; especiais.', $response->body());
         self::assertStringContainsString('Perfil privado', $response->body());
         self::assertStringContainsString('href="/perfil" aria-current="page"', $response->body());
+        self::assertStringContainsString('Contas conectadas', $response->body());
+        self::assertStringContainsString('Google', $response->body());
+        self::assertStringContainsString('Facebook', $response->body());
         self::assertStringNotContainsString('person@example.com', $response->body());
         self::assertStringNotContainsString('google-secret-subject', $response->body());
         self::assertStringNotContainsString('<script> especiais', $response->body());
@@ -176,6 +180,10 @@ final class ProfileControllerTest extends TestCase
             $this->csrf,
             $this->session,
             $store,
+            new class implements ConnectedProviderReader {
+                public function providersForUser(int $userId): array { return ['google']; }
+            },
+            false,
         );
     }
 

@@ -5,6 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-curl": "*",
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "google/apiclient": "^2.19",

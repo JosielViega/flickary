@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Authentication\GoogleIdentity;
+use App\Authentication\ExternalIdentity;
 
-/** @var GoogleIdentity $identity */
+/** @var ExternalIdentity $identity */
 /** @var string $username */
 /** @var null|string $error */
 /** @var string $csrfField */
@@ -28,14 +28,14 @@ use App\Authentication\GoogleIdentity;
         <?php if ($identity->avatarUrl !== null): ?>
             <img src="<?= e($identity->avatarUrl) ?>" alt="" referrerpolicy="no-referrer">
         <?php else: ?>
-            <span class="verified-identity__fallback" aria-hidden="true">G</span>
+            <span class="verified-identity__fallback" aria-hidden="true"><?= $identity->provider === 'facebook' ? 'f' : 'G' ?></span>
         <?php endif; ?>
         <span>
-            <strong><?= e($identity->displayName ?? 'Conta Google verificada') ?></strong>
+            <strong><?= e($identity->displayName ?? 'Conta externa verificada') ?></strong>
             <?php if ($identity->email !== null): ?>
                 <small><?= e($identity->email) ?></small>
             <?php else: ?>
-                <small>Identidade Google verificada</small>
+                <small>Identidade <?= $identity->provider === 'facebook' ? 'Facebook' : 'Google' ?> verificada</small>
             <?php endif; ?>
         </span>
         <em>Verificada</em>

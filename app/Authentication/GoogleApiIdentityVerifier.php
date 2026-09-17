@@ -21,7 +21,7 @@ final class GoogleApiIdentityVerifier implements GoogleIdentityVerifier
                 ->verifyIdToken($credential);
     }
 
-    public function verify(string $credential): ?GoogleIdentity
+    public function verify(string $credential): ?ExternalIdentity
     {
         if ($this->clientId === '' || trim($credential) === '') {
             return null;
@@ -45,7 +45,8 @@ final class GoogleApiIdentityVerifier implements GoogleIdentityVerifier
         $emailVerified = ($payload['email_verified'] ?? false) === true;
         $email = $emailVerified ? $this->validEmail($payload['email'] ?? null) : null;
 
-        return new GoogleIdentity(
+        return new ExternalIdentity(
+            'google',
             trim($subject),
             $email,
             $email !== null,

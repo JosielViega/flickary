@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Authentication\ExternalIdentityFinder;
+use App\Authentication\ExternalIdentity;
+use App\Authentication\ExternalIdentityLinker;
+use App\Authentication\ConnectedProviderReader;
 use App\Core\Database;
 use PDO;
 
-final class ExternalIdentityRepository implements ExternalIdentityFinder
+final class ExternalIdentityRepository implements ExternalIdentityFinder, ExternalIdentityLinker, ConnectedProviderReader
 {
     public function __construct(private readonly Database $database)
     {
@@ -39,5 +42,42 @@ final class ExternalIdentityRepository implements ExternalIdentityFinder
         $statement->bindValue(':provider', $provider);
         $statement->bindValue(':provider_user_id', $providerUserId);
         $statement->execute();
+    }
+
+    public function providersForUser(int $userId): array
+    {
+        $statement = $this->database->connection()->prepare(
+            'SELECT provider FROM user_external_identities WHERE user_id = :user_id ORDER BY provider',
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return array_values(array_filter(
+            $statement->fetchAll(PDO::FETCH_COLUMN),
+            static fn (mixed $provider): bool => is_string($provider) && $provider !== '',
+        ));
+    }
+
+    public function link(int $userId, ExternalIdentity $identity): string
+    {
+        $owner = $this->findUserId($identity->provider, $identity->providerUserId);
+        if ($owner === $userId) {
+            return self::ALREADY_LINKED;
+        }
+        if ($owner !== null || in_array($identity->provider, $this->providersForUser($userId), true)) {
+            return self::CONFLICT;
+        }
+
+        try {
+            $this->create($userId, $identity->provider, $identity->providerUserId);
+            return self::LINKED;
+        } catch (\PDOException $exception) {
+            if (($exception->errorInfo[0] ?? (string) $exception->getCode()) !== '23000') {
+                throw $exception;
+            }
+
+            return $this->findUserId($identity->provider, $identity->providerUserId) === $userId
+                ? self::ALREADY_LINKED
+                : self::CONFLICT;
+        }
     }
 }

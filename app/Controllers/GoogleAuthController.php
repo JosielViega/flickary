@@ -6,7 +6,7 @@ namespace App\Controllers;
 
 use App\Authentication\ExternalIdentityFinder;
 use App\Authentication\GoogleIdentityVerifier;
-use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\PendingExternalOnboarding;
 use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Response;
@@ -19,7 +19,7 @@ final class GoogleAuthController
         private readonly Session $session,
         private readonly GoogleIdentityVerifier $verifier,
         private readonly ExternalIdentityFinder $externalIdentities,
-        private readonly PendingGoogleOnboarding $pendingOnboarding,
+        private readonly PendingExternalOnboarding $pendingOnboarding,
         private readonly string $clientId,
     ) {
     }
@@ -48,7 +48,7 @@ final class GoogleAuthController
             return $this->reject('Não foi possível validar sua conta Google. Tente novamente.');
         }
 
-        $userId = $this->externalIdentities->findUserId('google', $identity->subject);
+        $userId = $this->externalIdentities->findUserId($identity->provider, $identity->providerUserId);
         if ($userId !== null) {
             $this->pendingOnboarding->clear();
             $this->auth->login($userId);

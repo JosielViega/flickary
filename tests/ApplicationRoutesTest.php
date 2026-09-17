@@ -6,10 +6,14 @@ namespace Tests;
 
 use App\Authentication\AccountCreationResult;
 use App\Authentication\AccountCreator;
+use App\Authentication\ConnectedProviderReader;
+use App\Authentication\ExternalIdentity;
 use App\Authentication\ExternalIdentityFinder;
-use App\Authentication\GoogleIdentity;
+use App\Authentication\ExternalIdentityLinker;
+use App\Authentication\FacebookIdentityProvider;
+use App\Authentication\FacebookOAuthState;
 use App\Authentication\GoogleIdentityVerifier;
-use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\PendingExternalOnboarding;
 use App\Authentication\UsernamePolicy;
 use App\Core\Auth;
 use App\Core\Csrf;
@@ -90,7 +94,8 @@ final class ApplicationRoutesTest extends TestCase
         $loginRequest = $this->request('GET', '/login');
         $login = $this->router($loginRequest)->dispatch($loginRequest);
         self::assertSame(200, $login->status());
-        self::assertStringContainsString('Acesso indisponível neste ambiente', $login->body());
+        self::assertStringContainsString('Google indisponível', $login->body());
+        self::assertStringContainsString('Facebook indisponível', $login->body());
 
         $_SESSION = [];
         $onboardingRequest = $this->request('GET', '/onboarding/username');
@@ -149,7 +154,17 @@ final class ApplicationRoutesTest extends TestCase
             $auth->login(7);
         }
         $csrf = new Csrf($session);
-        $pending = new PendingGoogleOnboarding($session);
+        $pending = new PendingExternalOnboarding($session);
+        $identities = new class implements ExternalIdentityFinder, ExternalIdentityLinker, ConnectedProviderReader {
+            public function findUserId(string $provider, string $providerUserId): ?int { return null; }
+            public function link(int $userId, ExternalIdentity $identity): string { return self::LINKED; }
+            public function providersForUser(int $userId): array { return ['google']; }
+        };
+        $facebook = new class implements FacebookIdentityProvider {
+            public function configured(): bool { return false; }
+            public function authorizationUrl(string $state): string { return 'https://www.facebook.com/'; }
+            public function identityFromCode(string $code): ?ExternalIdentity { return null; }
+        };
         $app = [
             'view' => new View(dirname(__DIR__) . '/resources/views'),
             'config' => ['name' => 'Flickary'],
@@ -163,23 +178,21 @@ final class ApplicationRoutesTest extends TestCase
                     'client_id' => '',
                     'login_uri' => 'http://localhost/auth/google',
                 ],
+                'facebook' => ['app_id' => '', 'app_secret' => ''],
             ],
             'google_identity_verifier' => new class implements GoogleIdentityVerifier {
-                public function verify(string $credential): ?GoogleIdentity
+                public function verify(string $credential): ?ExternalIdentity
                 {
                     return null;
                 }
             },
-            'external_identities' => new class implements ExternalIdentityFinder {
-                public function findUserId(string $provider, string $providerUserId): ?int
-                {
-                    return null;
-                }
-            },
-            'pending_google_onboarding' => $pending,
+            'external_identities' => $identities,
+            'pending_external_onboarding' => $pending,
+            'facebook_oauth_state' => new FacebookOAuthState($session),
+            'facebook_identity_provider' => $facebook,
             'username_policy' => new UsernamePolicy(),
             'account_creator' => new class implements AccountCreator {
-                public function createFromGoogle(GoogleIdentity $identity, string $username): AccountCreationResult
+                public function createFromExternalIdentity(ExternalIdentity $identity, string $username): AccountCreationResult
                 {
                     return AccountCreationResult::usernameTaken();
                 }

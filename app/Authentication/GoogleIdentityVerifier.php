@@ -6,5 +6,5 @@ namespace App\Authentication;
 
 interface GoogleIdentityVerifier
 {
-    public function verify(string $credential): ?GoogleIdentity;
+    public function verify(string $credential): ?ExternalIdentity;
 }

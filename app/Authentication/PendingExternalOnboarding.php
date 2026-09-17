@@ -7,10 +7,9 @@ namespace App\Authentication;
 use App\Core\Session;
 use Closure;
 
-final class PendingGoogleOnboarding
+class PendingExternalOnboarding
 {
-    private const SESSION_KEY = '_pending_google_onboarding';
-    private const PROVIDER = 'google';
+    private const SESSION_KEY = '_pending_external_onboarding';
     private const TTL_SECONDS = 600;
 
     private readonly Closure $clock;
@@ -22,11 +21,11 @@ final class PendingGoogleOnboarding
         $this->clock = $clock ?? static fn (): int => time();
     }
 
-    public function store(GoogleIdentity $identity): void
+    public function store(ExternalIdentity $identity): void
     {
         $this->session->put(self::SESSION_KEY, [
-            'provider' => self::PROVIDER,
-            'provider_user_id' => $identity->subject,
+            'provider' => $identity->provider,
+            'provider_user_id' => $identity->providerUserId,
             'email' => $identity->email,
             'email_verified' => $identity->emailVerified,
             'display_name' => $identity->displayName,
@@ -35,20 +34,16 @@ final class PendingGoogleOnboarding
         ]);
     }
 
-    public function current(): ?GoogleIdentity
+    public function current(): ?ExternalIdentity
     {
         $state = $this->session->get(self::SESSION_KEY);
-        if (!$this->isValidState($state)) {
+        if (!$this->isValidState($state) || ($this->clock)() - $state['created_at'] > self::TTL_SECONDS) {
             $this->clear();
             return null;
         }
 
-        if (($this->clock)() - $state['created_at'] > self::TTL_SECONDS) {
-            $this->clear();
-            return null;
-        }
-
-        return new GoogleIdentity(
+        return new ExternalIdentity(
+            $state['provider'],
             $state['provider_user_id'],
             $state['email'],
             $state['email_verified'],
@@ -65,7 +60,8 @@ final class PendingGoogleOnboarding
     private function isValidState(mixed $state): bool
     {
         return is_array($state)
-            && ($state['provider'] ?? null) === self::PROVIDER
+            && is_string($state['provider'] ?? null)
+            && in_array($state['provider'], ['google', 'facebook'], true)
             && is_string($state['provider_user_id'] ?? null)
             && $state['provider_user_id'] !== ''
             && strlen($state['provider_user_id']) <= 255

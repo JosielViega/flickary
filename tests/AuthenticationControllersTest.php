@@ -6,10 +6,10 @@ namespace Tests;
 
 use App\Authentication\AccountCreationResult;
 use App\Authentication\AccountCreator;
+use App\Authentication\ExternalIdentity;
 use App\Authentication\ExternalIdentityFinder;
-use App\Authentication\GoogleIdentity;
 use App\Authentication\GoogleIdentityVerifier;
-use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\PendingExternalOnboarding;
 use App\Authentication\UsernamePolicy;
 use App\Controllers\GoogleAuthController;
 use App\Controllers\LoginController;
@@ -56,10 +56,12 @@ final class AuthenticationControllersTest extends TestCase
             $this->auth,
             $this->session,
             ['client_id' => '', 'login_uri' => 'http://localhost/auth/google'],
+            ['app_id' => '', 'app_secret' => ''],
         ))->show();
 
         self::assertSame(200, $response->status());
-        self::assertStringContainsString('Acesso indisponível neste ambiente', $response->body());
+        self::assertStringContainsString('Google indisponível', $response->body());
+        self::assertStringContainsString('Facebook indisponível', $response->body());
         self::assertStringNotContainsString('accounts.google.com/gsi/client', $response->body());
         self::assertStringNotContainsString('type="password"', $response->body());
     }
@@ -71,6 +73,7 @@ final class AuthenticationControllersTest extends TestCase
             $this->auth,
             $this->session,
             ['client_id' => 'client-id', 'login_uri' => 'https://flickary.test/auth/google'],
+            ['app_id' => '', 'app_secret' => ''],
         ))->show();
 
         self::assertStringContainsString('accounts.google.com/gsi/client', $response->body());
@@ -84,7 +87,7 @@ final class AuthenticationControllersTest extends TestCase
         $this->auth->login(7);
         $response = (new LoginController($this->view(), $this->auth, $this->session, [
             'client_id' => 'client-id',
-        ]))->show();
+        ], []))->show();
 
         self::assertSame(302, $response->status());
         self::assertSame('/', $response->headers()['Location']);
@@ -94,7 +97,7 @@ final class AuthenticationControllersTest extends TestCase
     {
         $called = false;
         $controller = $this->googleController(
-            $this->verifier(new GoogleIdentity('subject', null, false, null, null), $called),
+            $this->verifier(new ExternalIdentity('google', 'subject', null, false, null, null), $called),
             $this->finder(null),
         );
         $request = new Request(
@@ -124,9 +127,9 @@ final class AuthenticationControllersTest extends TestCase
 
     public function testExistingGoogleIdentityLogsInAndClearsOldPendingState(): void
     {
-        $identity = new GoogleIdentity('subject', 'person@example.com', true, 'Person', null);
-        $pending = new PendingGoogleOnboarding($this->session, static fn (): int => 1000);
-        $pending->store(new GoogleIdentity('old-subject', null, false, null, null));
+        $identity = new ExternalIdentity('google', 'subject', 'person@example.com', true, 'Person', null);
+        $pending = new PendingExternalOnboarding($this->session, static fn (): int => 1000);
+        $pending->store(new ExternalIdentity('google', 'old-subject', null, false, null, null));
         $called = false;
         $controller = $this->googleController($this->verifier($identity, $called), $this->finder(17), $pending);
 
@@ -140,8 +143,8 @@ final class AuthenticationControllersTest extends TestCase
 
     public function testFirstGoogleAccessCreatesPendingOnboardingWithoutLoggingIn(): void
     {
-        $identity = new GoogleIdentity('new-subject', 'person@example.com', true, 'Person', null);
-        $pending = new PendingGoogleOnboarding($this->session, static fn (): int => 1000);
+        $identity = new ExternalIdentity('google', 'new-subject', 'person@example.com', true, 'Person', null);
+        $pending = new PendingExternalOnboarding($this->session, static fn (): int => 1000);
         $called = false;
         $controller = $this->googleController($this->verifier($identity, $called), $this->finder(null), $pending);
 
@@ -149,7 +152,8 @@ final class AuthenticationControllersTest extends TestCase
 
         self::assertSame('/onboarding/username', $response->headers()['Location']);
         self::assertFalse($this->auth->check());
-        self::assertEquals($identity, $pending->current());
+        self::assertSame('google', $pending->current()?->provider);
+        self::assertSame('new-subject', $pending->current()?->providerUserId);
     }
 
     public function testOnboardingWithoutPendingRedirectsToLogin(): void
@@ -263,28 +267,28 @@ final class AuthenticationControllersTest extends TestCase
     private function googleController(
         GoogleIdentityVerifier $verifier,
         ExternalIdentityFinder $finder,
-        ?PendingGoogleOnboarding $pending = null,
+        ?PendingExternalOnboarding $pending = null,
     ): GoogleAuthController {
         return new GoogleAuthController(
             $this->auth,
             $this->session,
             $verifier,
             $finder,
-            $pending ?? new PendingGoogleOnboarding($this->session),
+            $pending ?? new PendingExternalOnboarding($this->session),
             'client-id',
         );
     }
 
-    private function verifier(?GoogleIdentity $identity, bool &$called): GoogleIdentityVerifier
+    private function verifier(?ExternalIdentity $identity, bool &$called): GoogleIdentityVerifier
     {
         return new class($identity, $called) implements GoogleIdentityVerifier {
             public function __construct(
-                private readonly ?GoogleIdentity $identity,
+                private readonly ?ExternalIdentity $identity,
                 private bool &$called,
             ) {
             }
 
-            public function verify(string $credential): ?GoogleIdentity
+            public function verify(string $credential): ?ExternalIdentity
             {
                 $this->called = true;
                 return $this->identity;
@@ -315,7 +319,7 @@ final class AuthenticationControllersTest extends TestCase
             {
             }
 
-            public function createFromGoogle(GoogleIdentity $identity, string $username): AccountCreationResult
+            public function createFromExternalIdentity(ExternalIdentity $identity, string $username): AccountCreationResult
             {
                 $this->receivedUsername = $username;
                 return $this->result;
@@ -325,23 +329,24 @@ final class AuthenticationControllersTest extends TestCase
 
     private function onboardingController(
         AccountCreator $creator,
-        ?PendingGoogleOnboarding $pending = null,
+        ?PendingExternalOnboarding $pending = null,
     ): OnboardingController {
         return new OnboardingController(
             $this->view(),
             $this->auth,
             $this->csrf,
             $this->session,
-            $pending ?? new PendingGoogleOnboarding($this->session),
+            $pending ?? new PendingExternalOnboarding($this->session),
             new UsernamePolicy(),
             $creator,
         );
     }
 
-    private function storePendingIdentity(): PendingGoogleOnboarding
+    private function storePendingIdentity(): PendingExternalOnboarding
     {
-        $pending = new PendingGoogleOnboarding($this->session);
-        $pending->store(new GoogleIdentity(
+        $pending = new PendingExternalOnboarding($this->session);
+        $pending->store(new ExternalIdentity(
+            'google',
             'subject',
             'person@example.com',
             true,

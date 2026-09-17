@@ -956,13 +956,47 @@ code {
     min-height: 3rem;
     place-items: center;
     overflow: hidden;
+    margin: 0;
+}
+
+.auth-providers {
+    display: grid;
+    gap: var(--space-3);
     margin-block: var(--space-5);
+}
+
+.facebook-signin {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    border: 1px solid rgb(96 165 250 / 28%);
+    border-radius: .25rem;
+    background: #1877f2;
+    color: white;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.facebook-signin span,
+.connection-provider b {
+    display: grid;
+    width: 1.45rem;
+    height: 1.45rem;
+    place-items: center;
+    border-radius: 50%;
+    background: white;
+    color: #1877f2;
+    font-family: Arial, sans-serif;
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
 .auth-unavailable {
     display: grid;
     gap: .3rem;
-    margin-block: var(--space-5);
+    margin: 0;
     padding: var(--space-4);
     border: 1px solid rgb(245 158 11 / 30%);
     border-radius: var(--radius-medium);
@@ -1113,7 +1147,8 @@ code {
 
 .profile-hero,
 .profile-story,
-.profile-editor {
+.profile-editor,
+.profile-connections {
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-card);
 }
@@ -1355,7 +1390,8 @@ code {
 }
 
 .profile-story,
-.profile-editor {
+.profile-editor,
+.profile-connections {
     padding: clamp(1.25rem, 4vw, 2rem);
     border-radius: var(--radius-large);
     background: linear-gradient(150deg, rgb(20 31 49 / 94%), rgb(7 13 24 / 94%));
@@ -1381,7 +1417,8 @@ code {
 }
 
 .profile-story h2,
-.profile-editor h2 {
+.profile-editor h2,
+.profile-connections h2 {
     margin-bottom: var(--space-4);
     font-size: clamp(1.45rem, 5vw, 2rem);
     letter-spacing: -.04em;
@@ -1421,6 +1458,72 @@ code {
     color: var(--color-primary-hover);
     font-size: 1.7rem;
     text-shadow: 0 0 1.25rem rgb(14 165 255 / 55%);
+}
+
+.profile-connections {
+    display: grid;
+    gap: var(--space-5);
+    grid-column: 1 / -1;
+}
+
+.profile-connections > div > p:last-child,
+.profile-connections__privacy {
+    margin-bottom: 0;
+    color: var(--color-text-secondary);
+    font-size: .78rem;
+}
+
+.connection-list {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.connection-list li {
+    display: flex;
+    min-height: 3.75rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: rgb(11 18 32 / 72%);
+}
+
+.connection-provider {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.connection-provider b:first-child {
+    border: 1px solid rgb(148 163 184 / 25%);
+    color: var(--color-primary);
+}
+
+.connection-state,
+.connection-action {
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.connection-state.is-connected {
+    color: var(--color-success);
+}
+
+.connection-action {
+    min-height: 2.25rem;
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-small);
+    background: rgb(59 130 246 / 14%);
+    color: var(--color-primary-hover);
+    cursor: pointer;
 }
 
 .profile-form {

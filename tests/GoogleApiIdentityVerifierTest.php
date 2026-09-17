@@ -23,7 +23,8 @@ final class GoogleApiIdentityVerifierTest extends TestCase
         $identity = $verifier->verify('signed-id-token');
 
         self::assertNotNull($identity);
-        self::assertSame('google-subject-123', $identity->subject);
+        self::assertSame('google', $identity->provider);
+        self::assertSame('google-subject-123', $identity->providerUserId);
         self::assertSame('person@example.com', $identity->email);
         self::assertTrue($identity->emailVerified);
         self::assertSame('Person Name', $identity->displayName);

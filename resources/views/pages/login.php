@@ -5,6 +5,7 @@ declare(strict_types=1);
 /** @var bool $googleEnabled */
 /** @var string $googleClientId */
 /** @var string $googleLoginUri */
+/** @var bool $facebookEnabled */
 /** @var array $messages */
 ?>
 <section class="auth-panel" aria-labelledby="login-title">
@@ -19,15 +20,16 @@ declare(strict_types=1);
     <div class="auth-panel__intro">
         <p class="eyebrow">Passado · Presente · Futuro</p>
         <h1 id="login-title">Sua próxima história começa aqui.</h1>
-        <p>Entre com sua conta Google para guardar jornadas, descobertas e tudo o que ainda vem pela frente.</p>
+        <p>Entre com Google ou Facebook para guardar jornadas, descobertas e tudo o que ainda vem pela frente.</p>
     </div>
 
     <?php foreach (($messages['error'] ?? []) as $message): ?>
         <p class="form-alert form-alert--error" role="alert"><?= e((string) $message) ?></p>
     <?php endforeach; ?>
 
-    <?php if ($googleEnabled): ?>
-        <div class="google-signin" aria-label="Acesso com Google">
+    <div class="auth-providers" aria-label="Opções de acesso">
+        <?php if ($googleEnabled): ?>
+            <div class="google-signin" aria-label="Acesso com Google">
             <div id="g_id_onload"
                  data-client_id="<?= e($googleClientId) ?>"
                  data-login_uri="<?= e($googleLoginUri) ?>"
@@ -42,15 +44,28 @@ declare(strict_types=1);
                  data-logo_alignment="left"
                  data-width="320"
                  data-locale="pt-BR"></div>
-        </div>
-        <script src="https://accounts.google.com/gsi/client?hl=pt-BR" async defer></script>
-    <?php else: ?>
-        <div class="auth-unavailable" role="status">
-            <strong>Acesso indisponível neste ambiente</strong>
-            <span>O login com Google ainda precisa ser configurado pelo responsável da instalação.</span>
-        </div>
-    <?php endif; ?>
+            </div>
+            <script src="https://accounts.google.com/gsi/client?hl=pt-BR" async defer></script>
+        <?php else: ?>
+            <div class="auth-unavailable" role="status">
+                <strong>Google indisponível</strong>
+                <span>O provedor ainda precisa ser configurado neste ambiente.</span>
+            </div>
+        <?php endif; ?>
 
-    <p class="auth-panel__privacy">O Flickary usa somente sua identidade Google verificada para encontrar ou criar sua conta. Nenhum token é armazenado.</p>
+        <?php if ($facebookEnabled): ?>
+            <a class="facebook-signin" href="/auth/facebook">
+                <span aria-hidden="true">f</span>
+                Continuar com o Facebook
+            </a>
+        <?php else: ?>
+            <div class="auth-unavailable" role="status">
+                <strong>Facebook indisponível</strong>
+                <span>O provedor ainda precisa ser configurado neste ambiente.</span>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <p class="auth-panel__privacy">O Flickary usa somente a identidade verificada pelo provedor para encontrar ou criar sua conta. Nenhum token é armazenado.</p>
     <a class="auth-back" href="/">Voltar para a Home</a>
 </section>

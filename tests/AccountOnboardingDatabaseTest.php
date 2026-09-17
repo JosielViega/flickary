@@ -6,7 +6,8 @@ namespace Tests;
 
 use App\Authentication\AccountCreationResult;
 use App\Authentication\AccountOnboardingService;
-use App\Authentication\GoogleIdentity;
+use App\Authentication\ExternalIdentity;
+use App\Authentication\ExternalIdentityLinker;
 use App\Core\Database;
 use App\Repositories\ExternalIdentityRepository;
 use App\Repositories\UserProfileRepository;
@@ -57,7 +58,8 @@ final class AccountOnboardingDatabaseTest extends TestCase
 
     public function testCreatesCompleteAccountAndHandlesExpectedConflictsAtomically(): void
     {
-        $identity = new GoogleIdentity(
+        $identity = new ExternalIdentity(
+            'google',
             'google-subject-1',
             'person@example.com',
             true,
@@ -65,7 +67,7 @@ final class AccountOnboardingDatabaseTest extends TestCase
             'https://example.test/avatar.jpg',
         );
 
-        $created = $this->service->createFromGoogle($identity, 'person.one');
+        $created = $this->service->createFromExternalIdentity($identity, 'person.one');
 
         self::assertSame(AccountCreationResult::CREATED, $created->status);
         self::assertNotNull($created->userId);
@@ -85,19 +87,19 @@ final class AccountOnboardingDatabaseTest extends TestCase
         self::assertSame(1, $this->countRows('user_profiles'));
         self::assertSame(1, $this->countRows('user_external_identities'));
 
-        $usernameConflict = $this->service->createFromGoogle(
-            new GoogleIdentity('google-subject-2', 'second@example.com', true, null, null),
+        $usernameConflict = $this->service->createFromExternalIdentity(
+            new ExternalIdentity('google', 'google-subject-2', 'second@example.com', true, null, null),
             'PERSON.ONE',
         );
         self::assertSame(AccountCreationResult::USERNAME_TAKEN, $usernameConflict->status);
 
-        $emailConflict = $this->service->createFromGoogle(
-            new GoogleIdentity('google-subject-3', 'PERSON@example.com', true, null, null),
+        $emailConflict = $this->service->createFromExternalIdentity(
+            new ExternalIdentity('google', 'google-subject-3', 'PERSON@example.com', true, null, null),
             'person.three',
         );
         self::assertSame(AccountCreationResult::EMAIL_CONFLICT, $emailConflict->status);
 
-        $existingIdentity = $this->service->createFromGoogle($identity, 'another.username');
+        $existingIdentity = $this->service->createFromExternalIdentity($identity, 'another.username');
         self::assertSame(AccountCreationResult::IDENTITY_EXISTS, $existingIdentity->status);
         self::assertSame($created->userId, $existingIdentity->userId);
         self::assertSame(1, $this->countRows('users'));
@@ -107,7 +109,8 @@ final class AccountOnboardingDatabaseTest extends TestCase
 
     public function testRollsBackUserWhenProfileCreationFails(): void
     {
-        $identity = new GoogleIdentity(
+        $identity = new ExternalIdentity(
+            'google',
             'rollback-subject',
             null,
             false,
@@ -116,13 +119,59 @@ final class AccountOnboardingDatabaseTest extends TestCase
         );
 
         try {
-            $this->service->createFromGoogle($identity, 'rollback.user');
+            $this->service->createFromExternalIdentity($identity, 'rollback.user');
             self::fail('An oversized avatar URL should fail profile persistence.');
         } catch (PDOException) {
             self::assertSame(0, $this->countRows('users'));
             self::assertSame(0, $this->countRows('user_profiles'));
             self::assertSame(0, $this->countRows('user_external_identities'));
         }
+    }
+
+    public function testCreatesFacebookAccountWithoutEmailAndLinksProviderIdempotently(): void
+    {
+        $facebook = new ExternalIdentity('facebook', 'facebook-subject-1', null, false, 'Facebook Person', null);
+        $created = $this->service->createFromExternalIdentity($facebook, 'facebook.person');
+
+        self::assertSame(AccountCreationResult::CREATED, $created->status);
+        self::assertNotNull($created->userId);
+        self::assertNull($this->accountRow($created->userId)['email']);
+        self::assertSame(
+            ExternalIdentityLinker::LINKED,
+            $this->externalIdentities->link(
+                $created->userId,
+                new ExternalIdentity('google', 'linked-google-subject', null, false, null, null),
+            ),
+        );
+        self::assertSame(
+            ExternalIdentityLinker::ALREADY_LINKED,
+            $this->externalIdentities->link(
+                $created->userId,
+                new ExternalIdentity('google', 'linked-google-subject', null, false, null, null),
+            ),
+        );
+        self::assertSame(['facebook', 'google'], $this->externalIdentities->providersForUser($created->userId));
+    }
+
+    public function testRejectsIdentityAlreadyOwnedByAnotherAccount(): void
+    {
+        $first = $this->service->createFromExternalIdentity(
+            new ExternalIdentity('facebook', 'owned-facebook', null, false, 'One', null),
+            'owner.one',
+        );
+        $second = $this->service->createFromExternalIdentity(
+            new ExternalIdentity('google', 'google-two', null, false, 'Two', null),
+            'owner.two',
+        );
+
+        self::assertSame(
+            ExternalIdentityLinker::CONFLICT,
+            $this->externalIdentities->link(
+                $second->userId,
+                new ExternalIdentity('facebook', 'owned-facebook', null, false, null, null),
+            ),
+        );
+        self::assertSame($first->userId, $this->externalIdentities->findUserId('facebook', 'owned-facebook'));
     }
 
     private function accountRow(int $userId): array

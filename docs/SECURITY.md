@@ -27,17 +27,25 @@ Estas regras são requisitos do projeto, não sugestões:
 
 O núcleo de autenticação guarda na sessão somente o ID interno positivo de `users`. Ele não conhece provedores externos. Login e logout regeneram o identificador da sessão; logout remove apenas o estado autenticado, preservando CSRF e flash messages da sessão atual. Não guardar senha, segredo externo ou token reutilizável em cookie. Um futuro “remember me” deve usar token aleatório, armazenado de forma segura, com expiração e revogação.
 
-Esse núcleo ainda não oferece login ao usuário final. O fluxo que futuramente resolver uma identidade externa deverá validar a conta no servidor antes de estabelecer a sessão Flickary.
+Google e Facebook validam a identidade externa no servidor antes de estabelecer a sessão Flickary.
 
 ## Contas e identidades externas
 
-A conta interna e as identidades externas permanecem separadas no banco. A fundação persiste somente o provedor e seu identificador de usuário; não armazena tokens OAuth, respostas brutas ou perfis sociais. Uma futura vinculação entre provedores não deve confiar apenas na igualdade de e-mail e precisará de confirmação segura do usuário.
+A conta interna e as identidades externas permanecem separadas no banco. A fundação persiste somente o provedor e seu identificador de usuário; não armazena tokens OAuth, códigos, respostas brutas ou perfis sociais. A vinculação exige sessão autenticada, CSRF no início e estado OAuth vinculado ao mesmo usuário. Igualdade de e-mail, nome ou avatar nunca vincula contas.
 
 ## Google Login
 
 Google Identity Services envia a credential por POST. Antes de verificar o ID token, o backend exige correspondência em tempo constante entre o cookie e o campo `g_csrf_token`. A biblioteca oficial valida assinatura, audience, issuer e expiração; somente o claim `sub` identifica a conta Google.
 
 O ID token nunca é persistido ou registrado. O pending onboarding guarda apenas `sub`, e-mail verificado quando disponível, nome, avatar HTTPS e instante de criação, expirando em dez minutos. E-mails iguais não vinculam contas automaticamente. A criação de `users`, `user_profiles` e `user_external_identities` ocorre em uma única transação, com as constraints do banco como garantia final.
+
+## Facebook Login
+
+O Facebook usa Authorization Code Flow server-side na Graph API `v26.0`. O `state` contém 256 bits aleatórios, é armazenado na sessão somente como SHA-256, expira em dez minutos e é consumido uma única vez, inclusive em tentativas inválidas. No fluxo de conexão, o estado registra também a intenção e o ID do usuário autenticado; o callback recusa sessões ausentes ou alteradas.
+
+O código é trocado no backend com timeout curto, validação TLS habilitada, redirects desabilitados, limite de resposta e tratamento fechado para status ou JSON inesperado. O token fica somente em memória durante a requisição, segue no header `Authorization` da consulta de perfil e nunca vai para sessão, banco ou logs. A consulta pede apenas `id,name,picture` e inclui `appsecret_proof` calculado por HMAC-SHA256.
+
+O e-mail do Facebook é sempre tratado como ausente/não verificado, mesmo que o provedor o envie. Somente o `id` retornado pelo endpoint versionado identifica a conta. As constraints únicas `(provider, provider_user_id)` e `(user_id, provider)` são a garantia final contra corridas e duplicidade de conexão.
 
 ## Produção
 
