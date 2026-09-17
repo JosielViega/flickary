@@ -18,6 +18,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- fundação interna da integração TMDB API v3 com Bearer server-side, cliente HTTP seguro, configuração de imagens e normalização de Movie e TV/Series
 - fundação visual Cinematic Dark — Deep Blue com tokens, shell responsivo e navegação mobile/desktop
 - Home conceitual baseada em Passado · Presente · Futuro e página 404 integrada à identidade
 - fundação persistente de contas com usuário interno, perfil 1:1 e identidades externas desacopladas

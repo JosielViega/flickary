@@ -21,6 +21,7 @@ use App\Authentication\UsernamePolicy;
 use App\Repositories\ExternalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
 $root = dirname(__DIR__);
@@ -38,6 +39,7 @@ Dotenv::createImmutable($root)->safeLoad();
 $appConfig = require $root . '/config/app.php';
 $authConfig = require $root . '/config/auth.php';
 $databaseConfig = require $root . '/config/database.php';
+$tmdbConfig = require $root . '/config/tmdb.php';
 $logger = new Logger($root . '/storage/logs');
 (new ErrorHandler($logger, $appConfig['debug']))->register();
 
@@ -70,6 +72,7 @@ $facebookConfig = $authConfig['facebook'];
 return [
     'config' => $appConfig,
     'auth_config' => $authConfig,
+    'tmdb_config' => $tmdbConfig,
     'request' => Request::capture(),
     'router' => new Router(),
     'view' => new View($root . '/resources/views'),
@@ -83,6 +86,15 @@ return [
         $facebookConfig['app_secret'],
         $facebookConfig['redirect_uri'],
         $facebookConfig['graph_version'],
+    ),
+    'tmdb' => new TmdbClient(
+        $tmdbConfig['read_access_token'],
+        $tmdbConfig['api_base_url'],
+        $tmdbConfig['language'],
+        $tmdbConfig['region'],
+        $tmdbConfig['connect_timeout'],
+        $tmdbConfig['timeout'],
+        $tmdbConfig['max_response_bytes'],
     ),
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,

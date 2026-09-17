@@ -12,10 +12,10 @@ Router
 Controller
    ↓
 Service (quando houver regra que justifique)
-   ↓
-Repository
-   ↓
-PDO / MySQL
+   ├─→ Integration (serviço externo)
+   └─→ Repository
+          ↓
+       PDO / MySQL
 ```
 
 Sem regra intermediária, o Controller chama o Repository diretamente:
@@ -47,6 +47,7 @@ HTML
 - `app/Controllers`: coordena cada caso HTTP, sem SQL ou HTML extenso.
 - `app/Validation`: valida entradas no backend.
 - `app/Repositories`: concentra consultas explícitas de cada domínio e seus prepared statements.
+- `app/Integrations`: clientes de serviços externos, sem SQL, sessão de usuário ou lógica visual.
 - `app/Services`: coordena regras ou integrações que realmente precisem de uma camada própria.
 - `app/Models`: DTOs ou objetos simples quando o domínio os justificar; não é um ORM.
 - `resources/views`: apresentação PHP, sempre escapando valores dinâmicos por padrão.
@@ -64,6 +65,22 @@ HTML
 7. Cubra o comportamento fundamental com teste.
 
 Dependências são montadas explicitamente em `bootstrap/app.php` ou `routes/web.php`. Se o projeto crescer muito, um container pode ser avaliado, mas não é necessário na fundação atual.
+
+## Integrações externas e catálogo
+
+```text
+Browser
+   ↓
+Flickary
+   ↓
+Integration/TMDB
+   ↓
+TMDB API v3
+```
+
+`Repository` significa persistência MySQL; `Integration` significa comunicação com um serviço externo. A integração TMDB consulta o catálogo sob demanda e normaliza Movie e TV para os tipos internos `movie` e `series`. Ela não classifica animações como anime; uma futura integração AniList terá responsabilidade própria.
+
+O Flickary não manterá um espelho completo do TMDB. Quando uma mídia entrar futuramente em lista, agenda ou histórico, será persistido somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + source_id`.
 
 ## Ferramentas da fundação
 

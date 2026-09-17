@@ -51,6 +51,12 @@ O e-mail do Facebook é sempre tratado como ausente/não verificado, mesmo que o
 
 Configure `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE=true`, HTTPS e permissões mínimas. O usuário recebe erro genérico com referência; detalhes ficam em `storage/logs`. Proteja também logs e backups no servidor.
 
+## TMDB
+
+O `TMDB_READ_ACCESS_TOKEN` é um segredo exclusivamente server-side. O cliente usa Bearer sobre HTTPS com validação TLS, host base fixo e redirects desabilitados. Token e header `Authorization` não podem ser enviados ao navegador, persistidos no banco, incluídos em exceptions ou registrados em logs.
+
+As operações públicas do cliente representam endpoints TMDB conhecidos; entrada HTTP não escolhe host nem URL completa. Respostas possuem limite de tamanho e falham de forma controlada. Erros podem registrar futuramente somente path, status HTTP e categoria, nunca headers ou respostas integrais.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

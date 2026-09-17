@@ -100,6 +100,20 @@ Na área **Perfil → Contas conectadas**, um usuário autenticado pode conectar
 
 Sem as duas credenciais Facebook, o botão aparece como indisponível de forma amigável e Google, Home, perfil e `/health` continuam funcionando.
 
+## Fundação TMDB
+
+O catálogo externo usa a TMDB API v3 por uma integração exclusivamente server-side. Configure o API Read Access Token somente no ambiente:
+
+```env
+TMDB_READ_ACCESS_TOKEN=
+```
+
+O cliente envia o token como Bearer, usa inicialmente `pt-BR` e região `BR`, e nunca entrega a credencial ao navegador. O Flickary não mantém um espelho completo do catálogo TMDB: quando coleção, agenda e histórico forem implementados, somente um snapshot mínimo associado a `source + source_id` será persistido para integridade e exibição básica.
+
+Esta etapa fornece apenas a fundação interna, incluindo configuração de imagens e normalização de filmes e séries. Ainda não existe página pública de busca.
+
+Antes de qualquer tela exibir dados ou imagens TMDB, uma área **Sobre / Créditos** deverá usar um logo oficial aprovado, menos proeminente que a marca Flickary, e incluir o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
+
 ## Porta local
 
 Cada projeto recebe uma reserva por caminho absoluto. O registro continua em `~/.modeloPHP/ports.json` por compatibilidade com outros projetos derivados da mesma fundação. Esse nome é deliberadamente compartilhado: alterá-lo criaria uma segunda fonte de reservas e poderia reintroduzir conflitos de porta.
@@ -118,10 +132,10 @@ Router
 Controller
    ↓
 Service (quando necessário)
-   ↓
-Repository (quando houver persistência)
-   ↓
-PDO / MySQL
+   ├─→ Integration (serviço externo)
+   └─→ Repository (persistência)
+          ↓
+       PDO / MySQL
 ```
 
 Services são opcionais e devem coordenar regras ou integrações reais. Repositories concentram SQL explícito quando a persistência existir. Models só devem ser criados quando trouxerem valor concreto; não há ORM.
