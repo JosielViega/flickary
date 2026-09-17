@@ -12,6 +12,13 @@ use App\Core\Router;
 use App\Core\Session;
 use App\Core\View;
 use App\Validation\Validator;
+use App\Authentication\AccountOnboardingService;
+use App\Authentication\GoogleApiIdentityVerifier;
+use App\Authentication\PendingGoogleOnboarding;
+use App\Authentication\UsernamePolicy;
+use App\Repositories\ExternalIdentityRepository;
+use App\Repositories\UserProfileRepository;
+use App\Repositories\UserRepository;
 use Dotenv\Dotenv;
 
 $root = dirname(__DIR__);
@@ -27,6 +34,7 @@ require $autoload;
 Dotenv::createImmutable($root)->safeLoad();
 
 $appConfig = require $root . '/config/app.php';
+$authConfig = require $root . '/config/auth.php';
 $databaseConfig = require $root . '/config/database.php';
 $logger = new Logger($root . '/storage/logs');
 (new ErrorHandler($logger, $appConfig['debug']))->register();
@@ -51,16 +59,31 @@ $session->start([
     'use_only_cookies' => true,
 ]);
 $auth = new Auth($session);
+$database = new Database($databaseConfig);
+$users = new UserRepository($database);
+$profiles = new UserProfileRepository($database);
+$externalIdentities = new ExternalIdentityRepository($database);
 
 return [
     'config' => $appConfig,
+    'auth_config' => $authConfig,
     'request' => Request::capture(),
     'router' => new Router(),
     'view' => new View($root . '/resources/views'),
     'session' => $session,
     'auth' => $auth,
+    'google_identity_verifier' => new GoogleApiIdentityVerifier($authConfig['google']['client_id']),
+    'pending_google_onboarding' => new PendingGoogleOnboarding($session),
+    'username_policy' => new UsernamePolicy(),
+    'external_identities' => $externalIdentities,
+    'account_creator' => new AccountOnboardingService(
+        $database,
+        $users,
+        $profiles,
+        $externalIdentities,
+    ),
     'csrf' => new Csrf($session),
     'validator' => new Validator(),
-    'database' => new Database($databaseConfig),
+    'database' => $database,
     'logger' => $logger,
 ];

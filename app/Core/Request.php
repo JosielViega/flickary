@@ -11,12 +11,13 @@ final class Request
         private readonly array $parsedBody = [],
         private readonly array $server = [],
         private readonly array $files = [],
+        private readonly array $cookies = [],
     ) {
     }
 
     public static function capture(): self
     {
-        return new self($_GET, $_POST, $_SERVER, $_FILES);
+        return new self($_GET, $_POST, $_SERVER, $_FILES, $_COOKIE);
     }
 
     public function input(string $key, mixed $default = null): mixed
@@ -34,6 +35,11 @@ final class Request
         $file = $this->files[$key] ?? null;
 
         return is_array($file) ? $file : null;
+    }
+
+    public function cookie(string $key, mixed $default = null): mixed
+    {
+        return $this->cookies[$key] ?? $default;
     }
 
     public function method(): string

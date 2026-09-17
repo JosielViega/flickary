@@ -193,6 +193,7 @@ final class HostgatorMirrorBuilder
         $segments = explode('/', strtolower($normalized));
         $basename = strtolower((string) end($segments));
         $extension = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
+        $isComposerVendor = str_starts_with(strtolower($normalized), 'vendor/');
 
         if (str_starts_with($basename, '.env')
             || in_array($basename, array_map('strtolower', $this->manifest['protected_names']), true)
@@ -204,15 +205,17 @@ final class HostgatorMirrorBuilder
             throw new RuntimeException('Protected file extension detected: ' . $normalized);
         }
 
-        foreach ($segments as $segment) {
-            if (in_array($segment, $this->manifest['protected_directories'], true)) {
-                throw new RuntimeException('Protected directory detected: ' . $normalized);
+        if (!$isComposerVendor) {
+            foreach ($segments as $segment) {
+                if (in_array($segment, $this->manifest['protected_directories'], true)) {
+                    throw new RuntimeException('Protected directory detected: ' . $normalized);
+                }
             }
-        }
 
-        foreach ($this->manifest['sensitive_name_patterns'] as $pattern) {
-            if (preg_match($pattern, $basename) === 1) {
-                throw new RuntimeException('Sensitive-looking filename detected: ' . $normalized);
+            foreach ($this->manifest['sensitive_name_patterns'] as $pattern) {
+                if (preg_match($pattern, $basename) === 1) {
+                    throw new RuntimeException('Sensitive-looking filename detected: ' . $normalized);
+                }
             }
         }
     }

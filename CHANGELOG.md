@@ -10,6 +10,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 - identidade técnica, configuração ativa, documentação e home inicial adaptadas para Flickary
 - layout base ajustado para português do Brasil e navegação mínima do produto
+- validação do mirror diferencia código instalado pelo Composer de arquivos sensíveis da aplicação
 
 ### Removed
 
@@ -21,6 +22,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 - Home conceitual baseada em Passado · Presente · Futuro e página 404 integrada à identidade
 - fundação persistente de contas com usuário interno, perfil 1:1 e identidades externas desacopladas
 - núcleo de autenticação por sessão independente de provedores, com rotação de ID no login e logout
+- Google Login server-side com onboarding de username, criação transacional de conta e logout protegido por CSRF
 - Guia permanente `docs/PLANO_DE_ESTUDO_E_REVISAO.md` para estudo ativo, revisão por fluxo e evolução segura do modelo.
 - Atalho no README para iniciar o estudo estruturado do projeto.
 

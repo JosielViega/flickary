@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual é um baseline técnico seguro com a fundação persistente de contas, mas ainda não implementa autenticação, catálogo, integrações externas ou recursos sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas e Google Login com onboarding inicial de username. Catálogo, Facebook Login e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -73,7 +73,17 @@ composer port:release
 
 As migrations definem a conta interna em `users`, o perfil 1:1 em `user_profiles` e as identidades de provedores em `user_external_identities`. A separação mantém a identidade Flickary independente de Google, Facebook ou qualquer outro provedor.
 
-Esta etapa não implementa autenticação, Google Login, Facebook Login ou login local por senha. Também não cria usuários de demonstração nem armazena tokens OAuth.
+O Google Login resolve contas pela identidade externa verificada e cria novos usuários somente após a escolha de username. Não existe Facebook Login nem login local por senha. Também não há usuários de demonstração ou persistência de tokens OAuth.
+
+## Google Login
+
+O fluxo usa Google Identity Services e valida o ID token no servidor com `google/apiclient`. Configure apenas o Client ID público do aplicativo Web:
+
+```env
+GOOGLE_CLIENT_ID=
+```
+
+Sem essa configuração, Home e `/health` continuam disponíveis e `/login` exibe um estado amigável. O e-mail não identifica a conta Google e nunca causa vinculação automática; somente o claim `sub` verificado é usado como identidade externa.
 
 ## Porta local
 
@@ -123,6 +133,10 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 ## Rotas atuais
 
 - `GET /` — Home visual inicial do Flickary;
+- `GET /login` — entrada explícita com Google Identity Services;
+- `POST /auth/google` — valida a resposta server-side do Google;
+- `GET|POST /onboarding/username` — conclui uma nova conta com username;
+- `POST /logout` — encerra a sessão com proteção CSRF;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;
 - demais combinações de método e caminho — página 404.
 

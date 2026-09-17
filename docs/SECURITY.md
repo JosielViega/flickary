@@ -33,6 +33,12 @@ Esse núcleo ainda não oferece login ao usuário final. O fluxo que futuramente
 
 A conta interna e as identidades externas permanecem separadas no banco. A fundação persiste somente o provedor e seu identificador de usuário; não armazena tokens OAuth, respostas brutas ou perfis sociais. Uma futura vinculação entre provedores não deve confiar apenas na igualdade de e-mail e precisará de confirmação segura do usuário.
 
+## Google Login
+
+Google Identity Services envia a credential por POST. Antes de verificar o ID token, o backend exige correspondência em tempo constante entre o cookie e o campo `g_csrf_token`. A biblioteca oficial valida assinatura, audience, issuer e expiração; somente o claim `sub` identifica a conta Google.
+
+O ID token nunca é persistido ou registrado. O pending onboarding guarda apenas `sub`, e-mail verificado quando disponível, nome, avatar HTTPS e instante de criação, expirando em dez minutos. E-mails iguais não vinculam contas automaticamente. A criação de `users`, `user_profiles` e `user_external_identities` ocorre em uma única transação, com as constraints do banco como garantia final.
+
 ## Produção
 
 Configure `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE=true`, HTTPS e permissões mínimas. O usuário recebe erro genérico com referência; detalhes ficam em `storage/logs`. Proteja também logs e backups no servidor.

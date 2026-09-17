@@ -5,8 +5,11 @@ declare(strict_types=1);
 /** @var string $content */
 /** @var string $title */
 /** @var null|string $currentRoute */
+/** @var null|\App\Core\Auth $auth */
+/** @var null|\App\Core\Csrf $csrf */
 
 $homeIsActive = ($currentRoute ?? null) === 'home';
+$isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -98,6 +101,17 @@ $homeIsActive = ($currentRoute ?? null) === 'home';
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <span>Buscar filmes, séries e animes...</span>
                     <small>Em breve</small>
+                </div>
+
+                <div class="topbar__account">
+                    <?php if ($isAuthenticated && isset($csrf) && $csrf instanceof \App\Core\Csrf): ?>
+                        <form method="post" action="/logout">
+                            <?= $csrf->field() ?>
+                            <button class="account-action" type="submit">Sair</button>
+                        </form>
+                    <?php else: ?>
+                        <a class="account-action" href="/login">Entrar</a>
+                    <?php endif; ?>
                 </div>
 
                 <p class="topbar__signature">Mais que assistir. <strong>Viver histórias.</strong></p>

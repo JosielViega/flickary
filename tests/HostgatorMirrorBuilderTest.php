@@ -96,6 +96,22 @@ final class HostgatorMirrorBuilderTest extends TestCase
         $this->builder()->validate();
     }
 
+    public function testAllowsSensitiveLookingClassNamesInsideComposerVendor(): void
+    {
+        $this->write('vendor/google/sdk/Cache/AgentCredentials.php', '<?php // dependency source');
+
+        $this->builder()->validate();
+        self::assertFileExists($this->mirror . '/vendor/google/sdk/Cache/AgentCredentials.php');
+    }
+
+    public function testStillRejectsSensitiveLookingApplicationFilenames(): void
+    {
+        $this->write('config/google_credentials.php', '<?php // must not deploy');
+
+        $this->expectException(RuntimeException::class);
+        $this->builder()->validate();
+    }
+
     private function builder(): HostgatorMirrorBuilder
     {
         return new HostgatorMirrorBuilder($this->root, $this->manifest, 'composer');
