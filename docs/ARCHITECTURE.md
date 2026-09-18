@@ -91,6 +91,12 @@ Media Detail → UserMediaController → UserMediaRepository → MySQL
 
 A primeira inclusão obtém detalhes normalizados no servidor e persiste somente o snapshot necessário. Uma mudança de status ou remoção de item existente usa apenas MySQL, mantendo a lista funcional durante indisponibilidade do catálogo externo. `completed` é estado atual, não evento de histórico.
 
+## Progresso de séries
+
+`user_media` representa o estado atual de uma mídia na lista. `user_series_episode_progress` representa o conjunto atual de episódios marcados e referencia diretamente o usuário, não `user_media`; remover uma série da lista preserva seu progresso. Um futuro `watch_history` representará eventos históricos reais e permanece fora do domínio atual.
+
+Detalhes de temporada vêm em uma única chamada `TmdbCatalog::seasonDetails()`. Novas marcações são validadas pelo catálogo; desmarcar e limpar progresso são operações locais para continuarem disponíveis durante indisponibilidade externa.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

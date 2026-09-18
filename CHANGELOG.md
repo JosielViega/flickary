@@ -20,6 +20,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- temporadas públicas navegáveis com episódios reais do TMDB
+- progresso persistente e idempotente de episódios, incluindo marcação e limpeza em lote por temporada
+
 - Minha Lista privada com cinco estados atuais, filtros, paginação SQL e snapshot mínimo local de filmes e séries
 - persistência `user_media` isolada por usuário, com FK, unicidade de identidade externa e proteção CSRF
 

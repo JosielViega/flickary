@@ -128,6 +128,47 @@ declare(strict_types=1);
             <h2 id="media-detail-overview-title">Sinopse</h2>
             <p><?= e($details->overview ?? 'Sinopse não disponível.') ?></p>
         </section>
+        <?php if ($details->mediaType === 'series' && $details->seasons !== []): ?>
+            <?php
+            $mainTotal = 0;
+            $mainWatched = 0;
+
+            foreach ($details->seasons as $season) {
+                if ($season->seasonNumber > 0) {
+                    $mainTotal += $season->episodeCount;
+                    $mainWatched += min(
+                        $season->episodeCount,
+                        $progressCounts[$season->seasonNumber] ?? 0,
+                    );
+                }
+            }
+            ?>
+            <section class="season-list">
+                <p class="eyebrow">Episódios</p>
+                <h2>Temporadas</h2>
+                <?php if (isset($auth) && $auth->check()): ?>
+                    <p>
+                        <?= e((string) $mainWatched) ?> de <?= e((string) $mainTotal) ?>
+                        episódios principais marcados
+                    </p>
+                <?php endif; ?>
+                <div class="season-list__grid">
+                    <?php foreach ($details->seasons as $season): ?>
+                        <a href="/series/<?= e((string) $details->sourceId) ?>/temporadas/<?= e((string) $season->seasonNumber) ?>">
+                            <strong><?= e($season->name) ?></strong>
+                            <span>
+                                <?php if (isset($auth) && $auth->check()): ?>
+                                    <?= e((string) ($progressCounts[$season->seasonNumber] ?? 0)) ?>
+                                    de <?= e((string) $season->episodeCount) ?> marcados
+                                <?php else: ?>
+                                    <?= e((string) $season->episodeCount) ?> episódios
+                                <?php endif; ?>
+                            </span>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
         <footer class="media-detail__footer">
             <a class="media-detail__back" href="/buscar">← Voltar para buscar</a>

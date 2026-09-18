@@ -116,6 +116,8 @@ As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET 
 
 `GET /minha-lista` é uma área privada. Ela guarda um snapshot mínimo local — identidade TMDB, títulos, data e paths de imagens — e um dos estados `planned`, `watching`, `paused`, `completed` ou `dropped`. O catálogo completo continua externo e a listagem não consulta detalhes individuais no TMDB. **Concluído é somente o estado atual e ainda não representa histórico de visualização.**
 
+Séries possuem temporadas navegáveis em `GET /series/{id}/temporadas/{season}`. Usuários com a série na Minha Lista podem marcar episódios ou uma temporada inteira. As marcações persistem mesmo se a série for removida da lista e reaparecem ao adicioná-la novamente. Esse conjunto atual de episódios assistidos também não é histórico de visualização.
+
 A área **Sobre / Créditos** usa um logo oficial aprovado, menos proeminente que a marca Flickary, e inclui o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
 
 ## Porta local

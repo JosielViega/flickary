@@ -206,6 +206,7 @@ final class MediaDetailsControllerTest extends TestCase
                 if ($this->exception !== null) { throw $this->exception; }
                 return $this->series ?? throw new TmdbException('not_found', 404);
             }
+            public function seasonDetails(int $seriesId,int $seasonNumber): \App\Integrations\Tmdb\TmdbSeasonDetails { throw new \LogicException('Not used.'); }
 
             public function configuration(): TmdbImageConfiguration
             {

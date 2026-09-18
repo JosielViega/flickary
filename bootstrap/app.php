@@ -22,6 +22,7 @@ use App\Repositories\ExternalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserMediaRepository;
+use App\Repositories\UserSeriesProgressRepository;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -69,6 +70,7 @@ $users = new UserRepository($database);
 $profiles = new UserProfileRepository($database);
 $externalIdentities = new ExternalIdentityRepository($database);
 $userMedia = new UserMediaRepository($database);
+$seriesProgress = new UserSeriesProgressRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -102,6 +104,7 @@ return [
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,
     'user_media' => $userMedia,
+    'series_progress' => $seriesProgress,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

@@ -17,6 +17,7 @@ use App\Integrations\Tmdb\TmdbMediaDetails;
 use App\Integrations\Tmdb\TmdbMediaId;
 use App\Media\UserMediaStatus;
 use App\Media\UserMediaStore;
+use App\Media\UserSeriesProgressStore;
 
 final class MediaDetailsController
 {
@@ -27,6 +28,7 @@ final class MediaDetailsController
         private readonly ?Csrf $csrf = null,
         private readonly ?UserMediaStore $userMedia = null,
         private readonly ?Session $session = null,
+        private readonly ?UserSeriesProgressStore $seriesProgress = null,
     ) {
     }
 
@@ -64,6 +66,9 @@ final class MediaDetailsController
         $savedMedia = $userId === null || $this->userMedia === null
             ? null
             : $this->userMedia->findForUser($userId, 'tmdb', $type, $id);
+        $progressCounts = $userId !== null && $type === 'series' && $this->seriesProgress !== null
+            ? $this->seriesProgress->countsBySeason($userId, 'tmdb', $id)
+            : [];
 
         return $this->render([
             'title' => $details->title . ' — Flickary',
@@ -75,6 +80,7 @@ final class MediaDetailsController
             'userMedia' => $savedMedia,
             'statusOptions' => UserMediaStatus::options(),
             'messages' => $this->session?->consumeFlash() ?? [],
+            'progressCounts' => $progressCounts,
         ]);
     }
 
@@ -124,6 +130,7 @@ final class MediaDetailsController
             'userMedia' => null,
             'statusOptions' => UserMediaStatus::options(),
             'messages' => $this->session?->consumeFlash() ?? [],
+            'progressCounts' => [],
         ], $status);
     }
 

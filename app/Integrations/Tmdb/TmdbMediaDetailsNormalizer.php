@@ -63,6 +63,7 @@ final class TmdbMediaDetailsNormalizer
             $mediaType === 'series' && is_bool($payload['in_production'] ?? null)
                 ? $payload['in_production']
                 : null,
+            $mediaType === 'series' ? $this->seasons($payload['seasons'] ?? null) : [],
         );
     }
 
@@ -126,5 +127,53 @@ final class TmdbMediaDetailsNormalizer
     private function language(mixed $value): ?string
     {
         return is_string($value) && preg_match('/^[a-z]{2}$/', $value) === 1 ? $value : null;
+    }
+
+    /** @return list<TmdbSeasonSummary> */
+    private function seasons(mixed $values): array
+    {
+        if (!is_array($values)) {
+            return [];
+        }
+
+        $seasons = [];
+
+        foreach ($values as $value) {
+            if (!is_array($value)) {
+                continue;
+            }
+
+            $seasonNumber = $this->integer($value['season_number'] ?? null, 0);
+            $episodeCount = $this->integer($value['episode_count'] ?? null, 0);
+            $name = $this->text($value['name'] ?? null);
+            $id = $value['id'] ?? null;
+
+            if (
+                $seasonNumber === null
+                || $episodeCount === null
+                || $name === null
+                || ($id !== null && (!is_int($id) || $id < 1))
+            ) {
+                continue;
+            }
+
+            $seasons[] = new TmdbSeasonSummary(
+                $id,
+                $seasonNumber,
+                $name,
+                $episodeCount,
+                $this->date($value['air_date'] ?? null),
+                $this->filePath($value['poster_path'] ?? null),
+            );
+        }
+
+        usort(
+            $seasons,
+            static fn (TmdbSeasonSummary $left, TmdbSeasonSummary $right): int =>
+                ($left->seasonNumber === 0 ? PHP_INT_MAX : $left->seasonNumber)
+                <=> ($right->seasonNumber === 0 ? PHP_INT_MAX : $right->seasonNumber),
+        );
+
+        return $seasons;
     }
 }

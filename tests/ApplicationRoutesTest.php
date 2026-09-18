@@ -268,10 +268,12 @@ final class ApplicationRoutesTest extends TestCase
                 public function configured(): bool { return false; }
                 public function movieDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }
                 public function seriesDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }
+                public function seasonDetails(int $seriesId,int $seasonNumber): \App\Integrations\Tmdb\TmdbSeasonDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }
                 public function configuration(): TmdbImageConfiguration { throw new \RuntimeException(); }
                 public function searchMovies(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
                 public function searchSeries(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
             },
+            'series_progress' => new class implements \App\Media\UserSeriesProgressStore { public function watchedEpisodeNumbersForSeason(int$u,string$s,int$i,int$n):array{return[];}public function countsBySeason(int$u,string$s,int$i):array{return[];}public function countForSeries(int$u,string$s,int$i):int{return 0;}public function markWatched(int$u,string$s,int$i,int$n,int$e):void{}public function unmarkWatched(int$u,string$s,int$i,int$n,int$e):void{}public function markSeasonWatched(int$u,string$s,int$i,int$n,array$e):void{}public function clearSeason(int$u,string$s,int$i,int$n):void{} },
         ];
 
         return require dirname(__DIR__) . '/routes/web.php';

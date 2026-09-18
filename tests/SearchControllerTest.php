@@ -240,6 +240,7 @@ final class SearchControllerTest extends TestCase
             {
                 throw new \LogicException('Not used by search tests.');
             }
+            public function seasonDetails(int $seriesId,int $seasonNumber): \App\Integrations\Tmdb\TmdbSeasonDetails { throw new \LogicException('Not used.'); }
 
             public function configuration(): TmdbImageConfiguration
             {

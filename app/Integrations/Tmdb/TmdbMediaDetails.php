@@ -6,7 +6,10 @@ namespace App\Integrations\Tmdb;
 
 final readonly class TmdbMediaDetails
 {
-    /** @param list<array{id:int,name:string}> $genres */
+    /**
+     * @param list<array{id:int,name:string}> $genres
+     * @param list<TmdbSeasonSummary> $seasons
+     */
     public function __construct(
         public string $source,
         public string $mediaType,
@@ -31,6 +34,7 @@ final readonly class TmdbMediaDetails
         public ?int $numberOfEpisodes,
         public ?string $lastAirDate,
         public ?bool $inProduction,
+        public array $seasons = [],
     ) {
     }
 }

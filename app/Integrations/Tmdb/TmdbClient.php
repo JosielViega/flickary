@@ -46,6 +46,29 @@ final class TmdbClient implements TmdbCatalog
         return $this->details($id, 'series');
     }
 
+    public function seasonDetails(int $seriesId, int $seasonNumber): TmdbSeasonDetails
+    {
+        if (
+            $seriesId < 1
+            || $seriesId > 2147483647
+            || $seasonNumber < 0
+            || $seasonNumber > 2147483647
+        ) {
+            throw new \InvalidArgumentException('TMDB season identifiers are invalid.');
+        }
+
+        $payload = $this->request('/tv/' . $seriesId . '/season/' . $seasonNumber, [
+            'language' => $this->language,
+        ]);
+        $details = (new TmdbSeasonDetailsNormalizer())->normalize($payload, $seriesId);
+
+        if ($details === null || $details->seasonNumber !== $seasonNumber) {
+            throw new TmdbException('unexpected_payload', 200);
+        }
+
+        return $details;
+    }
+
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
     public function searchMovies(string $query, int $page = 1): array
     {
@@ -120,10 +143,15 @@ final class TmdbClient implements TmdbCatalog
         if (in_array($path, ['/configuration', '/search/movie', '/search/tv'], true)) {
             return true;
         }
-        if (preg_match('#^/(?:movie|tv)/([1-9]\d{0,9})$#D', $path, $matches) !== 1) {
-            return false;
+        if (preg_match('#^/(?:movie|tv)/([1-9]\d{0,9})$#D', $path, $matches) === 1) {
+            return (int) $matches[1] <= 2147483647;
         }
-        return (int) $matches[1] <= 2147483647;
+
+        if (preg_match('#^/tv/([1-9]\d{0,9})/season/(0|[1-9]\d{0,9})$#D', $path, $matches) === 1) {
+            return (int) $matches[1] <= 2147483647 && (int) $matches[2] <= 2147483647;
+        }
+
+        return false;
     }
 
     private function httpException(int $status, mixed $headers): TmdbException

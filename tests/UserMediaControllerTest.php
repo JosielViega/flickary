@@ -171,6 +171,7 @@ final class FakeUserMediaCatalog implements TmdbCatalog
     public function configured(): bool { return true; }
     public function movieDetails(int $id): TmdbMediaDetails { $this->calls[] = ['movie', $id]; if ($this->failIfCalled) throw new \LogicException('TMDB must not be called'); if ($this->exception) throw $this->exception; return $this->details ?? throw new TmdbException('not_found'); }
     public function seriesDetails(int $id): TmdbMediaDetails { $this->calls[] = ['series', $id]; if ($this->failIfCalled) throw new \LogicException('TMDB must not be called'); if ($this->exception) throw $this->exception; return $this->details ?? throw new TmdbException('not_found'); }
+    public function seasonDetails(int $seriesId,int $seasonNumber): \App\Integrations\Tmdb\TmdbSeasonDetails { throw new \LogicException('Not used.'); }
     public function configuration(): TmdbImageConfiguration { $this->calls[] = ['configuration']; if ($this->exception) throw $this->exception; return new TmdbImageConfiguration('https://image.tmdb.org/t/p/', ['w500'], ['w1280']); }
     public function searchMovies(string $query, int $page = 1): array { return []; }
     public function searchSeries(string $query, int $page = 1): array { return []; }

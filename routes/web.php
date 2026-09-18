@@ -15,6 +15,7 @@ use App\Controllers\OnboardingController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
 use App\Controllers\UserMediaController;
+use App\Controllers\SeriesSeasonController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -89,6 +90,7 @@ $mediaDetails = new MediaDetailsController(
     $app['csrf'],
     $app['user_media'],
     $app['session'],
+    $app['series_progress'],
 );
 $userMedia = new UserMediaController(
     $app['view'],
@@ -97,6 +99,15 @@ $userMedia = new UserMediaController(
     $app['session'],
     $app['user_media'],
     $app['tmdb'],
+);
+$season = new SeriesSeasonController(
+    $app['view'],
+    $app['tmdb'],
+    $app['auth'],
+    $app['csrf'],
+    $app['session'],
+    $app['user_media'],
+    $app['series_progress'],
 );
 $about = new AboutController(
     $app['view'],
@@ -119,6 +130,30 @@ $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookCo
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/filmes/{id}', static fn (string $id): Response => $mediaDetails->movie($id));
 $router->get('/series/{id}', static fn (string $id): Response => $mediaDetails->series($id));
+$router->get(
+    '/series/{id}/temporadas/{season}',
+    static fn (string $id, string $seasonNumber): Response => $season->show($id, $seasonNumber),
+);
+$router->post(
+    '/series/{id}/temporadas/{season}/episodios/{episode}/assistido',
+    static fn (string $id, string $seasonNumber, string $episode): Response =>
+        $season->mark($app['request'], $id, $seasonNumber, $episode),
+);
+$router->post(
+    '/series/{id}/temporadas/{season}/episodios/{episode}/desmarcar',
+    static fn (string $id, string $seasonNumber, string $episode): Response =>
+        $season->unmark($app['request'], $id, $seasonNumber, $episode),
+);
+$router->post(
+    '/series/{id}/temporadas/{season}/assistidos',
+    static fn (string $id, string $seasonNumber): Response =>
+        $season->markSeason($app['request'], $id, $seasonNumber),
+);
+$router->post(
+    '/series/{id}/temporadas/{season}/assistidos/remover',
+    static fn (string $id, string $seasonNumber): Response =>
+        $season->clearSeason($app['request'], $id, $seasonNumber),
+);
 $router->post('/filmes/{id}/lista', static fn (string $id): Response => $userMedia->save($app['request'], $id, 'movie'));
 $router->post('/filmes/{id}/lista/remover', static fn (string $id): Response => $userMedia->remove($app['request'], $id, 'movie'));
 $router->post('/series/{id}/lista', static fn (string $id): Response => $userMedia->save($app['request'], $id, 'series'));

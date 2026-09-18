@@ -13,6 +13,7 @@ interface TmdbCatalog
     public function movieDetails(int $id): TmdbMediaDetails;
 
     public function seriesDetails(int $id): TmdbMediaDetails;
+    public function seasonDetails(int $seriesId, int $seasonNumber): TmdbSeasonDetails;
 
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
     public function searchMovies(string $query, int $page = 1): array;
