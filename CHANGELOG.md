@@ -12,12 +12,16 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 - identidade técnica, configuração ativa, documentação e home inicial adaptadas para Flickary
 - layout base ajustado para português do Brasil e navegação mínima do produto
 - validação do mirror diferencia código instalado pelo Composer de arquivos sensíveis da aplicação
+- páginas de detalhes autenticadas agora permitem adicionar, atualizar e remover itens da Minha Lista
 
 ### Removed
 
 - formulário e rota demonstrativos `POST /example` do starter
 
 ### Added
+
+- Minha Lista privada com cinco estados atuais, filtros, paginação SQL e snapshot mínimo local de filmes e séries
+- persistência `user_media` isolada por usuário, com FK, unicidade de identidade externa e proteção CSRF
 
 - páginas públicas de detalhes básicos de filmes e séries TMDB, com hero cinematográfico, gêneros, metadados, pôster e backdrop
 - busca pública de filmes e séries no TMDB, com seções separadas, filtros, paginação específica, pôsteres responsivos e estados de falha seguros

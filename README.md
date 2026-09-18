@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, login com Google e Facebook, onboarding inicial de username, conexão segura de um segundo provedor, perfil próprio autenticado, busca pública e páginas públicas de detalhes de filmes e séries no TMDB. Coleção, temporadas navegáveis, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB e uma Minha Lista privada com estado atual de filmes e séries. Favoritos, histórico de visualização, agenda, temporadas navegáveis, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -67,7 +67,7 @@ composer port:release
 
 `composer check` valida o manifesto Composer, executa o lint dos arquivos PHP do projeto e roda os testes automatizados.
 
-`composer migrate` executa migrations SQL ainda não registradas. O schema atual contém somente a fundação de contas descrita abaixo.
+`composer migrate` executa migrations SQL ainda não registradas. O schema contém a fundação de contas e a lista pessoal descritas abaixo.
 
 ## Fundação de contas
 
@@ -110,7 +110,11 @@ TMDB_READ_ACCESS_TOKEN=
 
 O cliente envia o token como Bearer, usa inicialmente `pt-BR` e região `BR`, e nunca entrega a credencial ao navegador. O Flickary não mantém um espelho completo do catálogo TMDB: quando coleção, agenda e histórico forem implementados, somente um snapshot mínimo associado a `source + source_id` será persistido para integridade e exibição básica.
 
-As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios. As consultas acontecem no servidor sob demanda; resultados, detalhes, consultas e imagens não são persistidos nem armazenados em cache.
+As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios.
+
+## Minha Lista
+
+`GET /minha-lista` é uma área privada. Ela guarda um snapshot mínimo local — identidade TMDB, títulos, data e paths de imagens — e um dos estados `planned`, `watching`, `paused`, `completed` ou `dropped`. O catálogo completo continua externo e a listagem não consulta detalhes individuais no TMDB. **Concluído é somente o estado atual e ainda não representa histórico de visualização.**
 
 A área **Sobre / Créditos** usa um logo oficial aprovado, menos proeminente que a marca Flickary, e inclui o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
 

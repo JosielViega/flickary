@@ -256,6 +256,14 @@ final class ApplicationRoutesTest extends TestCase
                 ): void {
                 }
             },
+            'user_media' => new class implements \App\Media\UserMediaStore {
+                public function findForUser(int $userId, string $source, string $mediaType, int $sourceId): ?\App\Media\UserMediaItem { return null; }
+                public function create(int $userId, \App\Integrations\Tmdb\TmdbMediaDetails $details, string $status): bool { return true; }
+                public function updateStatus(int $userId, string $source, string $mediaType, int $sourceId, string $status): bool { return false; }
+                public function delete(int $userId, string $source, string $mediaType, int $sourceId): bool { return false; }
+                public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage): \App\Media\UserMediaPage { return new \App\Media\UserMediaPage([], 0, $page, $perPage); }
+                public function countForUser(int $userId): int { return 0; }
+            },
             'tmdb' => new class implements TmdbCatalog {
                 public function configured(): bool { return false; }
                 public function movieDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }

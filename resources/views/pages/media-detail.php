@@ -7,7 +7,15 @@ declare(strict_types=1);
 /** @var null|string $backdropUrl */
 /** @var null|string $errorTitle */
 /** @var null|string $errorMessage */
+/** @var null|\App\Media\UserMediaItem $userMedia */
+/** @var array<string,string> $statusOptions */
+/** @var array<string,list<string>> $messages */
 ?>
+<?php foreach ($messages ?? [] as $type => $items): ?>
+    <?php foreach ($items as $message): ?>
+        <div class="flash flash--<?= $type === 'error' ? 'error' : 'success' ?>" role="status"><?= e($message) ?></div>
+    <?php endforeach; ?>
+<?php endforeach; ?>
 <?php if ($details === null): ?>
     <section class="media-detail-state" aria-labelledby="media-detail-state-title">
         <p class="eyebrow">Catálogo Flickary</p>
@@ -84,6 +92,35 @@ declare(strict_types=1);
                     </dl>
                 </div>
             </div>
+        </section>
+
+        <section class="media-list-control" aria-labelledby="media-list-control-title">
+            <div>
+                <p class="eyebrow">Sua jornada</p>
+                <h2 id="media-list-control-title"><?= $userMedia === null ? 'Guarde esta história.' : 'Na sua lista' ?></h2>
+                <p><?= $userMedia === null ? 'Escolha como esta história faz parte do seu momento.' : 'Status atual: ' . e(\App\Media\UserMediaStatus::label($userMedia->status)) ?></p>
+            </div>
+            <?php if (isset($auth) && $auth instanceof \App\Core\Auth && $auth->check() && isset($csrf)): ?>
+                <?php $basePath = $details->mediaType === 'movie' ? '/filmes/' : '/series/'; ?>
+                <form class="media-list-control__form" method="post" action="<?= e($basePath . $details->sourceId . '/lista') ?>">
+                    <?= $csrf->field() ?>
+                    <label for="media-status">Estado atual</label>
+                    <select id="media-status" name="status">
+                        <?php foreach ($statusOptions as $value => $label): ?>
+                            <option value="<?= e($value) ?>"<?= ($userMedia?->status ?? 'planned') === $value ? ' selected' : '' ?>><?= e($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="button button--primary" type="submit"><?= $userMedia === null ? 'Adicionar à Minha Lista' : 'Salvar status' ?></button>
+                </form>
+                <?php if ($userMedia !== null): ?>
+                    <form method="post" action="<?= e($basePath . $details->sourceId . '/lista/remover') ?>">
+                        <?= $csrf->field() ?>
+                        <button class="button button--ghost" type="submit">Remover da Minha Lista</button>
+                    </form>
+                <?php endif; ?>
+            <?php else: ?>
+                <a class="button button--primary" href="/login">Entre para adicionar à sua lista</a>
+            <?php endif; ?>
         </section>
 
         <section class="media-detail__overview" aria-labelledby="media-detail-overview-title">

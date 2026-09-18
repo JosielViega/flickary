@@ -80,7 +80,16 @@ TMDB API v3
 
 `Repository` significa persistência MySQL; `Integration` significa comunicação com um serviço externo. A integração TMDB consulta o catálogo sob demanda e normaliza Movie e TV para os tipos internos `movie` e `series`. Ela não classifica animações como anime; uma futura integração AniList terá responsabilidade própria.
 
-O Flickary não manterá um espelho completo do TMDB. Quando uma mídia entrar futuramente em lista, agenda ou histórico, será persistido somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + source_id`.
+O Flickary não mantém um espelho completo do TMDB. Quando uma mídia entra na Minha Lista, persiste somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + media_type + source_id`.
+
+## Minha Lista
+
+```text
+Media Detail → UserMediaController → UserMediaRepository → MySQL
+                         └─ primeira inclusão → TmdbCatalog → snapshot mínimo
+```
+
+A primeira inclusão obtém detalhes normalizados no servidor e persiste somente o snapshot necessário. Uma mudança de status ou remoção de item existente usa apenas MySQL, mantendo a lista funcional durante indisponibilidade do catálogo externo. `completed` é estado atual, não evento de histórico.
 
 ## Ferramentas da fundação
 

@@ -33,6 +33,8 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('alt="Pôster de Matrix"', $response->body());
         self::assertStringContainsString('href="/sobre#tmdb"', $response->body());
         self::assertStringContainsString('href="/buscar"', $response->body());
+        self::assertStringContainsString('href="/login"', $response->body());
+        self::assertStringContainsString('Entre para adicionar à sua lista', $response->body());
         self::assertStringNotContainsString('IMDb', $response->body());
     }
 

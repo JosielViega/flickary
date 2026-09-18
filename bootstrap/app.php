@@ -21,6 +21,7 @@ use App\Authentication\UsernamePolicy;
 use App\Repositories\ExternalIdentityRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\UserMediaRepository;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -67,6 +68,7 @@ $database = new Database($databaseConfig);
 $users = new UserRepository($database);
 $profiles = new UserProfileRepository($database);
 $externalIdentities = new ExternalIdentityRepository($database);
+$userMedia = new UserMediaRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -99,6 +101,7 @@ return [
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,
+    'user_media' => $userMedia,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

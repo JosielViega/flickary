@@ -14,6 +14,7 @@ use App\Controllers\MediaDetailsController;
 use App\Controllers\OnboardingController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
+use App\Controllers\UserMediaController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -86,6 +87,16 @@ $mediaDetails = new MediaDetailsController(
     $app['tmdb'],
     $app['auth'],
     $app['csrf'],
+    $app['user_media'],
+    $app['session'],
+);
+$userMedia = new UserMediaController(
+    $app['view'],
+    $app['auth'],
+    $app['csrf'],
+    $app['session'],
+    $app['user_media'],
+    $app['tmdb'],
 );
 $about = new AboutController(
     $app['view'],
@@ -108,6 +119,11 @@ $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookCo
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/filmes/{id}', static fn (string $id): Response => $mediaDetails->movie($id));
 $router->get('/series/{id}', static fn (string $id): Response => $mediaDetails->series($id));
+$router->post('/filmes/{id}/lista', static fn (string $id): Response => $userMedia->save($app['request'], $id, 'movie'));
+$router->post('/filmes/{id}/lista/remover', static fn (string $id): Response => $userMedia->remove($app['request'], $id, 'movie'));
+$router->post('/series/{id}/lista', static fn (string $id): Response => $userMedia->save($app['request'], $id, 'series'));
+$router->post('/series/{id}/lista/remover', static fn (string $id): Response => $userMedia->remove($app['request'], $id, 'series'));
+$router->get('/minha-lista', static fn (): Response => $userMedia->index($app['request']));
 $router->get('/sobre', [$about, 'index']);
 $router->get('/health', [$health, 'index']);
 $router->fallback(static function (Request $request) use ($app): Response {

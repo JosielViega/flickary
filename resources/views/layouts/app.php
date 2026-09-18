@@ -12,6 +12,7 @@ $homeIsActive = ($currentRoute ?? null) === 'home';
 $profileIsActive = ($currentRoute ?? null) === 'profile';
 $searchIsActive = ($currentRoute ?? null) === 'search';
 $aboutIsActive = ($currentRoute ?? null) === 'about';
+$libraryIsActive = ($currentRoute ?? null) === 'library';
 $searchQuery = is_string($searchQuery ?? null) ? $searchQuery : '';
 $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
@@ -74,10 +75,15 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <span>Buscar</span>
                 </a>
-                <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
-                    <svg aria-hidden="true"><use href="#icon-bookmark"/></svg>
-                    <span>Minha Lista</span>
-                </span>
+                <?php if ($isAuthenticated): ?>
+                    <a class="nav-item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?>>
+                        <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
+                    </a>
+                <?php else: ?>
+                    <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar sua lista">
+                        <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
+                    </span>
+                <?php endif; ?>
                 <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
                     <svg aria-hidden="true"><use href="#icon-chart"/></svg>
                     <span>Estatísticas</span>
@@ -150,10 +156,15 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                 </span>
                 <span>Buscar</span>
             </a>
-            <span class="bottom-nav__item is-disabled" aria-disabled="true">
-                <svg aria-hidden="true"><use href="#icon-bookmark"/></svg>
-                <span>Minha Lista</span>
-            </span>
+            <?php if ($isAuthenticated): ?>
+                <a class="bottom-nav__item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?>>
+                    <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
+                </a>
+            <?php else: ?>
+                <span class="bottom-nav__item is-disabled" aria-disabled="true">
+                    <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
+                </span>
+            <?php endif; ?>
             <?php if ($isAuthenticated): ?>
                 <a class="bottom-nav__item<?= $profileIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileIsActive ? ' aria-current="page"' : '' ?>>
                     <svg aria-hidden="true"><use href="#icon-user"/></svg>
