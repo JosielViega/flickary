@@ -6,6 +6,7 @@
     "require": {
         "php": "^8.2",
         "ext-curl": "*",
+        "ext-mbstring": "*",
         "ext-pdo": "*",
         "ext-pdo_mysql": "*",
         "google/apiclient": "^2.19",
