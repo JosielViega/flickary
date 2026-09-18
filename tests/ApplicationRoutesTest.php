@@ -22,6 +22,8 @@ use App\Core\Router;
 use App\Core\Session;
 use App\Core\View;
 use App\Profiles\ProfileStore;
+use App\Integrations\Tmdb\TmdbCatalog;
+use App\Integrations\Tmdb\TmdbImageConfiguration;
 use PHPUnit\Framework\TestCase;
 
 final class ApplicationRoutesTest extends TestCase
@@ -55,7 +57,7 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('Flickary', $response->body());
         self::assertStringContainsString('Sua história', $response->body());
         self::assertStringContainsString('Passado · Presente · Futuro', $response->body());
-        self::assertStringNotContainsString('<form', $response->body());
+        self::assertStringContainsString('method="get" action="/buscar"', $response->body());
         self::assertStringNotContainsString('href="#"', $response->body());
         self::assertStringContainsString('href="/login"', $response->body());
     }
@@ -146,6 +148,24 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('href="/perfil" aria-current="page"', $authenticated->body());
     }
 
+    public function testSearchAndAboutArePublicRealRoutesWithActiveNavigation(): void
+    {
+        $searchRequest = $this->request('GET', '/buscar');
+        $search = $this->router($searchRequest)->dispatch($searchRequest);
+        self::assertSame(200, $search->status());
+        self::assertStringContainsString('href="/buscar" aria-current="page"', $search->body());
+        self::assertStringContainsString('Seu próximo título começa aqui', $search->body());
+        self::assertStringContainsString('bottom-nav__item bottom-nav__item--search is-active', $search->body());
+
+        $aboutRequest = $this->request('GET', '/sobre');
+        $about = $this->router($aboutRequest)->dispatch($aboutRequest);
+        self::assertSame(200, $about->status());
+        self::assertStringContainsString('This product uses the TMDB API but is not endorsed or certified by TMDB.', $about->body());
+        self::assertStringContainsString('https://www.themoviedb.org', $about->body());
+        self::assertStringContainsString('/assets/images/vendor/tmdb/tmdb-blue-long.svg', $about->body());
+        self::assertFileExists(dirname(__DIR__) . '/public/assets/images/vendor/tmdb/tmdb-blue-long.svg');
+    }
+
     private function router(Request $request, bool $authenticated = false): Router
     {
         $session = new Session(false);
@@ -218,6 +238,12 @@ final class ApplicationRoutesTest extends TestCase
                     bool $isPrivate,
                 ): void {
                 }
+            },
+            'tmdb' => new class implements TmdbCatalog {
+                public function configured(): bool { return false; }
+                public function configuration(): TmdbImageConfiguration { throw new \RuntimeException(); }
+                public function searchMovies(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
+                public function searchSeries(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
             },
         ];
 

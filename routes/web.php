@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AboutController;
 use App\Controllers\GoogleAuthController;
 use App\Controllers\FacebookAuthController;
 use App\Controllers\FacebookConnectionController;
@@ -11,6 +12,7 @@ use App\Controllers\LoginController;
 use App\Controllers\LogoutController;
 use App\Controllers\OnboardingController;
 use App\Controllers\ProfileController;
+use App\Controllers\SearchController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -72,6 +74,17 @@ $profile = new ProfileController(
     $app['external_identities'],
     $app['facebook_identity_provider']->configured(),
 );
+$search = new SearchController(
+    $app['view'],
+    $app['tmdb'],
+    $app['auth'],
+    $app['csrf'],
+);
+$about = new AboutController(
+    $app['view'],
+    $app['auth'],
+    $app['csrf'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -85,6 +98,8 @@ $router->post('/logout', static fn (): Response => $logout->handle($app['request
 $router->get('/perfil', [$profile, 'show']);
 $router->post('/perfil', static fn (): Response => $profile->update($app['request']));
 $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookConnection->store($app['request']));
+$router->get('/buscar', static fn (): Response => $search->index($app['request']));
+$router->get('/sobre', [$about, 'index']);
 $router->get('/health', [$health, 'index']);
 $router->fallback(static function (Request $request) use ($app): Response {
     return Response::html($app['view']->render('pages/404', [

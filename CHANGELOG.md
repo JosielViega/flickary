@@ -18,6 +18,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- busca pública de filmes e séries no TMDB, com seções separadas, filtros, paginação específica, pôsteres responsivos e estados de falha seguros
+- rota pública `/sobre`, atribuição obrigatória e asset oficial do TMDB, além de acesso real à busca pela topbar e navegação desktop/mobile
 - fundação interna da integração TMDB API v3 com Bearer server-side, cliente HTTP seguro, configuração de imagens e normalização de Movie e TV/Series
 - fundação visual Cinematic Dark — Deep Blue com tokens, shell responsivo e navegação mobile/desktop
 - Home conceitual baseada em Passado · Presente · Futuro e página 404 integrada à identidade

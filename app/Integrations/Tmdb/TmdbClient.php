@@ -6,7 +6,7 @@ namespace App\Integrations\Tmdb;
 
 use Closure;
 
-final class TmdbClient
+final class TmdbClient implements TmdbCatalog
 {
     private readonly Closure $http;
 

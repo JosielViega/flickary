@@ -10,6 +10,9 @@ declare(strict_types=1);
 
 $homeIsActive = ($currentRoute ?? null) === 'home';
 $profileIsActive = ($currentRoute ?? null) === 'profile';
+$searchIsActive = ($currentRoute ?? null) === 'search';
+$aboutIsActive = ($currentRoute ?? null) === 'about';
+$searchQuery = is_string($searchQuery ?? null) ? $searchQuery : '';
 $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
 <!doctype html>
@@ -67,10 +70,10 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                     <svg aria-hidden="true"><use href="#icon-calendar"/></svg>
                     <span>Agenda</span>
                 </span>
-                <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
+                <a class="nav-item<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <span>Buscar</span>
-                </span>
+                </a>
                 <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
                     <svg aria-hidden="true"><use href="#icon-bookmark"/></svg>
                     <span>Minha Lista</span>
@@ -96,6 +99,7 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                 </span>
             </nav>
 
+            <a class="sidebar__about<?= $aboutIsActive ? ' is-active' : '' ?>" href="/sobre"<?= $aboutIsActive ? ' aria-current="page"' : '' ?>>Sobre</a>
             <p class="sidebar__signature">Passado · Presente · Futuro</p>
         </aside>
 
@@ -105,11 +109,12 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                     <span class="brand__name">Flickary</span>
                 </a>
 
-                <div class="topbar__search" aria-disabled="true">
+                <form class="topbar__search" method="get" action="/buscar" role="search">
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
-                    <span>Buscar filmes, séries e animes...</span>
-                    <small>Em breve</small>
-                </div>
+                    <label class="visually-hidden" for="topbar-search">Buscar filmes e séries</label>
+                    <input id="topbar-search" name="q" type="search" value="<?= e($searchQuery) ?>" placeholder="Buscar filmes e séries..." minlength="2" maxlength="120" autocomplete="off">
+                    <button type="submit" aria-label="Pesquisar">Buscar</button>
+                </form>
 
                 <div class="topbar__account">
                     <?php if ($isAuthenticated && isset($csrf) && $csrf instanceof \App\Core\Csrf): ?>
@@ -139,12 +144,12 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                 <svg aria-hidden="true"><use href="#icon-calendar"/></svg>
                 <span>Agenda</span>
             </span>
-            <span class="bottom-nav__item bottom-nav__item--search is-disabled" aria-disabled="true">
+            <a class="bottom-nav__item bottom-nav__item--search<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
                 <span class="bottom-nav__search-icon">
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                 </span>
                 <span>Buscar</span>
-            </span>
+            </a>
             <span class="bottom-nav__item is-disabled" aria-disabled="true">
                 <svg aria-hidden="true"><use href="#icon-bookmark"/></svg>
                 <span>Minha Lista</span>
