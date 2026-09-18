@@ -1,0 +1,100 @@
+<?php
+
+declare(strict_types=1);
+
+/** @var null|\App\Integrations\Tmdb\TmdbMediaDetails $details */
+/** @var null|string $posterUrl */
+/** @var null|string $backdropUrl */
+/** @var null|string $errorTitle */
+/** @var null|string $errorMessage */
+?>
+<?php if ($details === null): ?>
+    <section class="media-detail-state" aria-labelledby="media-detail-state-title">
+        <p class="eyebrow">Catálogo Flickary</p>
+        <div class="media-detail-state__code" aria-hidden="true"><?= $errorTitle === 'Título não encontrado' ? '404' : '—' ?></div>
+        <h1 id="media-detail-state-title"><?= e($errorTitle ?? 'Detalhes indisponíveis') ?></h1>
+        <p><?= e($errorMessage ?? 'Não foi possível carregar este título.') ?></p>
+        <a class="media-detail__back" href="/buscar">← Voltar para buscar</a>
+    </section>
+<?php else: ?>
+    <?php
+    $typeLabel = $details->mediaType === 'movie' ? 'Filme' : 'Série';
+    $initial = mb_strtoupper(mb_substr($details->title, 0, 1));
+    $releaseDate = $details->releaseDate === null
+        ? null
+        : (new DateTimeImmutable($details->releaseDate))->format('d/m/Y');
+    ?>
+    <article class="media-detail">
+        <section class="media-detail__hero" aria-labelledby="media-detail-title">
+            <div class="media-detail__backdrop" aria-hidden="true">
+                <?php if ($backdropUrl !== null): ?>
+                    <img src="<?= e($backdropUrl) ?>" alt="" decoding="async" width="1280" height="720">
+                <?php endif; ?>
+            </div>
+
+            <div class="media-detail__hero-content">
+                <div class="media-detail__poster">
+                    <span aria-hidden="true"><?= e($initial) ?></span>
+                    <?php if ($posterUrl !== null): ?>
+                        <img src="<?= e($posterUrl) ?>" alt="Pôster de <?= e($details->title) ?>" decoding="async" width="500" height="750">
+                    <?php endif; ?>
+                </div>
+
+                <div class="media-detail__identity">
+                    <p class="eyebrow"><?= e($typeLabel) ?> · TMDB</p>
+                    <h1 id="media-detail-title"><?= e($details->title) ?></h1>
+
+                    <?php if ($details->originalTitle !== null && $details->originalTitle !== $details->title): ?>
+                        <p class="media-detail__original">Título original: <?= e($details->originalTitle) ?></p>
+                    <?php endif; ?>
+
+                    <?php if ($details->tagline !== null): ?>
+                        <p class="media-detail__tagline">“<?= e($details->tagline) ?>”</p>
+                    <?php endif; ?>
+
+                    <?php if ($details->genres !== []): ?>
+                        <ul class="media-detail__genres" aria-label="Gêneros">
+                            <?php foreach ($details->genres as $genre): ?>
+                                <li><?= e($genre['name']) ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+
+                    <dl class="media-detail__facts">
+                        <?php if ($releaseDate !== null): ?>
+                            <div><dt><?= $details->mediaType === 'movie' ? 'Lançamento' : 'Estreia' ?></dt><dd><?= e($releaseDate) ?></dd></div>
+                        <?php elseif ($details->year !== null): ?>
+                            <div><dt>Ano</dt><dd><?= e((string) $details->year) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if ($details->runtime !== null): ?>
+                            <div><dt>Duração</dt><dd><?= e((string) $details->runtime) ?> min</dd></div>
+                        <?php endif; ?>
+                        <?php if ($details->numberOfSeasons !== null): ?>
+                            <div><dt>Temporadas</dt><dd><?= e((string) $details->numberOfSeasons) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if ($details->numberOfEpisodes !== null): ?>
+                            <div><dt>Episódios</dt><dd><?= e((string) $details->numberOfEpisodes) ?></dd></div>
+                        <?php endif; ?>
+                        <?php if ($details->voteAverage !== null): ?>
+                            <div class="media-detail__rating">
+                                <dt>Nota</dt>
+                                <dd>TMDB <?= e(number_format($details->voteAverage, 1, ',', '')) ?><?php if ($details->voteCount !== null): ?> <small>(<?= e(number_format($details->voteCount, 0, ',', '.')) ?> votos)</small><?php endif; ?></dd>
+                            </div>
+                        <?php endif; ?>
+                    </dl>
+                </div>
+            </div>
+        </section>
+
+        <section class="media-detail__overview" aria-labelledby="media-detail-overview-title">
+            <p class="eyebrow">Sobre esta história</p>
+            <h2 id="media-detail-overview-title">Sinopse</h2>
+            <p><?= e($details->overview ?? 'Sinopse não disponível.') ?></p>
+        </section>
+
+        <footer class="media-detail__footer">
+            <a class="media-detail__back" href="/buscar">← Voltar para buscar</a>
+            <p class="tmdb-compact-credit">Dados e imagens fornecidos por TMDB. <a href="/sobre#tmdb">Saiba mais sobre os créditos.</a></p>
+        </footer>
+    </article>
+<?php endif; ?>

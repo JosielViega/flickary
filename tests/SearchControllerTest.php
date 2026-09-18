@@ -141,7 +141,22 @@ final class SearchControllerTest extends TestCase
         self::assertStringContainsString('decoding="async"', $response->body());
         self::assertStringContainsString('TMDB 8,3', $response->body());
         self::assertStringNotContainsString('IMDb', $response->body());
-        self::assertStringNotContainsString('<a class="media-card', $response->body());
+        self::assertStringContainsString('href="/filmes/603"', $response->body());
+        self::assertMatchesRegularExpression('#<article class="media-card">\s*<a[^>]+href="/filmes/603"[^>]*>.*?</a></article>#s', $response->body());
+        preg_match('#<article class="media-card">(.*?)</article>#s', $response->body(), $card);
+        self::assertStringNotContainsString('<button', $card[1]);
+    }
+
+    public function testSeriesCardUsesItsRealDetailsRoute(): void
+    {
+        $response = $this->search(
+            $this->catalog(series: [$this->media('series', title: 'Breaking Bad')]),
+            ['q' => 'breaking bad', 'tipo' => 'series'],
+        );
+
+        self::assertStringContainsString('href="/series/1396"', $response->body());
+        self::assertStringContainsString('aria-label="Ver detalhes de Breaking Bad"', $response->body());
+        self::assertStringNotContainsString('href="#"', $response->body());
     }
 
     public function testRequestedPageBeyondProviderTotalIsControlled(): void
@@ -215,6 +230,16 @@ final class SearchControllerTest extends TestCase
             }
 
             public function configured(): bool { return true; }
+
+            public function movieDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails
+            {
+                throw new \LogicException('Not used by search tests.');
+            }
+
+            public function seriesDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails
+            {
+                throw new \LogicException('Not used by search tests.');
+            }
 
             public function configuration(): TmdbImageConfiguration
             {

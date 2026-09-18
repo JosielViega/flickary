@@ -143,6 +143,89 @@ final class TmdbClientTest extends TestCase
         $client->searchMovies('Matrix', 0);
     }
 
+    public function testMovieAndSeriesDetailsUseRestrictedPathsAndLanguageOnly(): void
+    {
+        $urls = [];
+        $client = new TmdbClient('token', http: static function (string $url) use (&$urls): array {
+            $urls[] = $url;
+            $body = str_contains($url, '/movie/')
+                ? '{"id":603,"title":"Matrix","original_title":"The Matrix","release_date":"1999-03-31","genres":[{"id":28,"name":"Ação"}],"runtime":136,"tagline":"Realidade.","poster_path":"/poster.jpg","backdrop_path":"/backdrop.jpg","vote_average":8.2,"adult":false}'
+                : '{"id":1396,"name":"Breaking Bad","original_name":"Breaking Bad","first_air_date":"2008-01-20","genres":[{"id":18,"name":"Drama"}],"number_of_seasons":5,"number_of_episodes":62,"tagline":"Change.","poster_path":"/tv.jpg","backdrop_path":"/tv-backdrop.jpg","adult":false}';
+            return ['status' => 200, 'body' => $body];
+        });
+
+        $movie = $client->movieDetails(603);
+        $series = $client->seriesDetails(1396);
+
+        self::assertSame('https://api.themoviedb.org/3/movie/603?language=pt-BR', $urls[0]);
+        self::assertSame('https://api.themoviedb.org/3/tv/1396?language=pt-BR', $urls[1]);
+        self::assertStringNotContainsString('region=', implode(' ', $urls));
+        self::assertStringNotContainsString('append_to_response', implode(' ', $urls));
+        self::assertSame('movie', $movie->mediaType);
+        self::assertSame(136, $movie->runtime);
+        self::assertSame('series', $series->mediaType);
+        self::assertSame(5, $series->numberOfSeasons);
+        self::assertSame(62, $series->numberOfEpisodes);
+    }
+
+    /** @return iterable<string, array{int}> */
+    public static function invalidDetailIds(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'negative' => [-1];
+        yield 'outside int32' => [2147483648];
+    }
+
+    #[DataProvider('invalidDetailIds')]
+    public function testDetailsRejectInvalidIdsBeforeTransport(int $id): void
+    {
+        $called = false;
+        $client = new TmdbClient('token', http: static function () use (&$called): array {
+            $called = true;
+            return ['status' => 200, 'body' => '{}'];
+        });
+
+        try {
+            $client->movieDetails($id);
+            self::fail('Expected invalid ID exception.');
+        } catch (\InvalidArgumentException) {
+            self::assertFalse($called);
+        }
+    }
+
+    public function testDetailsRejectUnexpectedPayloadAndMapNotFound(): void
+    {
+        $unexpected = new TmdbClient('token', http: static fn (): array => [
+            'status' => 200,
+            'body' => '{"id":603,"title":""}',
+        ]);
+        $notFound = new TmdbClient('token', http: static fn (): array => [
+            'status' => 404,
+            'body' => '{}',
+        ]);
+
+        try {
+            $unexpected->movieDetails(603);
+            self::fail('Expected unexpected payload.');
+        } catch (TmdbException $exception) {
+            self::assertSame('unexpected_payload', $exception->category);
+        }
+
+        try {
+            $notFound->seriesDetails(1396);
+            self::fail('Expected not found.');
+        } catch (TmdbException $exception) {
+            self::assertSame('not_found', $exception->category);
+            self::assertSame(404, $exception->httpStatus);
+        }
+    }
+
+    public function testRejectsArbitraryApiHost(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new TmdbClient('token', 'https://attacker.example/3');
+    }
+
     private function categoryFrom(TmdbClient $client, bool $search = false): string
     {
         try {

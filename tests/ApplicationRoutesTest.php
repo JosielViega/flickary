@@ -166,6 +166,23 @@ final class ApplicationRoutesTest extends TestCase
         self::assertFileExists(dirname(__DIR__) . '/public/assets/images/vendor/tmdb/tmdb-blue-long.svg');
     }
 
+    public function testMovieAndSeriesDetailRoutesArePublicAndValidateIds(): void
+    {
+        foreach (['/filmes/603', '/series/1396'] as $path) {
+            $request = $this->request('GET', $path);
+            $response = $this->router($request)->dispatch($request);
+            self::assertSame(503, $response->status());
+            self::assertStringContainsString('Detalhes indisponíveis', $response->body());
+        }
+
+        foreach (['/filmes/0', '/filmes/abc', '/series/0', '/series/abc'] as $path) {
+            $request = $this->request('GET', $path);
+            $response = $this->router($request)->dispatch($request);
+            self::assertSame(404, $response->status());
+            self::assertStringContainsString('Título não encontrado', $response->body());
+        }
+    }
+
     private function router(Request $request, bool $authenticated = false): Router
     {
         $session = new Session(false);
@@ -241,6 +258,8 @@ final class ApplicationRoutesTest extends TestCase
             },
             'tmdb' => new class implements TmdbCatalog {
                 public function configured(): bool { return false; }
+                public function movieDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }
+                public function seriesDetails(int $id): \App\Integrations\Tmdb\TmdbMediaDetails { throw new \App\Integrations\Tmdb\TmdbException('not_configured'); }
                 public function configuration(): TmdbImageConfiguration { throw new \RuntimeException(); }
                 public function searchMovies(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
                 public function searchSeries(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }

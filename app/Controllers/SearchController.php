@@ -12,6 +12,7 @@ use App\Core\View;
 use App\Integrations\Tmdb\TmdbCatalog;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
+use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbMedia;
 
 final class SearchController
@@ -182,7 +183,7 @@ final class SearchController
             return $sections;
         }
 
-        $size = $this->posterSize($configuration->posterSizes);
+        $size = (new TmdbImageSizeSelector())->poster($configuration->posterSizes);
         if ($size === null) {
             return $sections;
         }
@@ -197,17 +198,6 @@ final class SearchController
         unset($section);
 
         return $sections;
-    }
-
-    /** @param list<string> $sizes */
-    private function posterSize(array $sizes): ?string
-    {
-        foreach (['w500', 'w342', 'w300', 'w185', 'original'] as $preferred) {
-            if (in_array($preferred, $sizes, true)) {
-                return $preferred;
-            }
-        }
-        return null;
     }
 
     private function pagination(string $query, string $type, int $requestedPage, array $section): ?array

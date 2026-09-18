@@ -10,6 +10,7 @@ use App\Controllers\HealthController;
 use App\Controllers\HomeController;
 use App\Controllers\LoginController;
 use App\Controllers\LogoutController;
+use App\Controllers\MediaDetailsController;
 use App\Controllers\OnboardingController;
 use App\Controllers\ProfileController;
 use App\Controllers\SearchController;
@@ -80,6 +81,12 @@ $search = new SearchController(
     $app['auth'],
     $app['csrf'],
 );
+$mediaDetails = new MediaDetailsController(
+    $app['view'],
+    $app['tmdb'],
+    $app['auth'],
+    $app['csrf'],
+);
 $about = new AboutController(
     $app['view'],
     $app['auth'],
@@ -99,6 +106,8 @@ $router->get('/perfil', [$profile, 'show']);
 $router->post('/perfil', static fn (): Response => $profile->update($app['request']));
 $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookConnection->store($app['request']));
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
+$router->get('/filmes/{id}', static fn (string $id): Response => $mediaDetails->movie($id));
+$router->get('/series/{id}', static fn (string $id): Response => $mediaDetails->series($id));
 $router->get('/sobre', [$about, 'index']);
 $router->get('/health', [$health, 'index']);
 $router->fallback(static function (Request $request) use ($app): Response {

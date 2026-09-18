@@ -36,6 +36,16 @@ final class TmdbClient implements TmdbCatalog
         return TmdbImageConfiguration::fromPayload($this->request('/configuration'));
     }
 
+    public function movieDetails(int $id): TmdbMediaDetails
+    {
+        return $this->details($id, 'movie');
+    }
+
+    public function seriesDetails(int $id): TmdbMediaDetails
+    {
+        return $this->details($id, 'series');
+    }
+
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
     public function searchMovies(string $query, int $page = 1): array
     {
@@ -53,7 +63,7 @@ final class TmdbClient implements TmdbCatalog
         if (!$this->configured()) {
             throw new TmdbException('not_configured');
         }
-        if (!in_array($path, ['/configuration', '/search/movie', '/search/tv'], true)) {
+        if (!$this->isSupportedPath($path)) {
             throw new \InvalidArgumentException('Unsupported TMDB path.');
         }
 
@@ -103,6 +113,17 @@ final class TmdbClient implements TmdbCatalog
         }
 
         return $payload;
+    }
+
+    private function isSupportedPath(string $path): bool
+    {
+        if (in_array($path, ['/configuration', '/search/movie', '/search/tv'], true)) {
+            return true;
+        }
+        if (preg_match('#^/(?:movie|tv)/([1-9]\d{0,9})$#D', $path, $matches) !== 1) {
+            return false;
+        }
+        return (int) $matches[1] <= 2147483647;
     }
 
     private function httpException(int $status, mixed $headers): TmdbException
@@ -169,6 +190,22 @@ final class TmdbClient implements TmdbCatalog
             'total_results' => $payload['total_results'],
             'results' => $results,
         ];
+    }
+
+    private function details(int $id, string $type): TmdbMediaDetails
+    {
+        if ($id < 1 || $id > 2147483647 || !in_array($type, ['movie', 'series'], true)) {
+            throw new \InvalidArgumentException('TMDB details ID or type is invalid.');
+        }
+
+        $path = $type === 'movie' ? '/movie/' . $id : '/tv/' . $id;
+        $payload = $this->request($path, ['language' => $this->language]);
+        $normalizer = new TmdbMediaDetailsNormalizer();
+        $details = $type === 'movie' ? $normalizer->movie($payload) : $normalizer->series($payload);
+        if ($details === null || $details->sourceId !== $id) {
+            throw new TmdbException('unexpected_payload', 200);
+        }
+        return $details;
     }
 
     private function defaultHttp(string $url, array $headers, int $connectTimeout, int $timeout, int $maxBytes): array

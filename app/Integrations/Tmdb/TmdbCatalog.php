@@ -10,6 +10,10 @@ interface TmdbCatalog
 
     public function configuration(): TmdbImageConfiguration;
 
+    public function movieDetails(int $id): TmdbMediaDetails;
+
+    public function seriesDetails(int $id): TmdbMediaDetails;
+
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
     public function searchMovies(string $query, int $page = 1): array;
 

@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, login com Google e Facebook, onboarding inicial de username, conexão segura de um segundo provedor, perfil próprio autenticado com edição básica e busca pública de filmes e séries no TMDB. Detalhes de mídia, coleção, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui fundação persistente de contas, login com Google e Facebook, onboarding inicial de username, conexão segura de um segundo provedor, perfil próprio autenticado, busca pública e páginas públicas de detalhes de filmes e séries no TMDB. Coleção, temporadas navegáveis, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -110,7 +110,7 @@ TMDB_READ_ACCESS_TOKEN=
 
 O cliente envia o token como Bearer, usa inicialmente `pt-BR` e região `BR`, e nunca entrega a credencial ao navegador. O Flickary não mantém um espelho completo do catálogo TMDB: quando coleção, agenda e histórico forem implementados, somente um snapshot mínimo associado a `source + source_id` será persistido para integridade e exibição básica.
 
-As rotas públicas `GET /buscar` e `GET /sobre` usam essa integração para pesquisar filmes e séries, construir URLs de pôster a partir da configuração real de imagens e apresentar os créditos obrigatórios. A consulta acontece no servidor a cada busca válida; resultados, consultas e imagens não são persistidos nem armazenados em cache.
+As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios. As consultas acontecem no servidor sob demanda; resultados, detalhes, consultas e imagens não são persistidos nem armazenados em cache.
 
 A área **Sobre / Créditos** usa um logo oficial aprovado, menos proeminente que a marca Flickary, e inclui o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
 
@@ -170,6 +170,8 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
+- `GET /filmes/{id}` — detalhes públicos básicos de um filme TMDB;
+- `GET /series/{id}` — detalhes públicos básicos de uma série TMDB;
 - `GET /sobre` — apresentação do Flickary e créditos da integração TMDB;
 - `POST /logout` — encerra a sessão com proteção CSRF;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;
