@@ -90,6 +90,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
     </article>
 
     <div class="profile-grid">
+        <a class="profile-statistics-link" href="/estatisticas">
+            <span><span class="eyebrow">Sua jornada</span><strong>Ver minhas estatísticas</strong></span>
+            <span aria-hidden="true">→</span>
+        </a>
         <section class="profile-story" aria-labelledby="profile-story-title">
             <p class="eyebrow">Identidade pessoal</p>
             <h2 id="profile-story-title">Seu espaço entre histórias.</h2>

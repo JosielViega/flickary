@@ -293,6 +293,9 @@ final class ApplicationRoutesTest extends TestCase
                 public function countForUser(int $userId):int{return 0;}
                 public function episodeSchedulesForSeason(int $userId,string $source,int $seriesId,int $seasonNumber):array{return[];}
             },
+            'personal_statistics' => new class implements \App\Statistics\StatisticsReader {
+                public function readForUser(int $userId,string $today):\App\Statistics\PersonalStatistics{return new \App\Statistics\PersonalStatistics(0,0,0,0,0,0,0,0,0,0,0,[],array_fill_keys(array_keys(\App\Media\UserMediaStatus::options()),0),0,0,0,0,0,0);}
+            },
         ];
 
         return require dirname(__DIR__) . '/routes/web.php';

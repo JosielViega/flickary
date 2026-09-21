@@ -10,10 +10,11 @@ use App\History\WatchHistoryEntry;
 use App\History\WatchHistoryEvent;
 use App\History\WatchHistoryPage;
 use App\History\WatchHistoryStore;
+use App\History\WatchHistoryDurationStore;
 use PDO;
 use PDOException;
 
-final class WatchHistoryRepository implements WatchHistoryStore
+final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDurationStore
 {
     public function __construct(private readonly Database $database)
     {
@@ -133,6 +134,74 @@ final class WatchHistoryRepository implements WatchHistoryStore
         return (int) $statement->fetchColumn();
     }
 
+    public function countMissingDuration(): int
+    {
+        return (int) $this->database->connection()
+            ->query('SELECT COUNT(*) FROM watch_history WHERE duration_minutes IS NULL')
+            ->fetchColumn();
+    }
+
+    public function missingMovieIdentities(): array
+    {
+        $rows = $this->database->connection()->query(
+            "SELECT source, source_id FROM watch_history WHERE entry_type = 'movie' "
+            . 'AND duration_minutes IS NULL GROUP BY source, source_id ORDER BY source, source_id',
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(static fn (array $row): array => [
+            'source' => (string) $row['source'],
+            'source_id' => (int) $row['source_id'],
+        ], $rows);
+    }
+
+    public function missingEpisodeSeasons(): array
+    {
+        $rows = $this->database->connection()->query(
+            "SELECT source, source_id, season_number FROM watch_history WHERE entry_type = 'episode' "
+            . 'AND duration_minutes IS NULL GROUP BY source, source_id, season_number '
+            . 'ORDER BY source, source_id, season_number',
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(static fn (array $row): array => [
+            'source' => (string) $row['source'],
+            'source_id' => (int) $row['source_id'],
+            'season_number' => (int) $row['season_number'],
+        ], $rows);
+    }
+
+    public function fillMovieDuration(string $source, int $sourceId, int $durationMinutes): int
+    {
+        return $this->fillDuration(
+            "source = :source AND entry_type = 'movie' AND source_id = :source_id",
+            ['source' => $source, 'source_id' => $sourceId],
+            $durationMinutes,
+        );
+    }
+
+    public function fillEpisodeDuration(string $source, int $sourceId, int $seasonNumber, int $episodeNumber, int $durationMinutes): int
+    {
+        return $this->fillDuration(
+            "source = :source AND entry_type = 'episode' AND source_id = :source_id "
+            . 'AND season_number = :season_number AND episode_number = :episode_number',
+            ['source' => $source, 'source_id' => $sourceId, 'season_number' => $seasonNumber, 'episode_number' => $episodeNumber],
+            $durationMinutes,
+        );
+    }
+
+    /** @param array<string, int|string> $identity */
+    private function fillDuration(string $identitySql, array $identity, int $durationMinutes): int
+    {
+        $duration = \App\History\WatchDuration::normalize($durationMinutes);
+        if ($duration === null) {
+            throw new \InvalidArgumentException('Invalid duration.');
+        }
+        $statement = $this->database->connection()->prepare(
+            'UPDATE watch_history SET duration_minutes = :duration_minutes WHERE duration_minutes IS NULL AND ' . $identitySql,
+        );
+        $statement->execute(['duration_minutes' => $duration, ...$identity]);
+        return $statement->rowCount();
+    }
+
     private function create(int $userId, WatchHistoryEvent $event): bool
     {
         if ($this->requestKeyExists($userId, $event->requestKey)) {
@@ -142,11 +211,11 @@ final class WatchHistoryRepository implements WatchHistoryStore
         $statement = $this->database->connection()->prepare(
             'INSERT INTO watch_history (
                 user_id, source, entry_type, source_id, season_number, episode_number,
-                title, original_title, episode_title, content_date, poster_path,
+                title, original_title, episode_title, content_date, poster_path, duration_minutes,
                 watched_on, request_key
              ) VALUES (
                 :user_id, :source, :entry_type, :source_id, :season_number, :episode_number,
-                :title, :original_title, :episode_title, :content_date, :poster_path,
+                :title, :original_title, :episode_title, :content_date, :poster_path, :duration_minutes,
                 :watched_on, :request_key
              )',
         );
@@ -170,6 +239,7 @@ final class WatchHistoryRepository implements WatchHistoryStore
                 'poster_path' => $event->posterPath === null
                     ? null
                     : mb_substr($event->posterPath, 0, 255),
+                'duration_minutes' => $event->durationMinutes,
                 'watched_on' => $event->watchedOn,
                 'request_key' => $event->requestKey,
             ]);
@@ -211,6 +281,7 @@ final class WatchHistoryRepository implements WatchHistoryStore
             is_string($row['episode_title']) ? $row['episode_title'] : null,
             is_string($row['content_date']) ? $row['content_date'] : null,
             is_string($row['poster_path']) ? $row['poster_path'] : null,
+            isset($row['duration_minutes']) ? (int) $row['duration_minutes'] : null,
             (string) $row['watched_on'],
             (string) $row['created_at'],
             (string) $row['updated_at'],

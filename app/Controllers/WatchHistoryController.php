@@ -114,6 +114,7 @@ final class WatchHistoryController
             $details->originalTitle,
             $details->releaseDate,
             $details->posterPath,
+            $details->runtime,
             $watchedOn,
             $requestKey,
         ));
@@ -176,6 +177,7 @@ final class WatchHistoryController
             $episode->name,
             $episode->airDate,
             $series->posterPath,
+            $episode->runtime,
             $watchedOn,
             $requestKey,
         ));

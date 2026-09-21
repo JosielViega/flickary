@@ -17,6 +17,7 @@ final readonly class WatchHistoryEvent
         public ?string $episodeTitle,
         public ?string $contentDate,
         public ?string $posterPath,
+        public ?int $durationMinutes,
         public string $watchedOn,
         public string $requestKey,
     ) {
@@ -28,6 +29,7 @@ final readonly class WatchHistoryEvent
         ?string $originalTitle,
         ?string $contentDate,
         ?string $posterPath,
+        ?int $durationMinutes,
         string $watchedOn,
         string $requestKey,
     ): self {
@@ -44,6 +46,7 @@ final readonly class WatchHistoryEvent
             null,
             self::validOptionalDate($contentDate),
             $posterPath,
+            WatchDuration::normalize($durationMinutes),
             $watchedOn,
             $requestKey,
         );
@@ -58,6 +61,7 @@ final readonly class WatchHistoryEvent
         string $episodeTitle,
         ?string $contentDate,
         ?string $posterPath,
+        ?int $durationMinutes,
         string $watchedOn,
         string $requestKey,
     ): self {
@@ -78,6 +82,7 @@ final readonly class WatchHistoryEvent
             $episodeTitle,
             self::validOptionalDate($contentDate),
             $posterPath,
+            WatchDuration::normalize($durationMinutes),
             $watchedOn,
             $requestKey,
         );

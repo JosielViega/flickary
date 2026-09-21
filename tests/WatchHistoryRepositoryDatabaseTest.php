@@ -55,6 +55,7 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
         self::assertContains('idx_watch_history_source', $names);
         $create = (string) $pdo->query('SHOW CREATE TABLE watch_history')->fetchColumn(1);
         self::assertStringContainsString('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE', $create);
+        self::assertStringContainsString('`duration_minutes` smallint(5) unsigned default null', strtolower($create));
 
         $first = $this->users->create('history.schema.one', null);
         $second = $this->users->create('history.schema.two', null);
@@ -73,6 +74,7 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
         self::assertTrue($this->history->createEpisode($owner, $this->episode(str_repeat('c', 32), '2026-09-11')));
 
         self::assertSame(3, $this->history->countForUser($owner));
+        self::assertSame(136, $this->history->paginateForUser($owner, 'movie', 1, 30)->items[0]->durationMinutes);
         $all = $this->history->paginateForUser($owner, null, 1, 2);
         self::assertSame(3, $all->total);
         self::assertSame('episode', $all->items[0]->entryType);
@@ -86,6 +88,7 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
         self::assertFalse($this->history->updateDate($other, $id, '2020-01-01'));
         self::assertTrue($this->history->updateDate($owner, $id, '2020-01-01'));
         self::assertSame('2020-01-01', $this->history->findForUser($owner, $id)?->watchedOn);
+        self::assertSame(136, $this->history->findForUser($owner, $id)?->durationMinutes);
         self::assertFalse($this->history->delete($other, $id));
         self::assertTrue($this->history->delete($owner, $id));
         self::assertSame(2, $this->history->countForUser($owner));
@@ -117,12 +120,12 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
 
     private function movie(string $requestKey, string $watchedOn): WatchHistoryEvent
     {
-        return WatchHistoryEvent::movie(603, 'Matrix', 'The Matrix', '1999-03-31', '/matrix.jpg', $watchedOn, $requestKey);
+        return WatchHistoryEvent::movie(603, 'Matrix', 'The Matrix', '1999-03-31', '/matrix.jpg', 136, $watchedOn, $requestKey);
     }
 
     private function episode(string $requestKey, string $watchedOn): WatchHistoryEvent
     {
-        return WatchHistoryEvent::episode(1396, 1, 1, 'Breaking Bad', 'Breaking Bad', 'Piloto', '2008-01-20', '/bb.jpg', $watchedOn, $requestKey);
+        return WatchHistoryEvent::episode(1396, 1, 1, 'Breaking Bad', 'Breaking Bad', 'Piloto', '2008-01-20', '/bb.jpg', 47, $watchedOn, $requestKey);
     }
 
     private function clear(): void

@@ -20,6 +20,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Estatísticas pessoais com tempo assistido, duração histórica congelada, gráfico mensal e visão Passado · Presente · Futuro
 - Agenda pessoal explícita para filmes, séries e episódios, com reagendamento, filtros, paginação e itens atrasados preservados
 
 - histórico real de filmes e episódios por data, com reassistidas, filtros e paginação cronológica

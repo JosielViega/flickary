@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização e Agenda pessoal. Favoritos, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal e Estatísticas pessoais. Favoritos, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -60,6 +60,7 @@ composer test
 composer lint
 composer check
 composer migrate
+composer history:backfill-duration
 composer deploy:hostgator
 composer port:status
 composer port:release
@@ -128,6 +129,12 @@ Registrar histórico não altera automaticamente Minha Lista nem progresso de ep
 
 `GET /agenda` organiza intenções futuras escolhidas explicitamente pelo usuário para filmes, séries e episódios, sempre com uma data diária. Itens que passam da data são preservados como atrasados até serem reagendados ou removidos. A Agenda usa snapshots mínimos locais e permanece independente de Minha Lista, progresso e Histórico: nenhuma ação em um desses domínios altera automaticamente os demais. Não há descoberta automática de lançamentos, horários ou notificações nesta etapa.
 
+## Estatísticas pessoais
+
+`GET /estatisticas` apresenta a jornada privada em números usando exclusivamente dados locais de Histórico, Minha Lista, progresso e Agenda. A leitura não consulta o TMDB. Novos eventos históricos congelam a duração conhecida do filme ou episódio; quando ela for desconhecida, a interface informa explicitamente que o tempo registrado é parcial.
+
+Eventos antigos continuam válidos com duração `NULL`. O comando manual e idempotente `composer history:backfill-duration` consulta no máximo uma vez cada filme e cada temporada TMDB necessários, preenche somente `duration_minutes` e nunca exibe o token. Ele não possui retry ou espera automática.
+
 A área **Sobre / Créditos** usa um logo oficial aprovado, menos proeminente que a marca Flickary, e inclui o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
 
 ## Porta local
@@ -194,6 +201,7 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /minha-lista` — estado atual privado de filmes e séries;
 - `GET /historico` — linha do tempo privada, filtrável e paginada;
 - `GET /agenda` — agenda pessoal privada, filtrável e paginada de filmes, séries e episódios;
+- `GET /estatisticas` — estatísticas pessoais privadas calculadas somente com dados locais;
 - `POST /filmes/{id}/agenda`, `POST /series/{id}/agenda` e `POST /series/{id}/temporadas/{season}/episodios/{episode}/agenda` — cria ou reagenda uma intenção futura;
 - `POST /agenda/{id}` e `POST /agenda/{id}/remover` — reagenda ou remove um item próprio;
 - `POST /historico/{id}` — corrige somente a data de um evento próprio;

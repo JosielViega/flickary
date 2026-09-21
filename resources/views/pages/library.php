@@ -25,6 +25,7 @@ $queryFor = static function (int $page) use ($statusFilter, $typeFilter): string
     <nav class="personal-subnav" aria-label="Sua coleção e histórico">
         <a class="is-active" href="/minha-lista" aria-current="page">Minha Lista</a>
         <a href="/historico">Histórico</a>
+        <a href="/estatisticas">Estatísticas</a>
     </nav>
 
     <header class="library-hero">

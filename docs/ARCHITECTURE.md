@@ -108,13 +108,23 @@ watch_history                    → eventos reais de visualização
 user_schedule                    → intenção futura explícita
 ```
 
-`watch_history` preserva um snapshot mínimo obtido server-side no momento do registro. A identidade e o conteúdo do evento não são editáveis; somente `watched_on` pode ser corrigido, e um evento inserido por engano pode ser excluído. `request_key` resolve reenvios técnicos do mesmo formulário sem bloquear reassistidas legítimas com chaves novas.
+`watch_history` preserva um snapshot mínimo obtido server-side no momento do registro. A identidade e o conteúdo do evento não são editáveis; somente `watched_on` pode ser corrigido, e um evento inserido por engano pode ser excluído. `request_key` resolve reenvios técnicos do mesmo formulário sem bloquear reassistidas legítimas com chaves novas. A duração conhecida também é congelada no evento: filmes usam `runtime` dos detalhes e episódios usam `runtime` da temporada. Durações ausentes permanecem `NULL`.
 
 A linha do tempo usa apenas MySQL para títulos, episódios e datas. Ela pode consultar uma única vez a configuração de imagens do TMDB por request, mas nunca busca detalhes por card e continua útil quando o catálogo está indisponível.
 
 ## Agenda pessoal
 
 `user_schedule` preserva uma única intenção futura ativa por identidade de conteúdo e usuário, com snapshot mínimo obtido server-side. Novos itens consultam o catálogo para validar conteúdo e bloquear material adulto; reagendamento, remoção e listagem são locais. A página pode consultar a configuração de imagens uma vez, sem detalhes por card. Estados Hoje, Próximo e Atrasado são derivados da data configurada da aplicação e nunca persistidos.
+
+## Estatísticas pessoais
+
+```text
+StatisticsController → PersonalStatisticsRepository → MySQL
+```
+
+`GET /estatisticas` agrega os quatro domínios pessoais com consultas locais e sempre filtradas por `user_id`. Os doze meses são preenchidos em PHP a partir de um único agrupamento mensal, garantindo buckets vazios e ordem cronológica. Tempo assistido soma somente `watch_history.duration_minutes`; quando existem eventos sem duração, o resultado é explicitamente parcial. A rota não depende do cliente TMDB nem executa chamadas externas.
+
+O backfill manual de duração é um fluxo CLI separado. Ele agrupa filmes por identidade e episódios por série/temporada antes de consultar o TMDB, atualiza exclusivamente eventos com duração `NULL` e não possui retry, `sleep()` ou execução automática em requests HTTP.
 
 ## Ferramentas da fundação
 

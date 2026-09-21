@@ -36,6 +36,7 @@ $currentDate = null;
     <nav class="personal-subnav" aria-label="Sua coleção e histórico">
         <a href="/minha-lista">Minha Lista</a>
         <a class="is-active" href="/historico" aria-current="page">Histórico</a>
+        <a href="/estatisticas">Estatísticas</a>
     </nav>
 
     <header class="history-hero">
@@ -94,6 +95,7 @@ $currentDate = null;
                             <p class="history-card__episode">T<?= e((string) $item->seasonNumber) ?>E<?= e((string) $item->episodeNumber) ?> · <?= e((string) $item->episodeTitle) ?></p>
                         <?php endif; ?>
                         <p>Assistido em <?= e((new DateTimeImmutable($item->watchedOn))->format('d/m/Y')) ?></p>
+                        <?php if ($item->durationMinutes !== null): ?><p><?= e(\App\History\WatchDuration::format($item->durationMinutes)) ?></p><?php endif; ?>
                     </div>
                     <div class="history-card__actions">
                         <form method="post" action="/historico/<?= e((string) $item->id) ?>">

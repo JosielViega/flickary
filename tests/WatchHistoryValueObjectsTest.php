@@ -8,6 +8,7 @@ use App\History\WatchHistoryDate;
 use App\History\WatchHistoryEvent;
 use App\History\WatchHistoryId;
 use App\History\WatchHistoryRequestKey;
+use App\History\WatchDuration;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -51,13 +52,13 @@ final class WatchHistoryValueObjectsTest extends TestCase
     public function testFactoriesEnforceMovieAndEpisodeStructures(): void
     {
         $key = str_repeat('1', 32);
-        $movie = WatchHistoryEvent::movie(603, 'Matrix', 'The Matrix', '1999-03-31', '/matrix.jpg', date('Y-m-d'), $key);
+        $movie = WatchHistoryEvent::movie(603, 'Matrix', 'The Matrix', '1999-03-31', '/matrix.jpg', 136, date('Y-m-d'), $key);
         self::assertSame('movie', $movie->entryType);
         self::assertNull($movie->seasonNumber);
         self::assertNull($movie->episodeNumber);
         self::assertNull($movie->episodeTitle);
 
-        $episode = WatchHistoryEvent::episode(1396, 0, 1, 'Breaking Bad', null, 'Pilot', '2008-01-20', null, date('Y-m-d'), $key);
+        $episode = WatchHistoryEvent::episode(1396, 0, 1, 'Breaking Bad', null, 'Pilot', '2008-01-20', null, 47, date('Y-m-d'), $key);
         self::assertSame('episode', $episode->entryType);
         self::assertSame(0, $episode->seasonNumber);
         self::assertSame(1, $episode->episodeNumber);
@@ -67,7 +68,7 @@ final class WatchHistoryValueObjectsTest extends TestCase
     public function testInvalidEpisodeStructureThrows(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        WatchHistoryEvent::episode(1396, -1, 0, 'Breaking Bad', null, '', null, null, date('Y-m-d'), str_repeat('1', 32));
+        WatchHistoryEvent::episode(1396, -1, 0, 'Breaking Bad', null, '', null, null, null, date('Y-m-d'), str_repeat('1', 32));
     }
 
     public function testInternalIdsUsePositivePlatformBigints(): void
@@ -76,5 +77,24 @@ final class WatchHistoryValueObjectsTest extends TestCase
         foreach (['0', '-1', '01', 'abc', '9223372036854775808'] as $invalid) {
             self::assertNull(WatchHistoryId::parse($invalid));
         }
+    }
+
+    public function testDurationNormalizationAndFormatting(): void
+    {
+        self::assertSame(136, WatchDuration::normalize(136));
+        self::assertNull(WatchDuration::normalize(null));
+        self::assertNull(WatchDuration::normalize(0));
+        self::assertNull(WatchDuration::normalize(-1));
+        self::assertNull(WatchDuration::normalize(65536));
+        self::assertSame('45 min', WatchDuration::format(45));
+        self::assertSame('2 h 16 min', WatchDuration::format(136));
+        self::assertSame('38 h 05 min', WatchDuration::format(2285));
+    }
+
+    public function testFactoriesNormalizeInvalidDurationToNull(): void
+    {
+        $key = str_repeat('2', 32);
+        self::assertNull(WatchHistoryEvent::movie(603, 'Matrix', null, null, null, 0, date('Y-m-d'), $key)->durationMinutes);
+        self::assertNull(WatchHistoryEvent::episode(1396, 1, 1, 'BB', null, 'Pilot', null, null, 70000, date('Y-m-d'), $key)->durationMinutes);
     }
 }

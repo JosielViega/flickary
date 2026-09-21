@@ -37,6 +37,7 @@
         "port:status": "@php bin/port-status.php",
         "port:release": "@php bin/port-release.php",
         "migrate": "@php bin/migrate.php",
+        "history:backfill-duration": "@php bin/backfill-watch-history-duration.php",
         "lint": "@php bin/lint.php",
         "test": "@php vendor/bin/phpunit",
         "check": [

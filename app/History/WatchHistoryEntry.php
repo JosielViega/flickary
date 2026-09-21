@@ -19,6 +19,7 @@ final readonly class WatchHistoryEntry
         public ?string $episodeTitle,
         public ?string $contentDate,
         public ?string $posterPath,
+        public ?int $durationMinutes,
         public string $watchedOn,
         public string $createdAt,
         public string $updatedAt,

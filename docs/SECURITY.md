@@ -67,11 +67,17 @@ Mutations de progresso de séries seguem o mesmo ownership e CSRF. Uma nova marc
 
 Criação, correção de data e remoção exigem autenticação e CSRF. Ownership vem exclusivamente de `Auth::id()` e toda busca, atualização ou exclusão inclui `user_id`; recursos de outro usuário respondem como não encontrados. O browser controla apenas `watched_on` e a `request_key` técnica: provider, tipo, IDs, títulos, episódio, imagem e usuário são validados ou obtidos server-side.
 
-Datas usam o formato estrito `YYYY-MM-DD`, calendário real e nunca podem estar no futuro. A chave aleatória de 32 caracteres hexadecimais é única por usuário e evita double-submit sem impedir reassistidas com novas chaves. Snapshots persistidos continuam sendo dados externos não confiáveis e são escapados na view.
+Datas usam o formato estrito `YYYY-MM-DD`, calendário real e nunca podem estar no futuro. A chave aleatória de 32 caracteres hexadecimais é única por usuário e evita double-submit sem impedir reassistidas com chaves novas. Snapshots persistidos continuam sendo dados externos não confiáveis e são escapados na view. `duration_minutes` nunca é aceito do browser: ele é normalizado e congelado exclusivamente a partir dos detalhes TMDB obtidos server-side.
 
 ## Agenda pessoal
 
 Criação, reagendamento e remoção exigem autenticação e CSRF; ownership deriva exclusivamente de `Auth::id()` e UPDATE/DELETE incluem `user_id`. O browser controla somente `scheduled_on`: identidade, títulos e imagem vêm da rota e do catálogo server-side. Datas são reais, estritas e iguais ou posteriores ao dia atual; snapshots continuam não confiáveis e são escapados na view.
+
+## Estatísticas pessoais e backfill
+
+As estatísticas exigem autenticação, aceitam somente GET e aplicam `user_id` em todas as leituras. Elas não recebem IDs de recurso do browser, não alteram estado e não consultam serviços externos. Durações desconhecidas não são estimadas nem ocultadas: a interface identifica o total como parcial.
+
+O comando manual de backfill lê a credencial TMDB apenas da configuração server-side, nunca a imprime e encerra de forma controlada diante de falhas de autenticação, limite ou rede. Ele só preenche durações nulas, usa prepared statements e não modifica identidade, data ou snapshot de qualquer evento.
 
 ## Uploads futuros
 
