@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB e uma Minha Lista privada com estado atual de filmes e séries. Favoritos, histórico de visualização, agenda, temporadas navegáveis, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, Minha Lista privada, temporadas navegáveis, progresso de episódios e histórico real de visualização. Favoritos, agenda, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -67,7 +67,7 @@ composer port:release
 
 `composer check` valida o manifesto Composer, executa o lint dos arquivos PHP do projeto e roda os testes automatizados.
 
-`composer migrate` executa migrations SQL ainda não registradas. O schema contém a fundação de contas e a lista pessoal descritas abaixo.
+`composer migrate` executa migrations SQL ainda não registradas. O schema contém a fundação de contas, a lista pessoal, o progresso de episódios e o histórico descritos abaixo.
 
 ## Fundação de contas
 
@@ -117,6 +117,12 @@ As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET 
 `GET /minha-lista` é uma área privada. Ela guarda um snapshot mínimo local — identidade TMDB, títulos, data e paths de imagens — e um dos estados `planned`, `watching`, `paused`, `completed` ou `dropped`. O catálogo completo continua externo e a listagem não consulta detalhes individuais no TMDB. **Concluído é somente o estado atual e ainda não representa histórico de visualização.**
 
 Séries possuem temporadas navegáveis em `GET /series/{id}/temporadas/{season}`. Usuários com a série na Minha Lista podem marcar episódios ou uma temporada inteira. As marcações persistem mesmo se a série for removida da lista e reaparecem ao adicioná-la novamente. Esse conjunto atual de episódios assistidos também não é histórico de visualização.
+
+## Histórico de visualização
+
+`GET /historico` é uma subárea privada de Minha Lista. Filmes e episódios podem ser registrados com `watched_on`, uma data real igual ou anterior a hoje. Cada registro é um evento independente: reassistidas do mesmo conteúdo, inclusive no mesmo dia, permanecem visíveis separadamente. O usuário pode corrigir a data ou remover um evento; a identidade e o snapshot mínimo do conteúdo permanecem server-side.
+
+Registrar histórico não altera automaticamente Minha Lista nem progresso de episódios. Da mesma forma, mudar status, marcar progresso, remover uma mídia da lista ou limpar uma temporada não cria nem apaga eventos históricos.
 
 A área **Sobre / Créditos** usa um logo oficial aprovado, menos proeminente que a marca Flickary, e inclui o aviso exigido: “This product uses the TMDB API but is not endorsed or certified by TMDB.” Uso e eventual monetização devem continuar obedecendo aos termos e ao licenciamento vigentes do TMDB.
 
@@ -178,6 +184,13 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /filmes/{id}` — detalhes públicos básicos de um filme TMDB;
 - `GET /series/{id}` — detalhes públicos básicos de uma série TMDB;
+- `GET /series/{id}/temporadas/{season}` — temporada pública e episódios, com progresso e registro histórico autenticados;
+- `POST /filmes/{id}/historico` — registra uma visualização de filme autenticada;
+- `POST /series/{id}/temporadas/{season}/episodios/{episode}/historico` — registra uma visualização de episódio autenticada;
+- `GET /minha-lista` — estado atual privado de filmes e séries;
+- `GET /historico` — linha do tempo privada, filtrável e paginada;
+- `POST /historico/{id}` — corrige somente a data de um evento próprio;
+- `POST /historico/{id}/remover` — remove um evento próprio;
 - `GET /sobre` — apresentação do Flickary e créditos da integração TMDB;
 - `POST /logout` — encerra a sessão com proteção CSRF;
 - `GET /health` — liveness check simples com `{"status":"ok"}`;

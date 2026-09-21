@@ -18,6 +18,7 @@ use App\Integrations\Tmdb\TmdbMediaId;
 use App\Media\UserMediaStatus;
 use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
+use App\History\WatchHistoryRequestKey;
 
 final class MediaDetailsController
 {
@@ -81,6 +82,10 @@ final class MediaDetailsController
             'statusOptions' => UserMediaStatus::options(),
             'messages' => $this->session?->consumeFlash() ?? [],
             'progressCounts' => $progressCounts,
+            'historyRequestKey' => $userId !== null && $type === 'movie'
+                ? WatchHistoryRequestKey::generate()
+                : null,
+            'today' => date('Y-m-d'),
         ]);
     }
 
@@ -131,6 +136,8 @@ final class MediaDetailsController
             'statusOptions' => UserMediaStatus::options(),
             'messages' => $this->session?->consumeFlash() ?? [],
             'progressCounts' => [],
+            'historyRequestKey' => null,
+            'today' => date('Y-m-d'),
         ], $status);
     }
 

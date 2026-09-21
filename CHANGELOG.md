@@ -20,6 +20,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- histórico real de filmes e episódios por data, com reassistidas, filtros e paginação cronológica
+- correção de data e remoção de eventos históricos próprios, sem acoplamento à Minha Lista ou ao progresso
+
 - temporadas públicas navegáveis com episódios reais do TMDB
 - progresso persistente e idempotente de episódios, incluindo marcação e limpeza em lote por temporada
 

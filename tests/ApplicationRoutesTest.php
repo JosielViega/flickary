@@ -274,6 +274,15 @@ final class ApplicationRoutesTest extends TestCase
                 public function searchSeries(string $query, int $page = 1): array { return ['page' => 1, 'total_pages' => 0, 'total_results' => 0, 'results' => []]; }
             },
             'series_progress' => new class implements \App\Media\UserSeriesProgressStore { public function watchedEpisodeNumbersForSeason(int$u,string$s,int$i,int$n):array{return[];}public function countsBySeason(int$u,string$s,int$i):array{return[];}public function countForSeries(int$u,string$s,int$i):int{return 0;}public function markWatched(int$u,string$s,int$i,int$n,int$e):void{}public function unmarkWatched(int$u,string$s,int$i,int$n,int$e):void{}public function markSeasonWatched(int$u,string$s,int$i,int$n,array$e):void{}public function clearSeason(int$u,string$s,int$i,int$n):void{} },
+            'watch_history' => new class implements \App\History\WatchHistoryStore {
+                public function createMovie(int $userId, \App\History\WatchHistoryEvent $event): bool { return true; }
+                public function createEpisode(int $userId, \App\History\WatchHistoryEvent $event): bool { return true; }
+                public function findForUser(int $userId, int $id): ?\App\History\WatchHistoryEntry { return null; }
+                public function updateDate(int $userId, int $id, string $watchedOn): bool { return false; }
+                public function delete(int $userId, int $id): bool { return false; }
+                public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage): \App\History\WatchHistoryPage { return new \App\History\WatchHistoryPage([], 0, $page, $perPage); }
+                public function countForUser(int $userId): int { return 0; }
+            },
         ];
 
         return require dirname(__DIR__) . '/routes/web.php';

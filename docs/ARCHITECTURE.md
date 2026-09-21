@@ -93,9 +93,23 @@ A primeira inclusão obtém detalhes normalizados no servidor e persiste somente
 
 ## Progresso de séries
 
-`user_media` representa o estado atual de uma mídia na lista. `user_series_episode_progress` representa o conjunto atual de episódios marcados e referencia diretamente o usuário, não `user_media`; remover uma série da lista preserva seu progresso. Um futuro `watch_history` representará eventos históricos reais e permanece fora do domínio atual.
+`user_media` representa o estado atual de uma mídia na lista. `user_series_episode_progress` representa o conjunto atual de episódios marcados e referencia diretamente o usuário, não `user_media`; remover uma série da lista preserva seu progresso.
 
 Detalhes de temporada vêm em uma única chamada `TmdbCatalog::seasonDetails()`. Novas marcações são validadas pelo catálogo; desmarcar e limpar progresso são operações locais para continuarem disponíveis durante indisponibilidade externa.
+
+## Histórico de visualização
+
+Os três domínios pessoais permanecem deliberadamente separados:
+
+```text
+user_media                       → estado atual da mídia
+user_series_episode_progress     → progresso atual de episódios
+watch_history                    → eventos reais de visualização
+```
+
+`watch_history` preserva um snapshot mínimo obtido server-side no momento do registro. A identidade e o conteúdo do evento não são editáveis; somente `watched_on` pode ser corrigido, e um evento inserido por engano pode ser excluído. `request_key` resolve reenvios técnicos do mesmo formulário sem bloquear reassistidas legítimas com chaves novas.
+
+A linha do tempo usa apenas MySQL para títulos, episódios e datas. Ela pode consultar uma única vez a configuração de imagens do TMDB por request, mas nunca busca detalhes por card e continua útil quando o catálogo está indisponível.
 
 ## Ferramentas da fundação
 

@@ -90,6 +90,15 @@ endforeach;
                                 </button>
                             </form>
                         <?php endif; ?>
+                        <?php if ($auth->check()): ?>
+                            <form class="episode-history-form" method="post" action="/series/<?= e((string) $details->seriesSourceId) ?>/temporadas/<?= e((string) $details->seasonNumber) ?>/episodios/<?= e((string) $episode->episodeNumber) ?>/historico">
+                                <?= $csrf->field() ?>
+                                <input type="hidden" name="request_key" value="<?= e($episodeHistoryKeys[$episode->episodeNumber]) ?>">
+                                <label for="history-episode-<?= e((string) $episode->episodeNumber) ?>">Histórico</label>
+                                <input id="history-episode-<?= e((string) $episode->episodeNumber) ?>" type="date" name="watched_on" value="<?= e($today) ?>" max="<?= e($today) ?>" required>
+                                <button class="button button--ghost" type="submit">Registrar visualização</button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </li>
             <?php endforeach; ?>

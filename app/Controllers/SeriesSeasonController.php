@@ -19,6 +19,7 @@ use App\Integrations\Tmdb\TmdbMediaId;
 use App\Integrations\Tmdb\TmdbSeasonNumber;
 use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
+use App\History\WatchHistoryRequestKey;
 
 final class SeriesSeasonController
 {
@@ -82,15 +83,19 @@ final class SeriesSeasonController
 
         $nextEpisode = null;
         $today = date('Y-m-d');
+        $episodeHistoryKeys = [];
 
         foreach ($details->episodes as $episode) {
+            if ($userId !== null) {
+                $episodeHistoryKeys[$episode->episodeNumber] = WatchHistoryRequestKey::generate();
+            }
             if (
-                !in_array($episode->episodeNumber, $watched, true)
+                $nextEpisode === null
+                && !in_array($episode->episodeNumber, $watched, true)
                 && $episode->airDate !== null
                 && $episode->airDate <= $today
             ) {
                 $nextEpisode = $episode->episodeNumber;
-                break;
             }
         }
 
@@ -106,6 +111,8 @@ final class SeriesSeasonController
             'canTrack' => $savedMedia !== null,
             'nextEpisode' => $nextEpisode,
             'messages' => $this->session->consumeFlash(),
+            'today' => $today,
+            'episodeHistoryKeys' => $episodeHistoryKeys,
         ]));
     }
 

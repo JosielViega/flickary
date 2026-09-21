@@ -22,6 +22,11 @@ $queryFor = static function (int $page) use ($statusFilter, $typeFilter): string
         <?php endforeach; ?>
     <?php endforeach; ?>
 
+    <nav class="personal-subnav" aria-label="Sua coleção e histórico">
+        <a class="is-active" href="/minha-lista" aria-current="page">Minha Lista</a>
+        <a href="/historico">Histórico</a>
+    </nav>
+
     <header class="library-hero">
         <p class="eyebrow">Seu tempo, suas histórias</p>
         <h1 id="library-title">Minha Lista</h1>

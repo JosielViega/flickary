@@ -123,6 +123,23 @@ declare(strict_types=1);
             <?php endif; ?>
         </section>
 
+        <?php if ($details->mediaType === 'movie' && isset($auth) && $auth->check() && $historyRequestKey !== null): ?>
+            <section class="history-register" aria-labelledby="movie-history-title">
+                <div>
+                    <p class="eyebrow">Histórico</p>
+                    <h2 id="movie-history-title">Registrar visualização</h2>
+                    <p>Guarde quando você assistiu. Isso não altera o estado na Minha Lista.</p>
+                </div>
+                <form method="post" action="/filmes/<?= e((string) $details->sourceId) ?>/historico">
+                    <?= $csrf->field() ?>
+                    <input type="hidden" name="request_key" value="<?= e($historyRequestKey) ?>">
+                    <label for="movie-watched-on">Quando você assistiu?</label>
+                    <input id="movie-watched-on" type="date" name="watched_on" value="<?= e($today) ?>" max="<?= e($today) ?>" required>
+                    <button class="button button--primary" type="submit">Registrar visualização</button>
+                </form>
+            </section>
+        <?php endif; ?>
+
         <section class="media-detail__overview" aria-labelledby="media-detail-overview-title">
             <p class="eyebrow">Sobre esta história</p>
             <h2 id="media-detail-overview-title">Sinopse</h2>

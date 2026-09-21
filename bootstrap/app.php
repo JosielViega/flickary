@@ -23,6 +23,7 @@ use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\UserMediaRepository;
 use App\Repositories\UserSeriesProgressRepository;
+use App\Repositories\WatchHistoryRepository;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -71,6 +72,7 @@ $profiles = new UserProfileRepository($database);
 $externalIdentities = new ExternalIdentityRepository($database);
 $userMedia = new UserMediaRepository($database);
 $seriesProgress = new UserSeriesProgressRepository($database);
+$watchHistory = new WatchHistoryRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -105,6 +107,7 @@ return [
     'profiles' => $profiles,
     'user_media' => $userMedia,
     'series_progress' => $seriesProgress,
+    'watch_history' => $watchHistory,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

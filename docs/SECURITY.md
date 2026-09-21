@@ -63,6 +63,12 @@ As mutations exigem autenticação e CSRF, e o ownership deriva exclusivamente d
 
 Mutations de progresso de séries seguem o mesmo ownership e CSRF. Uma nova marcação só aceita episódios presentes no payload de temporada consultado server-side; números enviados na URL não bastam. Queries de progresso sempre incluem o usuário autenticado, e a constraint única torna marcações repetidas idempotentes.
 
+## Histórico de visualização
+
+Criação, correção de data e remoção exigem autenticação e CSRF. Ownership vem exclusivamente de `Auth::id()` e toda busca, atualização ou exclusão inclui `user_id`; recursos de outro usuário respondem como não encontrados. O browser controla apenas `watched_on` e a `request_key` técnica: provider, tipo, IDs, títulos, episódio, imagem e usuário são validados ou obtidos server-side.
+
+Datas usam o formato estrito `YYYY-MM-DD`, calendário real e nunca podem estar no futuro. A chave aleatória de 32 caracteres hexadecimais é única por usuário e evita double-submit sem impedir reassistidas com novas chaves. Snapshots persistidos continuam sendo dados externos não confiáveis e são escapados na view.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.
