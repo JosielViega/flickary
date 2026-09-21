@@ -19,6 +19,7 @@ use App\Media\UserMediaStatus;
 use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
 use App\History\WatchHistoryRequestKey;
+use App\Schedule\ScheduleStore;
 
 final class MediaDetailsController
 {
@@ -30,6 +31,7 @@ final class MediaDetailsController
         private readonly ?UserMediaStore $userMedia = null,
         private readonly ?Session $session = null,
         private readonly ?UserSeriesProgressStore $seriesProgress = null,
+        private readonly ?ScheduleStore $schedule = null,
     ) {
     }
 
@@ -70,6 +72,9 @@ final class MediaDetailsController
         $progressCounts = $userId !== null && $type === 'series' && $this->seriesProgress !== null
             ? $this->seriesProgress->countsBySeason($userId, 'tmdb', $id)
             : [];
+        $scheduleItem = $userId === null || $this->schedule === null
+            ? null
+            : $this->schedule->findForUserIdentity($userId, 'tmdb', $type, $id);
 
         return $this->render([
             'title' => $details->title . ' — Flickary',
@@ -86,6 +91,7 @@ final class MediaDetailsController
                 ? WatchHistoryRequestKey::generate()
                 : null,
             'today' => date('Y-m-d'),
+            'scheduleItem' => $scheduleItem,
         ]);
     }
 
@@ -138,6 +144,7 @@ final class MediaDetailsController
             'progressCounts' => [],
             'historyRequestKey' => null,
             'today' => date('Y-m-d'),
+            'scheduleItem' => null,
         ], $status);
     }
 

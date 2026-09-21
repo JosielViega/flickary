@@ -99,17 +99,22 @@ Detalhes de temporada vêm em uma única chamada `TmdbCatalog::seasonDetails()`.
 
 ## Histórico de visualização
 
-Os três domínios pessoais permanecem deliberadamente separados:
+Os quatro domínios pessoais permanecem deliberadamente separados:
 
 ```text
 user_media                       → estado atual da mídia
 user_series_episode_progress     → progresso atual de episódios
 watch_history                    → eventos reais de visualização
+user_schedule                    → intenção futura explícita
 ```
 
 `watch_history` preserva um snapshot mínimo obtido server-side no momento do registro. A identidade e o conteúdo do evento não são editáveis; somente `watched_on` pode ser corrigido, e um evento inserido por engano pode ser excluído. `request_key` resolve reenvios técnicos do mesmo formulário sem bloquear reassistidas legítimas com chaves novas.
 
 A linha do tempo usa apenas MySQL para títulos, episódios e datas. Ela pode consultar uma única vez a configuração de imagens do TMDB por request, mas nunca busca detalhes por card e continua útil quando o catálogo está indisponível.
+
+## Agenda pessoal
+
+`user_schedule` preserva uma única intenção futura ativa por identidade de conteúdo e usuário, com snapshot mínimo obtido server-side. Novos itens consultam o catálogo para validar conteúdo e bloquear material adulto; reagendamento, remoção e listagem são locais. A página pode consultar a configuração de imagens uma vez, sem detalhes por card. Estados Hoje, Próximo e Atrasado são derivados da data configurada da aplicação e nunca persistidos.
 
 ## Ferramentas da fundação
 

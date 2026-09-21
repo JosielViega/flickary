@@ -20,6 +20,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Agenda pessoal explícita para filmes, séries e episódios, com reagendamento, filtros, paginação e itens atrasados preservados
+
 - histórico real de filmes e episódios por data, com reassistidas, filtros e paginação cronológica
 - correção de data e remoção de eventos históricos próprios, sem acoplamento à Minha Lista ou ao progresso
 

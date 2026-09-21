@@ -69,6 +69,10 @@ Criação, correção de data e remoção exigem autenticação e CSRF. Ownershi
 
 Datas usam o formato estrito `YYYY-MM-DD`, calendário real e nunca podem estar no futuro. A chave aleatória de 32 caracteres hexadecimais é única por usuário e evita double-submit sem impedir reassistidas com novas chaves. Snapshots persistidos continuam sendo dados externos não confiáveis e são escapados na view.
 
+## Agenda pessoal
+
+Criação, reagendamento e remoção exigem autenticação e CSRF; ownership deriva exclusivamente de `Auth::id()` e UPDATE/DELETE incluem `user_id`. O browser controla somente `scheduled_on`: identidade, títulos e imagem vêm da rota e do catálogo server-side. Datas são reais, estritas e iguais ou posteriores ao dia atual; snapshots continuam não confiáveis e são escapados na view.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

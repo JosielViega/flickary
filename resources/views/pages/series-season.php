@@ -66,7 +66,7 @@ endforeach;
     <?php else: ?>
         <ol class="episode-list">
             <?php foreach ($details->episodes as $episode): ?>
-                <?php $isWatched = in_array($episode->episodeNumber, $watched, true); ?>
+                <?php $isWatched = in_array($episode->episodeNumber, $watched, true); $episodeSchedule = $episodeSchedules[$episode->episodeNumber] ?? null; ?>
                 <li class="episode-card<?= $nextEpisode === $episode->episodeNumber ? ' is-next' : '' ?>">
                     <div class="episode-card__number">E<?= e((string) $episode->episodeNumber) ?></div>
                     <div>
@@ -98,6 +98,17 @@ endforeach;
                                 <input id="history-episode-<?= e((string) $episode->episodeNumber) ?>" type="date" name="watched_on" value="<?= e($today) ?>" max="<?= e($today) ?>" required>
                                 <button class="button button--ghost" type="submit">Registrar visualização</button>
                             </form>
+                            <form class="episode-schedule-form" method="post" action="/series/<?= e((string) $details->seriesSourceId) ?>/temporadas/<?= e((string) $details->seasonNumber) ?>/episodios/<?= e((string) $episode->episodeNumber) ?>/agenda">
+                                <?= $csrf->field() ?>
+                                <label for="schedule-episode-<?= e((string) $episode->episodeNumber) ?>">Agenda<?= $episodeSchedule === null ? '' : ' · ' . e((new DateTimeImmutable($episodeSchedule->scheduledOn))->format('d/m/Y')) ?></label>
+                                <input id="schedule-episode-<?= e((string) $episode->episodeNumber) ?>" type="date" name="scheduled_on" value="<?= e($episodeSchedule?->scheduledOn ?? $today) ?>" min="<?= e($today) ?>" required>
+                                <button class="button button--ghost" type="submit"><?= $episodeSchedule === null ? 'Agendar episódio' : 'Reagendar' ?></button>
+                            </form>
+                            <?php if ($episodeSchedule !== null): ?>
+                                <form method="post" action="/agenda/<?= e((string) $episodeSchedule->id) ?>/remover">
+                                    <?= $csrf->field() ?><button class="button button--ghost" type="submit">Remover da Agenda</button>
+                                </form>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </div>
                 </li>

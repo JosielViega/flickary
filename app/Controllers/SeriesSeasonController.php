@@ -20,6 +20,7 @@ use App\Integrations\Tmdb\TmdbSeasonNumber;
 use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
 use App\History\WatchHistoryRequestKey;
+use App\Schedule\ScheduleStore;
 
 final class SeriesSeasonController
 {
@@ -31,6 +32,7 @@ final class SeriesSeasonController
         private readonly Session $session,
         private readonly UserMediaStore $userMedia,
         private readonly UserSeriesProgressStore $progress,
+        private readonly ?ScheduleStore $schedule = null,
     ) {
     }
 
@@ -66,6 +68,9 @@ final class SeriesSeasonController
                 $seriesId,
                 $seasonNumber,
             );
+        $episodeSchedules = $userId === null || $this->schedule === null
+            ? []
+            : $this->schedule->episodeSchedulesForSeason($userId, 'tmdb', $seriesId, $seasonNumber);
 
         $posterUrl = null;
 
@@ -113,6 +118,7 @@ final class SeriesSeasonController
             'messages' => $this->session->consumeFlash(),
             'today' => $today,
             'episodeHistoryKeys' => $episodeHistoryKeys,
+            'episodeSchedules' => $episodeSchedules,
         ]));
     }
 

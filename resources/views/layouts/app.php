@@ -13,6 +13,7 @@ $profileIsActive = ($currentRoute ?? null) === 'profile';
 $searchIsActive = ($currentRoute ?? null) === 'search';
 $aboutIsActive = ($currentRoute ?? null) === 'about';
 $libraryIsActive = ($currentRoute ?? null) === 'library';
+$agendaIsActive = ($currentRoute ?? null) === 'agenda';
 $searchQuery = is_string($searchQuery ?? null) ? $searchQuery : '';
 $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
@@ -67,10 +68,11 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                     <svg aria-hidden="true"><use href="#icon-home"/></svg>
                     <span>Início</span>
                 </a>
-                <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
-                    <svg aria-hidden="true"><use href="#icon-calendar"/></svg>
-                    <span>Agenda</span>
-                </span>
+                <?php if ($isAuthenticated): ?>
+                    <a class="nav-item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?>><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
+                <?php else: ?>
+                    <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar sua agenda"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></span>
+                <?php endif; ?>
                 <a class="nav-item<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <span>Buscar</span>
@@ -146,10 +148,11 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                 <svg aria-hidden="true"><use href="#icon-home"/></svg>
                 <span>Início</span>
             </a>
-            <span class="bottom-nav__item is-disabled" aria-disabled="true">
-                <svg aria-hidden="true"><use href="#icon-calendar"/></svg>
-                <span>Agenda</span>
-            </span>
+            <?php if ($isAuthenticated): ?>
+                <a class="bottom-nav__item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?>><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
+            <?php else: ?>
+                <span class="bottom-nav__item is-disabled" aria-disabled="true"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></span>
+            <?php endif; ?>
             <a class="bottom-nav__item bottom-nav__item--search<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
                 <span class="bottom-nav__search-icon">
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>

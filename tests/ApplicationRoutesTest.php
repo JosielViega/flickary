@@ -283,6 +283,16 @@ final class ApplicationRoutesTest extends TestCase
                 public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage): \App\History\WatchHistoryPage { return new \App\History\WatchHistoryPage([], 0, $page, $perPage); }
                 public function countForUser(int $userId): int { return 0; }
             },
+            'user_schedule' => new class implements \App\Schedule\ScheduleStore {
+                public function findForUserIdentity(int $userId,string $source,string $entryType,int $sourceId,int $seasonNumber=0,int $episodeNumber=0):?\App\Schedule\ScheduleEntry{return null;}
+                public function findForUser(int $userId,int $id):?\App\Schedule\ScheduleEntry{return null;}
+                public function create(int $userId,\App\Schedule\ScheduleItem $item):bool{return true;}
+                public function updateDate(int $userId,int $id,string $scheduledOn):bool{return false;}
+                public function delete(int $userId,int $id):bool{return false;}
+                public function paginateForUser(int $userId,?string $entryType,string $today,int $page,int $perPage):\App\Schedule\SchedulePage{return new \App\Schedule\SchedulePage([],0,$page,$perPage);}
+                public function countForUser(int $userId):int{return 0;}
+                public function episodeSchedulesForSeason(int $userId,string $source,int $seriesId,int $seasonNumber):array{return[];}
+            },
         ];
 
         return require dirname(__DIR__) . '/routes/web.php';

@@ -10,6 +10,7 @@ declare(strict_types=1);
 /** @var null|\App\Media\UserMediaItem $userMedia */
 /** @var array<string,string> $statusOptions */
 /** @var array<string,list<string>> $messages */
+/** @var null|\App\Schedule\ScheduleEntry $scheduleItem */
 ?>
 <?php foreach ($messages ?? [] as $type => $items): ?>
     <?php foreach ($items as $message): ?>
@@ -120,6 +121,30 @@ declare(strict_types=1);
                 <?php endif; ?>
             <?php else: ?>
                 <a class="button button--primary" href="/login">Entre para adicionar à sua lista</a>
+            <?php endif; ?>
+        </section>
+
+        <section class="schedule-register" aria-labelledby="media-schedule-title">
+            <div>
+                <p class="eyebrow">Agenda</p>
+                <h2 id="media-schedule-title"><?= $scheduleItem === null ? 'Planeje esta história.' : 'Na sua Agenda' ?></h2>
+                <p><?= $scheduleItem === null ? 'Escolha uma data. Isso não altera sua lista, progresso ou histórico.' : 'Agendado para ' . e((new DateTimeImmutable($scheduleItem->scheduledOn))->format('d/m/Y')) . '.' ?></p>
+            </div>
+            <?php if (isset($auth) && $auth->check()): ?>
+                <?php $schedulePath = ($details->mediaType === 'movie' ? '/filmes/' : '/series/') . $details->sourceId . '/agenda'; ?>
+                <form method="post" action="<?= e($schedulePath) ?>">
+                    <?= $csrf->field() ?>
+                    <label for="media-scheduled-on"><?= $scheduleItem === null ? 'Quando?' : 'Reagendar para' ?></label>
+                    <input id="media-scheduled-on" type="date" name="scheduled_on" value="<?= e($scheduleItem?->scheduledOn ?? $today) ?>" min="<?= e($today) ?>" required>
+                    <button class="button button--primary" type="submit"><?= $scheduleItem === null ? 'Adicionar à Agenda' : 'Reagendar' ?></button>
+                </form>
+                <?php if ($scheduleItem !== null): ?>
+                    <form method="post" action="/agenda/<?= e((string) $scheduleItem->id) ?>/remover">
+                        <?= $csrf->field() ?><button class="button button--ghost" type="submit">Remover da Agenda</button>
+                    </form>
+                <?php endif; ?>
+            <?php else: ?>
+                <a class="button button--primary" href="/login">Entre para organizar sua agenda</a>
             <?php endif; ?>
         </section>
 
