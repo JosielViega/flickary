@@ -78,6 +78,60 @@ final class TmdbClientTest extends TestCase
         self::assertSame('movie', $movies['results'][0]->mediaType);
     }
 
+    public function testAnimeDiscoverUsesRestrictedEndpointsAndOfficialFilters(): void
+    {
+        $urls = [];
+        $client = new TmdbClient('token', http: static function (string $url) use (&$urls): array {
+            $urls[] = $url;
+            $item = str_contains($url, '/discover/movie')
+                ? '{"id":129,"title":"A Viagem de Chihiro","genre_ids":[16,10751],"original_language":"ja"}'
+                : '{"id":46260,"name":"Naruto","genre_ids":[16,10759],"original_language":"ja"}';
+            return ['status'=>200,'body'=>'{"page":2,"total_pages":30,"total_results":600,"results":['.$item.']}'];
+        });
+
+        $movies = $client->discoverAnimeMovies(2);
+        $series = $client->discoverAnimeSeries(2);
+
+        self::assertStringStartsWith('https://api.themoviedb.org/3/discover/movie?', $urls[0]);
+        self::assertStringStartsWith('https://api.themoviedb.org/3/discover/tv?', $urls[1]);
+        foreach ($urls as $url) {
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            self::assertSame('pt-BR', $query['language']);
+            self::assertSame('false', $query['include_adult']);
+            self::assertSame('2', $query['page']);
+            self::assertSame('16', $query['with_genres']);
+            self::assertSame('ja', $query['with_original_language']);
+            self::assertSame('popularity.desc', $query['sort_by']);
+            self::assertArrayNotHasKey('region', $query);
+            self::assertArrayNotHasKey('with_origin_country', $query);
+            self::assertArrayNotHasKey('with_keywords', $query);
+        }
+        self::assertSame('movie', $movies['results'][0]->mediaType);
+        self::assertSame('series', $series['results'][0]->mediaType);
+        self::assertNotSame('anime', $series['results'][0]->mediaType);
+    }
+
+    public function testDiscoverRejectsInvalidPagesBeforeTransport(): void
+    {
+        $called = false;
+        $client = new TmdbClient('token', http: static function () use (&$called): array { $called=true; return []; });
+        foreach ([0, -1, 501] as $page) {
+            try { $client->discoverAnimeMovies($page); self::fail('Expected invalid page.'); } catch (\InvalidArgumentException) {}
+        }
+        self::assertFalse($called);
+    }
+
+    public function testWhitelistAllowsOnlyConcreteDiscoverPaths(): void
+    {
+        $method = new \ReflectionMethod(TmdbClient::class, 'isSupportedPath');
+        $client = new TmdbClient('token');
+        self::assertTrue($method->invoke($client, '/discover/movie'));
+        self::assertTrue($method->invoke($client, '/discover/tv'));
+        foreach (['/discover/person','/discover/qualquer','https://attacker.example/discover/movie','/discover/movie/extra'] as $path) {
+            self::assertFalse($method->invoke($client, $path));
+        }
+    }
+
     /** @return iterable<string, array{int,string,?int}> */
     public static function httpErrors(): iterable
     {

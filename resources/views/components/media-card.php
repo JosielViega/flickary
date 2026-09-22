@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-/** @var array{media:\App\Integrations\Tmdb\TmdbMedia,poster_url:?string} $item */
+/** @var array{media:\App\Integrations\Tmdb\TmdbMedia,poster_url:?string,is_anime?:bool} $item */
 $media = $item['media'];
 $posterUrl = $item['poster_url'];
-$typeLabel = $media->mediaType === 'movie' ? 'Filme' : 'Série';
+$isAnime = ($item['is_anime'] ?? false) === true;
+$typeLabel = ($isAnime ? 'Anime · ' : '') . ($media->mediaType === 'movie' ? 'Filme' : 'Série');
 $initial = mb_strtoupper(mb_substr($media->title, 0, 1));
 $detailsUrl = match (true) {
     $media->source === 'tmdb' && $media->mediaType === 'movie' => '/filmes/' . $media->sourceId,

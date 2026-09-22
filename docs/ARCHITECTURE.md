@@ -78,7 +78,21 @@ Integration/TMDB
 TMDB API v3
 ```
 
-`Repository` significa persistência MySQL; `Integration` significa comunicação com um serviço externo. A integração TMDB consulta o catálogo sob demanda e normaliza Movie e TV para os tipos internos `movie` e `series`. Ela não classifica animações como anime; uma futura integração AniList terá responsabilidade própria.
+`Repository` significa persistência MySQL; `Integration` significa comunicação com um serviço externo. A integração TMDB consulta o catálogo sob demanda e normaliza Movie e TV para os tipos internos `movie` e `series`. O TMDB permanece a única fonte para filmes, séries e Anime.
+
+```text
+TMDB Movie/TV
+      ↓
+TmdbMedia
+      ↓
+TmdbAnimeClassifier
+      ↓
+categoria visual Anime
+```
+
+Anime não é `media_type` e não é `source`. `TmdbAnimeClassifier` aplica a política central `original_language = ja` mais gênero Animation aos dados já normalizados, sem request adicional por card. `/anime` usa operações concretas de TMDB Discover para Movie e TV e continua levando a `/filmes/{id}` ou `/series/{id}`. O filtro não exige país de origem, keyword editorial ou popularidade mínima.
+
+O TMDB não fornece uma flag oficial `is_anime`; a classificação é uma regra transparente do Flickary. Snapshots locais ainda não armazenam essa categoria, portanto Minha Lista, Histórico, Agenda e Estatísticas não a filtram nem consultam o TMDB para recalculá-la. Uma etapa futura poderá decidir congelar a classificação no snapshot caso isso seja necessário, com migration própria — nenhuma alteração de schema pertence a esta etapa.
 
 O Flickary não mantém um espelho completo do TMDB. Quando uma mídia entra na Minha Lista, persiste somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + media_type + source_id`.
 

@@ -81,6 +81,16 @@ final class TmdbClient implements TmdbCatalog
         return $this->search('/search/tv', $query, $page, 'series', false);
     }
 
+    public function discoverAnimeMovies(int $page = 1): array
+    {
+        return $this->discover('/discover/movie', $page, 'movie');
+    }
+
+    public function discoverAnimeSeries(int $page = 1): array
+    {
+        return $this->discover('/discover/tv', $page, 'series');
+    }
+
     private function request(string $path, array $query = []): array
     {
         if (!$this->configured()) {
@@ -140,7 +150,7 @@ final class TmdbClient implements TmdbCatalog
 
     private function isSupportedPath(string $path): bool
     {
-        if (in_array($path, ['/configuration', '/search/movie', '/search/tv'], true)) {
+        if (in_array($path, ['/configuration', '/search/movie', '/search/tv', '/discover/movie', '/discover/tv'], true)) {
             return true;
         }
         if (preg_match('#^/(?:movie|tv)/([1-9]\d{0,9})$#D', $path, $matches) === 1) {
@@ -192,7 +202,29 @@ final class TmdbClient implements TmdbCatalog
         if ($withRegion) {
             $parameters['region'] = $this->region;
         }
-        $payload = $this->request($path, $parameters);
+        return $this->normalizeMediaPage($this->request($path, $parameters), $type);
+    }
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    private function discover(string $path, int $page, string $type): array
+    {
+        if ($page < 1 || $page > 500 || !in_array($type, ['movie', 'series'], true)) {
+            throw new \InvalidArgumentException('Discover page or type is invalid.');
+        }
+
+        return $this->normalizeMediaPage($this->request($path, [
+            'language' => $this->language,
+            'include_adult' => 'false',
+            'page' => $page,
+            'with_genres' => (string) TmdbAnimeClassifier::ANIMATION_GENRE_ID,
+            'with_original_language' => 'ja',
+            'sort_by' => 'popularity.desc',
+        ]), $type);
+    }
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    private function normalizeMediaPage(array $payload, string $type): array
+    {
         if (!is_int($payload['page'] ?? null) || $payload['page'] < 1
             || !is_int($payload['total_pages'] ?? null) || $payload['total_pages'] < 0
             || !is_int($payload['total_results'] ?? null) || $payload['total_results'] < 0

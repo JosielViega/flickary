@@ -130,6 +130,6 @@ final class ScheduleCatalog implements TmdbCatalog
     public function seriesDetails(int$id):TmdbMediaDetails{$this->calls[]=['series',$id];if($this->fail)throw new TmdbException('transport');return $this->details('series',$id);}
     public function seasonDetails(int$seriesId,int$seasonNumber):TmdbSeasonDetails{$this->calls[]=['season',$seriesId,$seasonNumber];if($this->fail)throw new TmdbException('transport');return new TmdbSeasonDetails('tmdb',$seriesId,1,$seasonNumber,'Especiais',null,null,null,[new TmdbEpisode(1,$seasonNumber,1,'Piloto',null,'2008-01-20',50,null)]);}
     public function configuration():TmdbImageConfiguration{$this->calls[]=['configuration'];if($this->fail)throw new TmdbException('transport');return new TmdbImageConfiguration('https://image.tmdb.org/t/p/',['w500'],['w1280']);}
-    public function searchMovies(string$q,int$p=1):array{return[];} public function searchSeries(string$q,int$p=1):array{return[];}
+    public function searchMovies(string$q,int$p=1):array{return[];} public function searchSeries(string$q,int$p=1):array{return[];} public function discoverAnimeMovies(int$p=1):array{return[];} public function discoverAnimeSeries(int$p=1):array{return[];}
     private function details(string$type,int$id):TmdbMediaDetails{$movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad',null,null,$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,null,null,[],null,null,null,'en',false,null,$movie?136:null,$movie?null:5,$movie?null:62,null,false);}
 }

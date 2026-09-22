@@ -11,6 +11,7 @@ declare(strict_types=1);
 /** @var array<string,string> $statusOptions */
 /** @var array<string,list<string>> $messages */
 /** @var null|\App\Schedule\ScheduleEntry $scheduleItem */
+/** @var bool $isAnime */
 ?>
 <?php foreach ($messages ?? [] as $type => $items): ?>
     <?php foreach ($items as $message): ?>
@@ -50,7 +51,7 @@ declare(strict_types=1);
                 </div>
 
                 <div class="media-detail__identity">
-                    <p class="eyebrow"><?= e($typeLabel) ?> · TMDB</p>
+                    <p class="eyebrow"><?= $isAnime ? 'Anime · ' : '' ?><?= e($typeLabel) ?> · TMDB</p>
                     <h1 id="media-detail-title"><?= e($details->title) ?></h1>
 
                     <?php if ($details->originalTitle !== null && $details->originalTitle !== $details->title): ?>

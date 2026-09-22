@@ -52,6 +52,27 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringNotContainsString('/temporadas/', $response->body());
     }
 
+    public function testAnimeMovieAndSeriesShowClassificationWithoutAdditionalRequests(): void
+    {
+        $movieCatalog = $this->catalog(movie: $this->details('movie', genres:[['id'=>16,'name'=>'Animação']], originalLanguage:'ja'));
+        $seriesCatalog = $this->catalog(series: $this->details('series', genres:[['id'=>16,'name'=>'Animação']], originalLanguage:'ja'));
+        $movie = $this->controller($movieCatalog)->movie('603');
+        $series = $this->controller($seriesCatalog)->series('1396');
+
+        self::assertStringContainsString('Anime · Filme · TMDB', $movie->body());
+        self::assertStringContainsString('Anime · Série · TMDB', $series->body());
+        self::assertSame([['movie',603],['configuration']], $movieCatalog->calls);
+        self::assertSame([['series',1396],['configuration']], $seriesCatalog->calls);
+    }
+
+    public function testDetailsDoNotMislabelIncompleteOrSingleCriterionContent(): void
+    {
+        $liveAction = $this->catalog(movie: $this->details('movie', genres:[['id'=>18,'name'=>'Drama']], originalLanguage:'ja'));
+        $westernAnimation = $this->catalog(movie: $this->details('movie', genres:[['id'=>16,'name'=>'Animação']], originalLanguage:'en'));
+        self::assertStringNotContainsString('Anime · Filme', $this->controller($liveAction)->movie('603')->body());
+        self::assertStringNotContainsString('Anime · Filme', $this->controller($westernAnimation)->movie('603')->body());
+    }
+
     public function testInvalidIdsReturn404BeforeCallingTmdb(): void
     {
         foreach (['0', '-1', 'abc', '12.5', '1<script>', '2147483648', '99999999999'] as $id) {
@@ -148,6 +169,8 @@ final class MediaDetailsControllerTest extends TestCase
         string $overview = 'Uma escolha muda tudo.',
         ?string $posterPath = '/poster.jpg',
         ?string $backdropPath = '/backdrop.jpg',
+        ?array $genres = null,
+        ?string $originalLanguage = 'en',
     ): TmdbMediaDetails {
         $movie = $type === 'movie';
         return new TmdbMediaDetails(
@@ -162,11 +185,11 @@ final class MediaDetailsControllerTest extends TestCase
             $movie ? 1999 : 2008,
             $posterPath,
             $backdropPath,
-            [['id' => $movie ? 28 : 18, 'name' => $movie ? 'Ação' : 'Drama']],
+            $genres ?? [['id' => $movie ? 28 : 18, 'name' => $movie ? 'Ação' : 'Drama']],
             $movie ? 8.217 : 8.9,
             $movie ? 26789 : 14000,
             100.0,
-            'en',
+            $originalLanguage,
             $adult,
             $movie ? 'Released' : 'Ended',
             $movie ? 136 : null,
@@ -224,6 +247,9 @@ final class MediaDetailsControllerTest extends TestCase
             {
                 throw new \LogicException('Not used by details tests.');
             }
+
+            public function discoverAnimeMovies(int $page = 1): array { throw new \LogicException('Not used.'); }
+            public function discoverAnimeSeries(int $page = 1): array { throw new \LogicException('Not used.'); }
         };
     }
 }

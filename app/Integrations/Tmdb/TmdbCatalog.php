@@ -20,4 +20,10 @@ interface TmdbCatalog
 
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
     public function searchSeries(string $query, int $page = 1): array;
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    public function discoverAnimeMovies(int $page = 1): array;
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    public function discoverAnimeSeries(int $page = 1): array;
 }

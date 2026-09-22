@@ -188,6 +188,8 @@ final class WatchHistoryCatalog implements TmdbCatalog
     public function configuration(): TmdbImageConfiguration { $this->calls[]=['configuration'];$this->guard();return new TmdbImageConfiguration('https://image.tmdb.org/t/p/',['w500'],['w1280']); }
     public function searchMovies(string $query, int $page = 1): array { return []; }
     public function searchSeries(string $query, int $page = 1): array { return []; }
+    public function discoverAnimeMovies(int $page = 1): array { return []; }
+    public function discoverAnimeSeries(int $page = 1): array { return []; }
     private function guard(): void { if ($this->fail) throw new TmdbException('transport'); }
     private function details(string $type, int $id): TmdbMediaDetails { $movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad Original',null,'Resumo',$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,$movie?'/matrix.jpg':'/breaking-bad.jpg',null,[],8.0,1,null,'en',$this->adult,null,$movie?$this->movieRuntime:null,$movie?null:5,$movie?null:62,null,null); }
 }

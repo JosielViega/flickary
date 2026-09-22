@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal e Estatísticas pessoais. Favoritos, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal e Estatísticas pessoais. Favoritos, perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -111,7 +111,11 @@ TMDB_READ_ACCESS_TOKEN=
 
 O cliente envia o token como Bearer, usa inicialmente `pt-BR` e região `BR`, e nunca entrega a credencial ao navegador. O Flickary não mantém um espelho completo do catálogo TMDB: quando coleção, agenda e histórico forem implementados, somente um snapshot mínimo associado a `source + source_id` será persistido para integridade e exibição básica.
 
-As rotas públicas `GET /buscar`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios.
+As rotas públicas `GET /buscar`, `GET /anime`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar, descobrir e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios.
+
+O TMDB permanece a única fonte de catálogo também para Anime. Anime não é um provider nem um `media_type`: o Flickary classifica visualmente como Anime o Movie ou TV cujo idioma original é japonês (`ja`) e que contém o gênero Animation. A rota `/anime` usa TMDB Discover e preserva os tipos técnicos `movie` e `series`, inclusive nos links de detalhes. O TMDB não fornece uma flag oficial `is_anime`, portanto essa política é transparente e deliberadamente conservadora.
+
+Minha Lista, Histórico, Agenda e Estatísticas ainda não filtram Anime porque seus snapshots locais não congelam essa classificação. Uma evolução futura poderá persistir a categoria caso exista necessidade real, sem alterar retroativamente a fonte ou o tipo da mídia.
 
 ## Minha Lista
 
@@ -193,6 +197,7 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
+- `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;
 - `GET /filmes/{id}` — detalhes públicos básicos de um filme TMDB;
 - `GET /series/{id}` — detalhes públicos básicos de uma série TMDB;
 - `GET /series/{id}/temporadas/{season}` — temporada pública e episódios, com progresso e registro histórico autenticados;

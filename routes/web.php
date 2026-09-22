@@ -19,6 +19,7 @@ use App\Controllers\SeriesSeasonController;
 use App\Controllers\WatchHistoryController;
 use App\Controllers\UserScheduleController;
 use App\Controllers\StatisticsController;
+use App\Controllers\AnimeController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -86,6 +87,7 @@ $search = new SearchController(
     $app['auth'],
     $app['csrf'],
 );
+$anime = new AnimeController($app['view'], $app['tmdb'], $app['auth'], $app['csrf']);
 $mediaDetails = new MediaDetailsController(
     $app['view'],
     $app['tmdb'],
@@ -147,6 +149,7 @@ $router->get('/perfil', [$profile, 'show']);
 $router->post('/perfil', static fn (): Response => $profile->update($app['request']));
 $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookConnection->store($app['request']));
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
+$router->get('/anime', static fn (): Response => $anime->index($app['request']));
 $router->get('/filmes/{id}', static fn (string $id): Response => $mediaDetails->movie($id));
 $router->get('/series/{id}', static fn (string $id): Response => $mediaDetails->series($id));
 $router->get(

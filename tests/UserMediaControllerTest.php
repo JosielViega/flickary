@@ -175,4 +175,6 @@ final class FakeUserMediaCatalog implements TmdbCatalog
     public function configuration(): TmdbImageConfiguration { $this->calls[] = ['configuration']; if ($this->exception) throw $this->exception; return new TmdbImageConfiguration('https://image.tmdb.org/t/p/', ['w500'], ['w1280']); }
     public function searchMovies(string $query, int $page = 1): array { return []; }
     public function searchSeries(string $query, int $page = 1): array { return []; }
+    public function discoverAnimeMovies(int $page = 1): array { return []; }
+    public function discoverAnimeSeries(int $page = 1): array { return []; }
 }

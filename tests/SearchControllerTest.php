@@ -159,6 +159,29 @@ final class SearchControllerTest extends TestCase
         self::assertStringNotContainsString('href="#"', $response->body());
     }
 
+    public function testSearchAddsAnimeBadgeFromExistingMetadataWithoutExtraRequests(): void
+    {
+        $catalog = $this->catalog(series: [$this->media('series', title: 'Naruto', posterPath: null, genreIds: [16, 10759], originalLanguage: 'ja')]);
+        $response = $this->search($catalog, ['q'=>'naruto','tipo'=>'series']);
+
+        self::assertSame([['series','naruto',1]], $catalog->calls);
+        self::assertStringContainsString('Anime · Série', $response->body());
+        self::assertStringContainsString('href="/anime"', $response->body());
+    }
+
+    public function testSearchDoesNotMislabelJapaneseLiveActionOrWesternAnimation(): void
+    {
+        $catalog = $this->catalog(movies: [
+            $this->media('movie', title:'Godzilla', posterPath:null, genreIds:[28,18], originalLanguage:'ja'),
+            $this->media('movie', title:'Toy Story', posterPath:null, genreIds:[16,10751], originalLanguage:'en'),
+        ]);
+        $body = $this->search($catalog, ['q'=>'controle','tipo'=>'filmes'])->body();
+
+        self::assertSame(0, substr_count($body, 'Anime · Filme'));
+        self::assertStringContainsString('Godzilla', $body);
+        self::assertStringContainsString('Toy Story', $body);
+    }
+
     public function testRequestedPageBeyondProviderTotalIsControlled(): void
     {
         $catalog = $this->catalog(movies: [$this->media('movie')], moviePages: 2);
@@ -187,6 +210,8 @@ final class SearchControllerTest extends TestCase
         string $title = 'Matrix',
         string $overview = 'Uma história.',
         ?string $posterPath = '/poster.jpg',
+        array $genreIds = [18],
+        ?string $originalLanguage = 'en',
     ): TmdbMedia {
         return new TmdbMedia(
             'tmdb',
@@ -202,8 +227,8 @@ final class SearchControllerTest extends TestCase
             8.258,
             100,
             20.5,
-            [18],
-            'en',
+            $genreIds,
+            $originalLanguage,
             false,
         );
     }
@@ -268,6 +293,9 @@ final class SearchControllerTest extends TestCase
                 }
                 return ['page' => $page, 'total_pages' => $this->seriesPages, 'total_results' => count($this->series), 'results' => $this->series];
             }
+
+            public function discoverAnimeMovies(int $page = 1): array { throw new \LogicException('Not used.'); }
+            public function discoverAnimeSeries(int $page = 1): array { throw new \LogicException('Not used.'); }
         };
     }
 }

@@ -15,6 +15,7 @@ use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
 use App\Integrations\Tmdb\TmdbMediaDetails;
 use App\Integrations\Tmdb\TmdbMediaId;
+use App\Integrations\Tmdb\TmdbAnimeClassifier;
 use App\Media\UserMediaStatus;
 use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
@@ -23,6 +24,8 @@ use App\Schedule\ScheduleStore;
 
 final class MediaDetailsController
 {
+    private readonly TmdbAnimeClassifier $animeClassifier;
+
     public function __construct(
         private readonly View $view,
         private readonly TmdbCatalog $tmdb,
@@ -32,7 +35,9 @@ final class MediaDetailsController
         private readonly ?Session $session = null,
         private readonly ?UserSeriesProgressStore $seriesProgress = null,
         private readonly ?ScheduleStore $schedule = null,
+        ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
+        $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
 
     public function movie(string $id): Response
@@ -92,6 +97,7 @@ final class MediaDetailsController
                 : null,
             'today' => date('Y-m-d'),
             'scheduleItem' => $scheduleItem,
+            'isAnime' => $this->animeClassifier->details($details),
         ]);
     }
 
@@ -145,6 +151,7 @@ final class MediaDetailsController
             'historyRequestKey' => null,
             'today' => date('Y-m-d'),
             'scheduleItem' => null,
+            'isAnime' => false,
         ], $status);
     }
 

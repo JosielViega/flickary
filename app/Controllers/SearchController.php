@@ -14,19 +14,23 @@ use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
 use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbMedia;
+use App\Integrations\Tmdb\TmdbAnimeClassifier;
 
 final class SearchController
 {
     private const TYPES = ['todos', 'filmes', 'series'];
     private const SUMMARY_LIMIT = 8;
     private const MAX_PAGE = 500;
+    private readonly TmdbAnimeClassifier $animeClassifier;
 
     public function __construct(
         private readonly View $view,
         private readonly TmdbCatalog $tmdb,
         private readonly ?Auth $auth = null,
         private readonly ?Csrf $csrf = null,
+        ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
+        $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
 
     public function index(Request $request): Response
@@ -150,9 +154,10 @@ final class SearchController
         return [
             'title' => $title,
             'type' => $type,
-            'items' => array_map(static fn (TmdbMedia $media): array => [
+            'items' => array_map(fn (TmdbMedia $media): array => [
                 'media' => $media,
                 'poster_url' => null,
+                'is_anime' => $this->animeClassifier->media($media),
             ], $items),
             'page' => $result['page'],
             'total_pages' => $result['total_pages'],
