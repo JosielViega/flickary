@@ -22,6 +22,7 @@ final readonly class ScheduleEntry
         public string $scheduledOn,
         public string $createdAt,
         public string $updatedAt,
+        public ?bool $isAnime = null,
     ) {
     }
 

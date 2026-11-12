@@ -84,4 +84,16 @@ $unknownDurationLabel = $statistics->unknownDurationEvents === 1
         </div>
         <a class="statistics-link" href="/agenda">Ver minha Agenda →</a>
     </section>
+
+    <section class="statistics-section statistics-anime" aria-labelledby="statistics-anime">
+        <header><p class="eyebrow">Classificação local</p><h2 id="statistics-anime">Anime</h2></header>
+        <div class="statistics-metrics">
+            <article><strong><?= e((string) $statistics->animeLibraryItems) ?></strong><span>Na Minha Lista</span></article>
+            <article><strong><?= e((string) $statistics->animeHistoryViews) ?></strong><span>Visualizações</span></article>
+            <article><strong><?= e((string) $statistics->animeScheduleItems) ?></strong><span>Na Agenda</span></article>
+        </div>
+        <?php if ($statistics->unknownAnimeSnapshots > 0): ?>
+            <p class="statistics-coverage" role="note">Alguns registros antigos ainda não possuem classificação Anime local (<?= e((string) $statistics->unknownAnimeSnapshots) ?>).</p>
+        <?php endif; ?>
+    </section>
 </section>

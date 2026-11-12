@@ -258,10 +258,10 @@ final class ApplicationRoutesTest extends TestCase
             },
             'user_media' => new class implements \App\Media\UserMediaStore {
                 public function findForUser(int $userId, string $source, string $mediaType, int $sourceId): ?\App\Media\UserMediaItem { return null; }
-                public function create(int $userId, \App\Integrations\Tmdb\TmdbMediaDetails $details, string $status): bool { return true; }
+                public function create(int $userId, \App\Integrations\Tmdb\TmdbMediaDetails $details, string $status, ?bool $isAnime = null): bool { return true; }
                 public function updateStatus(int $userId, string $source, string $mediaType, int $sourceId, string $status): bool { return false; }
                 public function delete(int $userId, string $source, string $mediaType, int $sourceId): bool { return false; }
-                public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage): \App\Media\UserMediaPage { return new \App\Media\UserMediaPage([], 0, $page, $perPage); }
+                public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage, bool $animeOnly = false): \App\Media\UserMediaPage { return new \App\Media\UserMediaPage([], 0, $page, $perPage); }
                 public function countForUser(int $userId): int { return 0; }
             },
             'tmdb' => new class implements TmdbCatalog {
@@ -282,7 +282,7 @@ final class ApplicationRoutesTest extends TestCase
                 public function findForUser(int $userId, int $id): ?\App\History\WatchHistoryEntry { return null; }
                 public function updateDate(int $userId, int $id, string $watchedOn): bool { return false; }
                 public function delete(int $userId, int $id): bool { return false; }
-                public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage): \App\History\WatchHistoryPage { return new \App\History\WatchHistoryPage([], 0, $page, $perPage); }
+                public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage, bool $animeOnly = false): \App\History\WatchHistoryPage { return new \App\History\WatchHistoryPage([], 0, $page, $perPage); }
                 public function countForUser(int $userId): int { return 0; }
             },
             'user_schedule' => new class implements \App\Schedule\ScheduleStore {
@@ -291,7 +291,7 @@ final class ApplicationRoutesTest extends TestCase
                 public function create(int $userId,\App\Schedule\ScheduleItem $item):bool{return true;}
                 public function updateDate(int $userId,int $id,string $scheduledOn):bool{return false;}
                 public function delete(int $userId,int $id):bool{return false;}
-                public function paginateForUser(int $userId,?string $entryType,string $today,int $page,int $perPage):\App\Schedule\SchedulePage{return new \App\Schedule\SchedulePage([],0,$page,$perPage);}
+                public function paginateForUser(int $userId,?string $entryType,string $today,int$page,int$perPage,bool$animeOnly=false):\App\Schedule\SchedulePage{return new \App\Schedule\SchedulePage([],0,$page,$perPage);}
                 public function countForUser(int $userId):int{return 0;}
                 public function episodeSchedulesForSeason(int $userId,string $source,int $seriesId,int $seasonNumber):array{return[];}
             },

@@ -20,6 +20,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- classificação Anime persistida como snapshot nullable em Minha Lista, Histórico e Agenda
+- filtros locais Anime nas três áreas pessoais e métricas Anime com cobertura transparente nas Estatísticas
+- backfill manual e idempotente de snapshots antigos, com deduplicação global de Movies e Series
 - descoberta pública de Anime em `/anime` usando TMDB Discover para Movie e TV, com filtros e paginação próprios
 - classificação Anime transparente baseada em Animation + idioma original japonês, preservando Movie/Series como tipos técnicos
 - badges Anime na busca e nos detalhes, sem chamadas adicionais por resultado

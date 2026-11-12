@@ -18,6 +18,7 @@ final readonly class ScheduleItem
         public ?string $contentDate,
         public ?string $posterPath,
         public string $scheduledOn,
+        public ?bool $isAnime = null,
     ) {
         if (!in_array($entryType, ['movie', 'series', 'episode'], true)
             || $sourceId < 1 || trim($title) === ''

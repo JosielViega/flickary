@@ -36,13 +36,13 @@ final class UserMediaRepository implements UserMediaStore
         return is_array($row) ? $this->map($row) : null;
     }
 
-    public function create(int $userId, TmdbMediaDetails $details, string $status): bool
+    public function create(int $userId, TmdbMediaDetails $details, string $status, ?bool $isAnime = null): bool
     {
         $this->guardStatus($status);
         $statement = $this->database->connection()->prepare(
             'INSERT INTO user_media '
-            . '(user_id, source, media_type, source_id, status, title, original_title, release_date, poster_path, backdrop_path) '
-            . 'VALUES (:user_id, :source, :media_type, :source_id, :status, :title, :original_title, :release_date, :poster_path, :backdrop_path)',
+            . '(user_id, source, media_type, source_id, status, title, original_title, release_date, poster_path, backdrop_path, is_anime) '
+            . 'VALUES (:user_id, :source, :media_type, :source_id, :status, :title, :original_title, :release_date, :poster_path, :backdrop_path, :is_anime)',
         );
 
         try {
@@ -57,6 +57,7 @@ final class UserMediaRepository implements UserMediaStore
                 'release_date' => $details->releaseDate,
                 'poster_path' => $details->posterPath === null ? null : mb_substr($details->posterPath, 0, 255),
                 'backdrop_path' => $details->backdropPath === null ? null : mb_substr($details->backdropPath, 0, 255),
+                'is_anime' => $isAnime === null ? null : (int) $isAnime,
             ]);
         } catch (PDOException $exception) {
             if ((int) ($exception->errorInfo[1] ?? 0) === 1062) {
@@ -102,7 +103,7 @@ final class UserMediaRepository implements UserMediaStore
         return $statement->rowCount() > 0;
     }
 
-    public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage): UserMediaPage
+    public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage, bool $animeOnly = false): UserMediaPage
     {
         $where = ['user_id = :user_id'];
         $params = ['user_id' => $userId];
@@ -117,6 +118,9 @@ final class UserMediaRepository implements UserMediaStore
             }
             $where[] = 'media_type = :media_type';
             $params['media_type'] = $mediaType;
+        }
+        if ($animeOnly) {
+            $where[] = 'is_anime = 1';
         }
         $filter = implode(' AND ', $where);
         $count = $this->database->connection()->prepare('SELECT COUNT(*) FROM user_media WHERE ' . $filter);
@@ -169,6 +173,7 @@ final class UserMediaRepository implements UserMediaStore
             is_string($row['backdrop_path']) ? $row['backdrop_path'] : null,
             (string) $row['created_at'],
             (string) $row['updated_at'],
+            $row['is_anime'] === null ? null : (bool) (int) $row['is_anime'],
         );
     }
 }

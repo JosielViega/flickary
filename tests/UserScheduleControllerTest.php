@@ -63,6 +63,15 @@ final class UserScheduleControllerTest extends TestCase
         self::assertSame([['season',1396,0],['series',1396]], $catalog->calls);
     }
 
+    public function testAnimeClassificationForMediaAndEpisodeIgnoresBrowserInput(): void
+    {
+        [$controller,$store,$catalog,$csrf]=$this->fixture(true);$catalog->anime=true;$date=date('Y-m-d');
+        $controller->createMedia(new Request(parsedBody:['_token'=>$csrf->token(),'scheduled_on'=>$date,'is_anime'=>'0']),'603','movie');
+        self::assertTrue($store->created?->isAnime);
+        $store->created=null;$controller->createEpisode(new Request(parsedBody:['_token'=>$csrf->token(),'scheduled_on'=>$date,'is_anime'=>'0']),'1396','0','1');
+        self::assertTrue($store->created?->isAnime);
+    }
+
     public function testAgendaEscapesSnapshotsAndUsesOnlyConfiguration(): void
     {
         [$controller,$store,$catalog] = $this->fixture(true);
@@ -117,19 +126,19 @@ final class ScheduleMemoryStore implements ScheduleStore
     public function create(int$userId,ScheduleItem$item):bool{$this->created=$item;return true;}
     public function updateDate(int$userId,int$id,string$scheduledOn):bool{$this->updatedDate=$scheduledOn;return true;}
     public function delete(int$userId,int$id):bool{$this->deleted=true;return true;}
-    public function paginateForUser(int$userId,?string$entryType,string$today,int$page,int$perPage):SchedulePage{return new SchedulePage($this->items,count($this->items),$page,$perPage);}
+    public function paginateForUser(int$userId,?string$entryType,string$today,int$page,int$perPage,bool$animeOnly=false):SchedulePage{return new SchedulePage($this->items,count($this->items),$page,$perPage);}
     public function countForUser(int$userId):int{return count($this->items);}
     public function episodeSchedulesForSeason(int$userId,string$source,int$seriesId,int$seasonNumber):array{return[];}
 }
 
 final class ScheduleCatalog implements TmdbCatalog
 {
-    public array $calls=[]; public bool $fail=false;
+    public array $calls=[]; public bool $fail=false; public bool $anime=false;
     public function configured():bool{return true;}
     public function movieDetails(int$id):TmdbMediaDetails{$this->calls[]=['movie',$id];if($this->fail)throw new TmdbException('transport');return $this->details('movie',$id);}
     public function seriesDetails(int$id):TmdbMediaDetails{$this->calls[]=['series',$id];if($this->fail)throw new TmdbException('transport');return $this->details('series',$id);}
     public function seasonDetails(int$seriesId,int$seasonNumber):TmdbSeasonDetails{$this->calls[]=['season',$seriesId,$seasonNumber];if($this->fail)throw new TmdbException('transport');return new TmdbSeasonDetails('tmdb',$seriesId,1,$seasonNumber,'Especiais',null,null,null,[new TmdbEpisode(1,$seasonNumber,1,'Piloto',null,'2008-01-20',50,null)]);}
     public function configuration():TmdbImageConfiguration{$this->calls[]=['configuration'];if($this->fail)throw new TmdbException('transport');return new TmdbImageConfiguration('https://image.tmdb.org/t/p/',['w500'],['w1280']);}
     public function searchMovies(string$q,int$p=1):array{return[];} public function searchSeries(string$q,int$p=1):array{return[];} public function discoverAnimeMovies(int$p=1):array{return[];} public function discoverAnimeSeries(int$p=1):array{return[];}
-    private function details(string$type,int$id):TmdbMediaDetails{$movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad',null,null,$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,null,null,[],null,null,null,'en',false,null,$movie?136:null,$movie?null:5,$movie?null:62,null,false);}
+    private function details(string$type,int$id):TmdbMediaDetails{$movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad',null,null,$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,null,null,$this->anime?[['id'=>16,'name'=>'Animation']]:[],null,null,null,$this->anime?'ja':'en',false,null,$movie?136:null,$movie?null:5,$movie?null:62,null,false);}
 }

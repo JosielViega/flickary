@@ -36,7 +36,7 @@ $queryFor = static function (int $page) use ($statusFilter, $typeFilter): string
 
     <form class="library-filters" method="get" action="/minha-lista">
         <div><label for="library-status">Status</label><select id="library-status" name="status"><option value="">Todos</option><?php foreach ($statusOptions as $value => $label): ?><option value="<?= e($value) ?>"<?= $statusFilter === $value ? ' selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
-        <div><label for="library-type">Tipo</label><select id="library-type" name="tipo"><option value="">Todos</option><option value="filmes"<?= $typeFilter === 'filmes' ? ' selected' : '' ?>>Filmes</option><option value="series"<?= $typeFilter === 'series' ? ' selected' : '' ?>>Séries</option></select></div>
+        <div><label for="library-type">Tipo</label><select id="library-type" name="tipo"><option value="">Todos</option><option value="filmes"<?= $typeFilter === 'filmes' ? ' selected' : '' ?>>Filmes</option><option value="series"<?= $typeFilter === 'series' ? ' selected' : '' ?>>Séries</option><option value="anime"<?= $typeFilter === 'anime' ? ' selected' : '' ?>>Anime</option></select></div>
         <button class="button button--primary" type="submit">Aplicar filtros</button>
     </form>
 
@@ -50,7 +50,7 @@ $queryFor = static function (int $page) use ($statusFilter, $typeFilter): string
                 <?php $path = ($item->mediaType === 'movie' ? '/filmes/' : '/series/') . $item->sourceId; ?>
                 <article class="library-card"><a href="<?= e($path) ?>" aria-label="Ver detalhes de <?= e($item->title) ?>">
                     <div class="library-card__poster"><span aria-hidden="true"><?= e(mb_strtoupper(mb_substr($item->title, 0, 1))) ?></span><?php if (isset($posterUrls[$item->id])): ?><img src="<?= e($posterUrls[$item->id]) ?>" alt="Pôster de <?= e($item->title) ?>" loading="lazy" decoding="async" width="500" height="750"><?php endif; ?></div>
-                    <div class="library-card__body"><p><?= $item->mediaType === 'movie' ? 'Filme' : 'Série' ?><?= $item->year() !== null ? ' · ' . e((string) $item->year()) : '' ?></p><h2><?= e($item->title) ?></h2><span><?= e(\App\Media\UserMediaStatus::label($item->status)) ?></span></div>
+                    <div class="library-card__body"><p><?= $item->isAnime === true ? 'Anime · ' : '' ?><?= $item->mediaType === 'movie' ? 'Filme' : 'Série' ?><?= $item->year() !== null ? ' · ' . e((string) $item->year()) : '' ?></p><h2><?= e($item->title) ?></h2><span><?= e(\App\Media\UserMediaStatus::label($item->status)) ?></span></div>
                 </a></article>
             <?php endforeach; ?>
         </div>

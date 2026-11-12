@@ -82,6 +82,7 @@ final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDur
         ?string $entryType,
         int $page,
         int $perPage,
+        bool $animeOnly = false,
     ): WatchHistoryPage {
         if ($entryType !== null && !in_array($entryType, ['movie', 'episode'], true)) {
             throw new \InvalidArgumentException('Invalid history entry type.');
@@ -97,6 +98,9 @@ final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDur
         if ($entryType !== null) {
             $where[] = 'entry_type = :entry_type';
             $params['entry_type'] = $entryType;
+        }
+        if ($animeOnly) {
+            $where[] = 'is_anime = 1';
         }
 
         $filter = implode(' AND ', $where);
@@ -211,11 +215,11 @@ final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDur
         $statement = $this->database->connection()->prepare(
             'INSERT INTO watch_history (
                 user_id, source, entry_type, source_id, season_number, episode_number,
-                title, original_title, episode_title, content_date, poster_path, duration_minutes,
+                title, original_title, episode_title, content_date, poster_path, duration_minutes, is_anime,
                 watched_on, request_key
              ) VALUES (
                 :user_id, :source, :entry_type, :source_id, :season_number, :episode_number,
-                :title, :original_title, :episode_title, :content_date, :poster_path, :duration_minutes,
+                :title, :original_title, :episode_title, :content_date, :poster_path, :duration_minutes, :is_anime,
                 :watched_on, :request_key
              )',
         );
@@ -240,6 +244,7 @@ final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDur
                     ? null
                     : mb_substr($event->posterPath, 0, 255),
                 'duration_minutes' => $event->durationMinutes,
+                'is_anime' => $event->isAnime === null ? null : (int) $event->isAnime,
                 'watched_on' => $event->watchedOn,
                 'request_key' => $event->requestKey,
             ]);
@@ -285,6 +290,7 @@ final class WatchHistoryRepository implements WatchHistoryStore, WatchHistoryDur
             (string) $row['watched_on'],
             (string) $row['created_at'],
             (string) $row['updated_at'],
+            $row['is_anime'] === null ? null : (bool) (int) $row['is_anime'],
         );
     }
 }

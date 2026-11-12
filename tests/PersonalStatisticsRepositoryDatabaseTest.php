@@ -47,13 +47,28 @@ final class PersonalStatisticsRepositoryDatabaseTest extends TestCase
         self::assertSame(3,$stats->scheduleTotal);self::assertSame(1,$stats->scheduleToday);self::assertSame(1,$stats->scheduleFuture);self::assertSame(1,$stats->scheduleOverdue);
     }
 
-    private function history(int$user,array$e,string$key):void
+    public function testAnimeMetricsAndUnknownCoverageAreLocalAndUserScoped():void
     {
-        [$type,$sourceId,$season,$episode,$date,$duration]=$e;$s=$this->database->connection()->prepare('INSERT INTO watch_history(user_id,source,entry_type,source_id,season_number,episode_number,title,episode_title,watched_on,request_key,duration_minutes) VALUES(:u,\'tmdb\',:t,:sid,:sn,:en,:title,:episode_title,:watched,:request_key,:duration)');
-        $s->execute(['u'=>$user,'t'=>$type,'sid'=>$sourceId,'sn'=>$season,'en'=>$episode,'title'=>$type==='movie'?'Matrix':'Breaking Bad','episode_title'=>$type==='episode'?'Episode':null,'watched'=>$date,'request_key'=>$key,'duration'=>$duration]);
+        $user=$this->users->create('stats.anime',null);$other=$this->users->create('stats.anime.other',null);
+        $this->history($user,['movie',1,null,null,'2026-09-21',90],str_repeat('a',32),true);
+        $this->history($user,['episode',2,1,1,'2026-09-21',25],str_repeat('b',32),true);
+        $this->history($user,['movie',3,null,null,'2026-09-21',90],str_repeat('c',32),false);
+        $this->history($user,['movie',4,null,null,'2026-09-21',90],str_repeat('d',32),null);
+        $this->history($other,['movie',5,null,null,'2026-09-21',90],str_repeat('e',32),true);
+        $this->media($user,10,'watching',true);$this->media($user,11,'planned',false);$this->media($user,12,'planned',null);$this->media($other,13,'planned',true);
+        $this->schedule($user,20,'2026-09-22',true);$this->schedule($user,21,'2026-09-22',null);$this->schedule($other,22,'2026-09-22',true);
+        $stats=$this->statistics->readForUser($user,'2026-09-21');
+        self::assertSame(2,$stats->animeHistoryViews);self::assertSame(1,$stats->animeLibraryItems);self::assertSame(1,$stats->animeScheduleItems);self::assertSame(3,$stats->unknownAnimeSnapshots);
+        self::assertSame(4,$stats->totalViews);self::assertSame(3,$stats->libraryTotal);self::assertSame(2,$stats->scheduleTotal);
     }
-    private function media(int$user,int$id,string$status):void{$s=$this->database->connection()->prepare('INSERT INTO user_media(user_id,source,media_type,source_id,status,title)VALUES(:u,\'tmdb\',\'movie\',:id,:status,\'Title\')');$s->execute(['u'=>$user,'id'=>$id,'status'=>$status]);}
+
+    private function history(int$user,array$e,string$key,?bool$anime=null):void
+    {
+        [$type,$sourceId,$season,$episode,$date,$duration]=$e;$s=$this->database->connection()->prepare('INSERT INTO watch_history(user_id,source,entry_type,source_id,season_number,episode_number,title,episode_title,watched_on,request_key,duration_minutes,is_anime) VALUES(:u,\'tmdb\',:t,:sid,:sn,:en,:title,:episode_title,:watched,:request_key,:duration,:anime)');
+        $s->execute(['u'=>$user,'t'=>$type,'sid'=>$sourceId,'sn'=>$season,'en'=>$episode,'title'=>$type==='movie'?'Matrix':'Breaking Bad','episode_title'=>$type==='episode'?'Episode':null,'watched'=>$date,'request_key'=>$key,'duration'=>$duration,'anime'=>$anime===null?null:(int)$anime]);
+    }
+    private function media(int$user,int$id,string$status,?bool$anime=null):void{$s=$this->database->connection()->prepare('INSERT INTO user_media(user_id,source,media_type,source_id,status,title,is_anime)VALUES(:u,\'tmdb\',\'movie\',:id,:status,\'Title\',:anime)');$s->execute(['u'=>$user,'id'=>$id,'status'=>$status,'anime'=>$anime===null?null:(int)$anime]);}
     private function progress(int$user,int$episode):void{$s=$this->database->connection()->prepare('INSERT INTO user_series_episode_progress(user_id,source,series_source_id,season_number,episode_number)VALUES(:u,\'tmdb\',1396,1,:e)');$s->execute(['u'=>$user,'e'=>$episode]);}
-    private function schedule(int$user,int$id,string$date):void{$s=$this->database->connection()->prepare('INSERT INTO user_schedule(user_id,source,entry_type,source_id,title,scheduled_on)VALUES(:u,\'tmdb\',\'movie\',:id,\'Title\',:d)');$s->execute(['u'=>$user,'id'=>$id,'d'=>$date]);}
+    private function schedule(int$user,int$id,string$date,?bool$anime=null):void{$s=$this->database->connection()->prepare('INSERT INTO user_schedule(user_id,source,entry_type,source_id,title,scheduled_on,is_anime)VALUES(:u,\'tmdb\',\'movie\',:id,\'Title\',:d,:anime)');$s->execute(['u'=>$user,'id'=>$id,'d'=>$date,'anime'=>$anime===null?null:(int)$anime]);}
     private function clear():void{$pdo=$this->database->connection();$pdo->exec('DELETE FROM user_schedule');$pdo->exec('DELETE FROM watch_history');$pdo->exec('DELETE FROM user_series_episode_progress');$pdo->exec('DELETE FROM user_media');$pdo->exec('DELETE FROM user_external_identities');$pdo->exec('DELETE FROM user_profiles');$pdo->exec('DELETE FROM users');}
 }

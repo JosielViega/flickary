@@ -61,6 +61,7 @@ composer lint
 composer check
 composer migrate
 composer history:backfill-duration
+composer anime:backfill-snapshots
 composer deploy:hostgator
 composer port:status
 composer port:release
@@ -115,7 +116,9 @@ As rotas públicas `GET /buscar`, `GET /anime`, `GET /filmes/{id}`, `GET /series
 
 O TMDB permanece a única fonte de catálogo também para Anime. Anime não é um provider nem um `media_type`: o Flickary classifica visualmente como Anime o Movie ou TV cujo idioma original é japonês (`ja`) e que contém o gênero Animation. A rota `/anime` usa TMDB Discover e preserva os tipos técnicos `movie` e `series`, inclusive nos links de detalhes. O TMDB não fornece uma flag oficial `is_anime`, portanto essa política é transparente e deliberadamente conservadora.
 
-Minha Lista, Histórico, Agenda e Estatísticas ainda não filtram Anime porque seus snapshots locais não congelam essa classificação. Uma evolução futura poderá persistir a categoria caso exista necessidade real, sem alterar retroativamente a fonte ou o tipo da mídia.
+O catálogo público calcula essa classificação ao vivo a partir dos dados TMDB. Novas entradas pessoais congelam `is_anime` no snapshot local para que Minha Lista, Histórico, Agenda e Estatísticas reconheçam Anime usando somente MySQL. `NULL` significa snapshot antigo ainda não classificado; `0` significa não Anime e `1`, Anime. Os filtros Anime são transversais: Filmes e Séries continuam incluindo suas respectivas produções Anime.
+
+`composer anime:backfill-snapshots` classifica manualmente apenas snapshots TMDB ainda `NULL`, deduplicando Movies e Series entre todas as tabelas. O comando não sincroniza registros já classificados, não usa outra API e não executa automaticamente em requests ou tarefas agendadas.
 
 ## Minha Lista
 

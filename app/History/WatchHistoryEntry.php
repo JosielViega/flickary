@@ -23,6 +23,7 @@ final readonly class WatchHistoryEntry
         public string $watchedOn,
         public string $createdAt,
         public string $updatedAt,
+        public ?bool $isAnime = null,
     ) {
     }
 

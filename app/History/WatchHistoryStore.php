@@ -21,6 +21,7 @@ interface WatchHistoryStore
         ?string $entryType,
         int $page,
         int $perPage,
+        bool $animeOnly = false,
     ): WatchHistoryPage;
 
     public function countForUser(int $userId): int;

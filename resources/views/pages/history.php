@@ -51,6 +51,7 @@ $currentDate = null;
             <option value="todos">Todos</option>
             <option value="filmes"<?= $typeFilter === 'filmes' ? ' selected' : '' ?>>Filmes</option>
             <option value="episodios"<?= $typeFilter === 'episodios' ? ' selected' : '' ?>>Episódios</option>
+            <option value="anime"<?= $typeFilter === 'anime' ? ' selected' : '' ?>>Anime</option>
         </select>
         <button class="button button--primary" type="submit">Aplicar filtro</button>
     </form>
@@ -87,7 +88,7 @@ $currentDate = null;
                         <?php endif; ?>
                     </a>
                     <div class="history-card__body">
-                        <p class="history-card__kind"><?= $isMovie ? 'Filme' : 'Série' ?></p>
+                        <p class="history-card__kind"><?= $item->isAnime === true ? 'Anime · ' : '' ?><?= $isMovie ? 'Filme' : 'Série' ?></p>
                         <h3><a href="<?= e($path) ?>"><?= e($item->title) ?></a></h3>
                         <?php if ($isMovie): ?>
                             <?php if ($item->year() !== null): ?><p><?= e((string) $item->year()) ?></p><?php endif; ?>

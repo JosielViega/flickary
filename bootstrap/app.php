@@ -26,6 +26,7 @@ use App\Repositories\UserSeriesProgressRepository;
 use App\Repositories\WatchHistoryRepository;
 use App\Repositories\UserScheduleRepository;
 use App\Repositories\PersonalStatisticsRepository;
+use App\Repositories\AnimeSnapshotRepository;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -77,6 +78,7 @@ $seriesProgress = new UserSeriesProgressRepository($database);
 $watchHistory = new WatchHistoryRepository($database);
 $userSchedule = new UserScheduleRepository($database);
 $personalStatistics = new PersonalStatisticsRepository($database);
+$animeSnapshots = new AnimeSnapshotRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -114,6 +116,7 @@ return [
     'watch_history' => $watchHistory,
     'user_schedule' => $userSchedule,
     'personal_statistics' => $personalStatistics,
+    'anime_snapshots' => $animeSnapshots,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

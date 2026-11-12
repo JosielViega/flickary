@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Integrations\Tmdb\TmdbCatalog;
+use App\Integrations\Tmdb\TmdbAnimeClassifier;
 use App\Integrations\Tmdb\TmdbEpisode;
 use App\Integrations\Tmdb\TmdbEpisodeNumber;
 use App\Integrations\Tmdb\TmdbException;
@@ -26,6 +27,8 @@ use App\Schedule\ScheduleStore;
 
 final class UserScheduleController
 {
+    private readonly TmdbAnimeClassifier $animeClassifier;
+
     public function __construct(
         private readonly View $view,
         private readonly Auth $auth,
@@ -33,7 +36,9 @@ final class UserScheduleController
         private readonly Session $session,
         private readonly ScheduleStore $schedule,
         private readonly TmdbCatalog $tmdb,
+        ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
+        $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
 
     public function index(Request $request): Response
@@ -44,13 +49,14 @@ final class UserScheduleController
         }
         $rawType = $request->query('tipo');
         $type = match ($rawType) { 'filmes' => 'movie', 'series' => 'series', 'episodios' => 'episode', default => null };
-        $typeFilter = in_array($rawType, ['filmes', 'series', 'episodios'], true) ? $rawType : 'todos';
+        $animeOnly = $rawType === 'anime';
+        $typeFilter = in_array($rawType, ['filmes', 'series', 'episodios', 'anime'], true) ? $rawType : 'todos';
         $rawPage = $request->query('page');
         $page = is_string($rawPage) && preg_match('/^[1-9]\d{0,4}$/D', $rawPage) === 1 ? (int) $rawPage : 1;
         $today = date('Y-m-d');
-        $pageData = $this->schedule->paginateForUser($userId, $type, $today, $page, 30);
+        $pageData = $this->schedule->paginateForUser($userId, $type, $today, $page, 30, $animeOnly);
         if ($page > $pageData->lastPage()) {
-            $pageData = $this->schedule->paginateForUser($userId, $type, $today, $pageData->lastPage(), 30);
+            $pageData = $this->schedule->paginateForUser($userId, $type, $today, $pageData->lastPage(), 30, $animeOnly);
         }
 
         return Response::html($this->view->render('pages/schedule', [
@@ -85,7 +91,7 @@ final class UserScheduleController
             return Response::redirect($this->mediaPath($type, $id), 303);
         }
         if ($details->adult) { return Response::html('Título não encontrado.', 404); }
-        $this->schedule->create($userId, new ScheduleItem('tmdb', $type, $details->sourceId, 0, 0, $details->title, $details->originalTitle, null, $details->releaseDate, $details->posterPath, $date));
+        $this->schedule->create($userId, new ScheduleItem('tmdb', $type, $details->sourceId, 0, 0, $details->title, $details->originalTitle, null, $details->releaseDate, $details->posterPath, $date, $this->animeClassifier->details($details)));
         $this->session->flash('success', 'Título adicionado à Agenda.');
         return Response::redirect($this->mediaPath($type, $id), 303);
     }
@@ -115,7 +121,7 @@ final class UserScheduleController
             return Response::redirect($this->seasonPath($id, $season), 303);
         }
         if ($series->adult) { return Response::html('Episódio não encontrado.', 404); }
-        $this->schedule->create($userId, new ScheduleItem('tmdb', 'episode', $id, $season, $episode, $series->title, $series->originalTitle, $episodeDetails->name, $episodeDetails->airDate, $series->posterPath, $date));
+        $this->schedule->create($userId, new ScheduleItem('tmdb', 'episode', $id, $season, $episode, $series->title, $series->originalTitle, $episodeDetails->name, $episodeDetails->airDate, $series->posterPath, $date, $this->animeClassifier->details($series)));
         $this->session->flash('success', 'Episódio adicionado à Agenda.');
         return Response::redirect($this->seasonPath($id, $season), 303);
     }

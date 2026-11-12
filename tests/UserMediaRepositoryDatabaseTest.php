@@ -48,9 +48,29 @@ final class UserMediaRepositoryDatabaseTest extends TestCase
         self::assertContains('uq_user_media_identity', $names);
         self::assertContains('idx_user_media_status_updated', $names);
         self::assertContains('idx_user_media_type_updated', $names);
+        self::assertContains('idx_user_media_anime_updated', $names);
 
         $create = (string) $pdo->query('SHOW CREATE TABLE user_media')->fetchColumn(1);
         self::assertStringContainsString('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE', $create);
+        self::assertStringContainsString('`is_anime` tinyint(1) default null', strtolower($create));
+    }
+
+    public function testNullableAnimeMappingAndTransversalSqlFilter(): void
+    {
+        $user=$this->users->create('media.anime',null);
+        self::assertTrue($this->media->create($user,$this->details(1,'movie','Anime Movie'),'watching',true));
+        self::assertTrue($this->media->create($user,$this->details(2,'series','Anime Series'),'completed',true));
+        self::assertTrue($this->media->create($user,$this->details(3,'movie','Not Anime'),'watching',false));
+        self::assertTrue($this->media->create($user,$this->details(4,'series','Unknown'),'planned',null));
+        self::assertTrue($this->media->findForUser($user,'tmdb','movie',1)?->isAnime);
+        self::assertFalse($this->media->findForUser($user,'tmdb','movie',3)?->isAnime);
+        self::assertNull($this->media->findForUser($user,'tmdb','series',4)?->isAnime);
+        $anime=$this->media->paginateForUser($user,null,null,1,24,true);
+        self::assertSame(2,$anime->total);
+        self::assertEqualsCanonicalizing([1,2],array_map(fn($item)=>$item->sourceId,$anime->items));
+        self::assertSame(1,$this->media->paginateForUser($user,'watching',null,1,24,true)->total);
+        self::assertSame(2,$this->media->paginateForUser($user,null,'movie',1,24)->total,'Anime Movie remains a Movie.');
+        self::assertSame(2,$this->media->paginateForUser($user,null,'series',1,24)->total,'Anime Series remains a Series.');
     }
 
     public function testCreateUniquePerUserAndAllowSameMediaForDifferentUsers(): void

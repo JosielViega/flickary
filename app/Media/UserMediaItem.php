@@ -20,6 +20,7 @@ final readonly class UserMediaItem
         public ?string $backdropPath,
         public string $createdAt,
         public string $updatedAt,
+        public ?bool $isAnime = null,
     ) {
     }
 

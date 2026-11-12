@@ -11,6 +11,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Integrations\Tmdb\TmdbCatalog;
+use App\Integrations\Tmdb\TmdbAnimeClassifier;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
@@ -20,6 +21,8 @@ use App\Media\UserMediaStore;
 
 final class UserMediaController
 {
+    private readonly TmdbAnimeClassifier $animeClassifier;
+
     public function __construct(
         private readonly View $view,
         private readonly Auth $auth,
@@ -27,7 +30,9 @@ final class UserMediaController
         private readonly Session $session,
         private readonly UserMediaStore $media,
         private readonly TmdbCatalog $tmdb,
+        ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
+        $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
 
     public function index(Request $request): Response
@@ -45,12 +50,13 @@ final class UserMediaController
             'series' => 'series',
             default => null,
         };
+        $animeOnly = $typeValue === 'anime';
         $pageValue = $request->query('page');
         $page = is_string($pageValue) && preg_match('/^[1-9]\d{0,4}$/D', $pageValue) === 1 ? (int) $pageValue : 1;
-        $pageData = $this->media->paginateForUser($userId, $status, $type, $page, 24);
+        $pageData = $this->media->paginateForUser($userId, $status, $type, $page, 24, $animeOnly);
         if ($page > $pageData->lastPage()) {
             $page = $pageData->lastPage();
-            $pageData = $this->media->paginateForUser($userId, $status, $type, $page, 24);
+            $pageData = $this->media->paginateForUser($userId, $status, $type, $page, 24, $animeOnly);
         }
 
         $posterUrls = $this->posterUrls($pageData->items);
@@ -64,7 +70,7 @@ final class UserMediaController
             'pageData' => $pageData,
             'hasAnyItems' => $this->media->countForUser($userId) > 0,
             'statusFilter' => $status,
-            'typeFilter' => $typeValue === 'filmes' || $typeValue === 'series' ? $typeValue : null,
+            'typeFilter' => in_array($typeValue, ['filmes', 'series', 'anime'], true) ? $typeValue : null,
             'statusOptions' => UserMediaStatus::options(),
             'posterUrls' => $posterUrls,
             'messages' => $this->session->consumeFlash(),
@@ -106,7 +112,7 @@ final class UserMediaController
             return Response::html('Título não encontrado.', 404);
         }
 
-        $created = $this->media->create($userId, $details, $status);
+        $created = $this->media->create($userId, $details, $status, $this->animeClassifier->details($details));
         if (!$created) {
             $this->media->updateStatus($userId, 'tmdb', $type, $id, $status);
         }

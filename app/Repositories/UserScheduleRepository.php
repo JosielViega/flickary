@@ -44,8 +44,8 @@ final class UserScheduleRepository implements ScheduleStore
 
     public function create(int $userId, ScheduleItem $item): bool
     {
-        $sql = 'INSERT INTO user_schedule (user_id, source, entry_type, source_id, season_number, episode_number, title, original_title, episode_title, content_date, poster_path, scheduled_on) '
-            . 'VALUES (:user_id,:source,:entry_type,:source_id,:season_number,:episode_number,:title,:original_title,:episode_title,:content_date,:poster_path,:scheduled_on)';
+        $sql = 'INSERT INTO user_schedule (user_id, source, entry_type, source_id, season_number, episode_number, title, original_title, episode_title, content_date, poster_path, is_anime, scheduled_on) '
+            . 'VALUES (:user_id,:source,:entry_type,:source_id,:season_number,:episode_number,:title,:original_title,:episode_title,:content_date,:poster_path,:is_anime,:scheduled_on)';
         try {
             $this->database->connection()->prepare($sql)->execute([
                 'user_id' => $userId, 'source' => $item->source, 'entry_type' => $item->entryType,
@@ -54,6 +54,7 @@ final class UserScheduleRepository implements ScheduleStore
                 'original_title' => $item->originalTitle === null ? null : mb_substr($item->originalTitle, 0, 255),
                 'episode_title' => $item->episodeTitle === null ? null : mb_substr($item->episodeTitle, 0, 255),
                 'content_date' => $item->contentDate, 'poster_path' => $item->posterPath === null ? null : mb_substr($item->posterPath, 0, 255),
+                'is_anime' => $item->isAnime === null ? null : (int) $item->isAnime,
                 'scheduled_on' => $item->scheduledOn,
             ]);
         } catch (PDOException $exception) {
@@ -86,12 +87,12 @@ final class UserScheduleRepository implements ScheduleStore
         return $statement->rowCount() > 0;
     }
 
-    public function paginateForUser(int $userId, ?string $entryType, string $today, int $page, int $perPage): SchedulePage
+    public function paginateForUser(int $userId, ?string $entryType, string $today, int $page, int $perPage, bool $animeOnly = false): SchedulePage
     {
         if ($entryType !== null && !in_array($entryType, ['movie', 'series', 'episode'], true)) {
             throw new \InvalidArgumentException('Invalid schedule type.');
         }
-        $where = 'user_id = :user_id' . ($entryType === null ? '' : ' AND entry_type = :entry_type');
+        $where = 'user_id = :user_id' . ($entryType === null ? '' : ' AND entry_type = :entry_type') . ($animeOnly ? ' AND is_anime = 1' : '');
         $params = ['user_id' => $userId] + ($entryType === null ? [] : ['entry_type' => $entryType]);
         $count = $this->database->connection()->prepare('SELECT COUNT(*) FROM user_schedule WHERE ' . $where);
         $count->execute($params);
@@ -129,6 +130,6 @@ final class UserScheduleRepository implements ScheduleStore
     /** @param array<string,mixed> $row */
     private function map(array $row): ScheduleEntry
     {
-        return new ScheduleEntry((int)$row['id'],(int)$row['user_id'],(string)$row['source'],(string)$row['entry_type'],(int)$row['source_id'],(int)$row['season_number'],(int)$row['episode_number'],(string)$row['title'],is_string($row['original_title'])?$row['original_title']:null,is_string($row['episode_title'])?$row['episode_title']:null,is_string($row['content_date'])?$row['content_date']:null,is_string($row['poster_path'])?$row['poster_path']:null,(string)$row['scheduled_on'],(string)$row['created_at'],(string)$row['updated_at']);
+        return new ScheduleEntry((int)$row['id'],(int)$row['user_id'],(string)$row['source'],(string)$row['entry_type'],(int)$row['source_id'],(int)$row['season_number'],(int)$row['episode_number'],(string)$row['title'],is_string($row['original_title'])?$row['original_title']:null,is_string($row['episode_title'])?$row['episode_title']:null,is_string($row['content_date'])?$row['content_date']:null,is_string($row['poster_path'])?$row['poster_path']:null,(string)$row['scheduled_on'],(string)$row['created_at'],(string)$row['updated_at'],$row['is_anime']===null?null:(bool)(int)$row['is_anime']);
     }
 }

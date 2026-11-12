@@ -57,6 +57,17 @@ final class UserMediaControllerTest extends TestCase
         self::assertSame('/matrix.jpg', $store->created?->posterPath);
         self::assertSame(7, $store->createdUserId);
         self::assertSame('planned', $store->createdStatus);
+        self::assertFalse($store->createdAnime);
+    }
+
+    public function testAnimeClassificationComesOnlyFromServerDetailsAndFilterIsLocal(): void
+    {
+        [$controller,$store,$catalog,$csrf]=$this->fixture();
+        $catalog->details=$this->details(genres:[['id'=>16,'name'=>'Animation']],language:'ja');
+        $controller->save(new Request(parsedBody:['_token'=>$csrf->token(),'status'=>'planned','is_anime'=>'0']), '603','movie');
+        self::assertTrue($store->createdAnime);
+        $catalog->calls=[];$controller->index(new Request(queryParams:['tipo'=>'anime','status'=>'planned']));
+        self::assertTrue($store->lastAnimeOnly);self::assertSame([], $catalog->calls);
     }
 
     public function testExistingStatusUpdateDoesNotCallTmdbOrChangeSnapshot(): void
@@ -133,9 +144,9 @@ final class UserMediaControllerTest extends TestCase
         return [new UserMediaController(new View(dirname(__DIR__) . '/resources/views'), $auth, $csrf, $session, $store, $catalog), $store, $catalog, $csrf];
     }
 
-    private function details(bool $adult = false): TmdbMediaDetails
+    private function details(bool $adult = false, array $genres = [], ?string $language = 'en'): TmdbMediaDetails
     {
-        return new TmdbMediaDetails('tmdb', 'movie', 603, 'Matrix', 'The Matrix', null, 'Overview', '1999-03-31', 1999, '/matrix.jpg', '/backdrop.jpg', [], 8.2, 10, null, 'en', $adult, null, 136, null, null, null, null);
+        return new TmdbMediaDetails('tmdb', 'movie', 603, 'Matrix', 'The Matrix', null, 'Overview', '1999-03-31', 1999, '/matrix.jpg', '/backdrop.jpg', $genres, 8.2, 10, null, $language, $adult, null, 136, null, null, null, null);
     }
 
     private function item(string $title = 'Matrix', string $status = 'planned'): UserMediaItem
@@ -151,14 +162,16 @@ final class FakeUserMediaStore implements UserMediaStore
     public ?TmdbMediaDetails $created = null;
     public ?int $createdUserId = null;
     public ?string $createdStatus = null;
+    public ?bool $createdAnime = null;
     public ?string $updatedStatus = null;
     public bool $createResult = true;
     public ?UserMediaPage $page = null;
     public function findForUser(int $userId, string $source, string $mediaType, int $sourceId): ?UserMediaItem { $this->calls[] = ['find', $userId, $source, $mediaType, $sourceId]; return $this->existing; }
-    public function create(int $userId, TmdbMediaDetails $details, string $status): bool { $this->calls[] = ['create']; $this->createdUserId = $userId; $this->created = $details; $this->createdStatus = $status; return $this->createResult; }
+    public function create(int $userId, TmdbMediaDetails $details, string $status, ?bool $isAnime = null): bool { $this->calls[] = ['create']; $this->createdUserId = $userId; $this->created = $details; $this->createdStatus = $status; $this->createdAnime=$isAnime; return $this->createResult; }
     public function updateStatus(int $userId, string $source, string $mediaType, int $sourceId, string $status): bool { $this->calls[] = ['update', $userId, $source, $mediaType, $sourceId]; $this->updatedStatus = $status; return true; }
     public function delete(int $userId, string $source, string $mediaType, int $sourceId): bool { $this->calls[] = ['delete', $userId, $source, $mediaType, $sourceId]; return true; }
-    public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage): UserMediaPage { $this->calls[] = ['paginate', $userId, $status, $mediaType, $page, $perPage]; return $this->page ?? new UserMediaPage([], 0, $page, $perPage); }
+    public bool $lastAnimeOnly = false;
+    public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage, bool $animeOnly = false): UserMediaPage { $this->lastAnimeOnly=$animeOnly;$this->calls[] = ['paginate', $userId, $status, $mediaType, $page, $perPage]; return $this->page ?? new UserMediaPage([], 0, $page, $perPage); }
     public function countForUser(int $userId): int { return $this->existing === null ? 0 : 1; }
 }
 

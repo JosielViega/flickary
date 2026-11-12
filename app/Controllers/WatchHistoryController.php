@@ -17,6 +17,7 @@ use App\History\WatchHistoryId;
 use App\History\WatchHistoryRequestKey;
 use App\History\WatchHistoryStore;
 use App\Integrations\Tmdb\TmdbCatalog;
+use App\Integrations\Tmdb\TmdbAnimeClassifier;
 use App\Integrations\Tmdb\TmdbEpisode;
 use App\Integrations\Tmdb\TmdbEpisodeNumber;
 use App\Integrations\Tmdb\TmdbException;
@@ -27,6 +28,8 @@ use App\Integrations\Tmdb\TmdbSeasonNumber;
 
 final class WatchHistoryController
 {
+    private readonly TmdbAnimeClassifier $animeClassifier;
+
     public function __construct(
         private readonly View $view,
         private readonly Auth $auth,
@@ -34,7 +37,9 @@ final class WatchHistoryController
         private readonly Session $session,
         private readonly WatchHistoryStore $history,
         private readonly TmdbCatalog $tmdb,
+        ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
+        $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
 
     public function index(Request $request): Response
@@ -50,16 +55,17 @@ final class WatchHistoryController
             'episodios' => 'episode',
             default => null,
         };
-        $typeFilter = in_array($rawType, ['filmes', 'episodios'], true) ? $rawType : null;
+        $animeOnly = $rawType === 'anime';
+        $typeFilter = in_array($rawType, ['filmes', 'episodios', 'anime'], true) ? $rawType : null;
         $rawPage = $request->query('page');
         $page = is_string($rawPage) && preg_match('/^[1-9]\d{0,4}$/D', $rawPage) === 1
             ? (int) $rawPage
             : 1;
-        $pageData = $this->history->paginateForUser($userId, $entryType, $page, 30);
+        $pageData = $this->history->paginateForUser($userId, $entryType, $page, 30, $animeOnly);
 
         if ($page > $pageData->lastPage()) {
             $page = $pageData->lastPage();
-            $pageData = $this->history->paginateForUser($userId, $entryType, $page, 30);
+            $pageData = $this->history->paginateForUser($userId, $entryType, $page, 30, $animeOnly);
         }
 
         return Response::html($this->view->render('pages/history', [
@@ -117,6 +123,7 @@ final class WatchHistoryController
             $details->runtime,
             $watchedOn,
             $requestKey,
+            $this->animeClassifier->details($details),
         ));
         $this->session->flash(
             'success',
@@ -180,6 +187,7 @@ final class WatchHistoryController
             $episode->runtime,
             $watchedOn,
             $requestKey,
+            $this->animeClassifier->details($series),
         ));
         $this->session->flash(
             'success',

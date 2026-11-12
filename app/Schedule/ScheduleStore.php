@@ -11,7 +11,7 @@ interface ScheduleStore
     public function create(int $userId, ScheduleItem $item): bool;
     public function updateDate(int $userId, int $id, string $scheduledOn): bool;
     public function delete(int $userId, int $id): bool;
-    public function paginateForUser(int $userId, ?string $entryType, string $today, int $page, int $perPage): SchedulePage;
+    public function paginateForUser(int $userId, ?string $entryType, string $today, int $page, int $perPage, bool $animeOnly = false): SchedulePage;
     public function countForUser(int $userId): int;
     /** @return array<int, ScheduleEntry> */
     public function episodeSchedulesForSeason(int $userId, string $source, int $seriesId, int $seasonNumber): array;

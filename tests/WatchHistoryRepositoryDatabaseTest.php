@@ -53,9 +53,11 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
         self::assertContains('idx_watch_history_chronology', $names);
         self::assertContains('idx_watch_history_type', $names);
         self::assertContains('idx_watch_history_source', $names);
+        self::assertContains('idx_watch_history_anime_chronology', $names);
         $create = (string) $pdo->query('SHOW CREATE TABLE watch_history')->fetchColumn(1);
         self::assertStringContainsString('FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE', $create);
         self::assertStringContainsString('`duration_minutes` smallint(5) unsigned default null', strtolower($create));
+        self::assertStringContainsString('`is_anime` tinyint(1) default null', strtolower($create));
 
         $first = $this->users->create('history.schema.one', null);
         $second = $this->users->create('history.schema.two', null);
@@ -63,6 +65,22 @@ final class WatchHistoryRepositoryDatabaseTest extends TestCase
         self::assertTrue($this->history->createMovie($first, $event));
         self::assertFalse($this->history->createMovie($first, $event));
         self::assertTrue($this->history->createMovie($second, $event));
+    }
+
+    public function testAnimeMappingFilterAndDateUpdatePreserveSnapshot(): void
+    {
+        $user=$this->users->create('history.anime',null);
+        $this->history->createMovie($user,WatchHistoryEvent::movie(1,'Anime Movie',null,null,null,90,'2026-09-20',str_repeat('1',32),true));
+        $this->history->createEpisode($user,WatchHistoryEvent::episode(2,1,1,'Anime Series',null,'Episode',null,null,25,'2026-09-20',str_repeat('2',32),true));
+        $this->history->createMovie($user,WatchHistoryEvent::movie(3,'Not Anime',null,null,null,90,'2026-09-20',str_repeat('3',32),false));
+        $this->history->createMovie($user,WatchHistoryEvent::movie(4,'Unknown',null,null,null,90,'2026-09-20',str_repeat('4',32),null));
+        $anime=$this->history->paginateForUser($user,null,1,30,true);
+        self::assertSame(2,$anime->total);
+        self::assertEqualsCanonicalizing(['movie','episode'],array_map(fn($item)=>$item->entryType,$anime->items));
+        $movie=array_values(array_filter($this->history->paginateForUser($user,'movie',1,30)->items,fn($item)=>$item->sourceId===3))[0];
+        self::assertFalse($movie->isAnime);
+        $animeId=$anime->items[0]->id;$this->history->updateDate($user,$animeId,'2026-09-19');
+        self::assertTrue($this->history->findForUser($user,$animeId)?->isAnime);
     }
 
     public function testRewatchOrderFiltersPaginationOwnershipUpdateAndDelete(): void

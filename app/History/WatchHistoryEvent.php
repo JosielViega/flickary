@@ -20,6 +20,7 @@ final readonly class WatchHistoryEvent
         public ?int $durationMinutes,
         public string $watchedOn,
         public string $requestKey,
+        public ?bool $isAnime,
     ) {
     }
 
@@ -32,6 +33,7 @@ final readonly class WatchHistoryEvent
         ?int $durationMinutes,
         string $watchedOn,
         string $requestKey,
+        ?bool $isAnime = null,
     ): self {
         self::guardBase($sourceId, $title, $watchedOn, $requestKey);
 
@@ -49,6 +51,7 @@ final readonly class WatchHistoryEvent
             WatchDuration::normalize($durationMinutes),
             $watchedOn,
             $requestKey,
+            $isAnime,
         );
     }
 
@@ -64,6 +67,7 @@ final readonly class WatchHistoryEvent
         ?int $durationMinutes,
         string $watchedOn,
         string $requestKey,
+        ?bool $isAnime = null,
     ): self {
         self::guardBase($seriesSourceId, $seriesTitle, $watchedOn, $requestKey);
 
@@ -85,6 +89,7 @@ final readonly class WatchHistoryEvent
             WatchDuration::normalize($durationMinutes),
             $watchedOn,
             $requestKey,
+            $isAnime,
         );
     }
 

@@ -27,6 +27,10 @@ final readonly class PersonalStatistics
         public int $scheduleToday,
         public int $scheduleFuture,
         public int $scheduleOverdue,
+        public int $animeHistoryViews = 0,
+        public int $animeLibraryItems = 0,
+        public int $animeScheduleItems = 0,
+        public int $unknownAnimeSnapshots = 0,
     ) {
     }
 

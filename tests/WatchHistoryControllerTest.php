@@ -80,6 +80,15 @@ final class WatchHistoryControllerTest extends TestCase
         self::assertSame([['season', 1396, 1], ['series', 1396]], $catalog->calls);
     }
 
+    public function testAnimeClassificationForMovieAndEpisodeIgnoresBrowserInput(): void
+    {
+        [$controller,$store,$catalog,$csrf]=$this->fixture();$catalog->anime=true;
+        $base=['_token'=>$csrf->token(),'watched_on'=>date('Y-m-d'),'is_anime'=>'0'];
+        $controller->createMovie(new Request(parsedBody:[...$base,'request_key'=>str_repeat('7',32)]),'603');
+        $controller->createEpisode(new Request(parsedBody:[...$base,'request_key'=>str_repeat('8',32)]),'1396','1','1');
+        self::assertTrue($store->entries[0]->isAnime);self::assertTrue($store->entries[1]->isAnime);
+    }
+
     public function testMissingProviderRuntimeKeepsValidEventsWithNullDuration(): void
     {
         [$controller, $store, $catalog, $csrf] = $this->fixture();
@@ -167,11 +176,11 @@ final class MemoryWatchHistoryStore implements WatchHistoryStore
     public function createMovie(int $userId, WatchHistoryEvent $event): bool { return $this->create($userId, $event); }
     public function createEpisode(int $userId, WatchHistoryEvent $event): bool { return $this->create($userId, $event); }
     public function findForUser(int $userId, int $id): ?WatchHistoryEntry { foreach ($this->entries as $entry) { if ($entry->id === $id && $entry->userId === $userId) return $entry; } return null; }
-    public function updateDate(int $userId, int $id, string $watchedOn): bool { foreach ($this->entries as $key => $entry) { if ($entry->id === $id && $entry->userId === $userId) { $this->entries[$key] = new WatchHistoryEntry($entry->id,$entry->userId,$entry->source,$entry->entryType,$entry->sourceId,$entry->seasonNumber,$entry->episodeNumber,$entry->title,$entry->originalTitle,$entry->episodeTitle,$entry->contentDate,$entry->posterPath,$entry->durationMinutes,$watchedOn,$entry->createdAt,$entry->updatedAt); return true; } } return false; }
+    public function updateDate(int $userId, int $id, string $watchedOn): bool { foreach ($this->entries as $key => $entry) { if ($entry->id === $id && $entry->userId === $userId) { $this->entries[$key] = new WatchHistoryEntry($entry->id,$entry->userId,$entry->source,$entry->entryType,$entry->sourceId,$entry->seasonNumber,$entry->episodeNumber,$entry->title,$entry->originalTitle,$entry->episodeTitle,$entry->contentDate,$entry->posterPath,$entry->durationMinutes,$watchedOn,$entry->createdAt,$entry->updatedAt,$entry->isAnime); return true; } } return false; }
     public function delete(int $userId, int $id): bool { foreach ($this->entries as $key => $entry) { if ($entry->id === $id && $entry->userId === $userId) { unset($this->entries[$key]); $this->entries = array_values($this->entries); return true; } } return false; }
-    public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage): WatchHistoryPage { $this->lastFilter=$entryType;$this->lastPerPage=$perPage;$items=array_values(array_filter($this->entries,fn($e)=>$e->userId===$userId&&($entryType===null||$e->entryType===$entryType)));return new WatchHistoryPage($items,count($items),$page,$perPage); }
+    public function paginateForUser(int $userId, ?string $entryType, int $page, int $perPage, bool $animeOnly = false): WatchHistoryPage { $this->lastFilter=$entryType;$this->lastPerPage=$perPage;$items=array_values(array_filter($this->entries,fn($e)=>$e->userId===$userId&&($entryType===null||$e->entryType===$entryType)&&(!$animeOnly||$e->isAnime===true)));return new WatchHistoryPage($items,count($items),$page,$perPage); }
     public function countForUser(int $userId): int { return count(array_filter($this->entries, fn($e) => $e->userId === $userId)); }
-    private function create(int $userId, WatchHistoryEvent $event): bool { foreach ($this->entries as $entry) { if ($entry->userId === $userId && $entry->createdAt === $event->requestKey) return false; } $id=count($this->entries)+1;$this->entries[]=new WatchHistoryEntry($id,$userId,$event->source,$event->entryType,$event->sourceId,$event->seasonNumber,$event->episodeNumber,$event->title,$event->originalTitle,$event->episodeTitle,$event->contentDate,$event->posterPath,$event->durationMinutes,$event->watchedOn,$event->requestKey,$event->requestKey);return true; }
+    private function create(int $userId, WatchHistoryEvent $event): bool { foreach ($this->entries as $entry) { if ($entry->userId === $userId && $entry->createdAt === $event->requestKey) return false; } $id=count($this->entries)+1;$this->entries[]=new WatchHistoryEntry($id,$userId,$event->source,$event->entryType,$event->sourceId,$event->seasonNumber,$event->episodeNumber,$event->title,$event->originalTitle,$event->episodeTitle,$event->contentDate,$event->posterPath,$event->durationMinutes,$event->watchedOn,$event->requestKey,$event->requestKey,$event->isAnime);return true; }
 }
 
 final class WatchHistoryCatalog implements TmdbCatalog
@@ -181,6 +190,7 @@ final class WatchHistoryCatalog implements TmdbCatalog
     public bool $adult = false;
     public ?int $movieRuntime = 136;
     public ?int $episodeRuntime = 58;
+    public bool $anime = false;
     public function configured(): bool { return true; }
     public function movieDetails(int $id): TmdbMediaDetails { $this->calls[]=['movie',$id];$this->guard();return $this->details('movie',$id); }
     public function seriesDetails(int $id): TmdbMediaDetails { $this->calls[]=['series',$id];$this->guard();return $this->details('series',$id); }
@@ -191,5 +201,5 @@ final class WatchHistoryCatalog implements TmdbCatalog
     public function discoverAnimeMovies(int $page = 1): array { return []; }
     public function discoverAnimeSeries(int $page = 1): array { return []; }
     private function guard(): void { if ($this->fail) throw new TmdbException('transport'); }
-    private function details(string $type, int $id): TmdbMediaDetails { $movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad Original',null,'Resumo',$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,$movie?'/matrix.jpg':'/breaking-bad.jpg',null,[],8.0,1,null,'en',$this->adult,null,$movie?$this->movieRuntime:null,$movie?null:5,$movie?null:62,null,null); }
+    private function details(string $type, int $id): TmdbMediaDetails { $movie=$type==='movie';return new TmdbMediaDetails('tmdb',$type,$id,$movie?'Matrix':'Breaking Bad',$movie?'The Matrix':'Breaking Bad Original',null,'Resumo',$movie?'1999-03-31':'2008-01-20',$movie?1999:2008,$movie?'/matrix.jpg':'/breaking-bad.jpg',null,$this->anime?[['id'=>16,'name'=>'Animation']]:[],8.0,1,null,$this->anime?'ja':'en',$this->adult,null,$movie?$this->movieRuntime:null,$movie?null:5,$movie?null:62,null,null); }
 }

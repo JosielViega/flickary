@@ -38,6 +38,7 @@
         "port:release": "@php bin/port-release.php",
         "migrate": "@php bin/migrate.php",
         "history:backfill-duration": "@php bin/backfill-watch-history-duration.php",
+        "anime:backfill-snapshots": "@php bin/backfill-anime-snapshots.php",
         "lint": "@php bin/lint.php",
         "test": "@php vendor/bin/phpunit",
         "check": [

@@ -15,7 +15,7 @@ foreach ($messages as $type => $items): foreach ($items as $message): ?>
     <form class="schedule-filters" method="get" action="/agenda">
         <label for="schedule-type">Tipo</label>
         <select id="schedule-type" name="tipo">
-            <?php foreach (['todos'=>'Todos','filmes'=>'Filmes','series'=>'Séries','episodios'=>'Episódios'] as $value=>$label): ?>
+            <?php foreach (['todos'=>'Todos','filmes'=>'Filmes','series'=>'Séries','episodios'=>'Episódios','anime'=>'Anime'] as $value=>$label): ?>
                 <option value="<?= e($value) ?>"<?= $typeFilter === $value ? ' selected' : '' ?>><?= e($label) ?></option>
             <?php endforeach; ?>
         </select><button class="button button--ghost" type="submit">Filtrar</button>
@@ -32,7 +32,7 @@ foreach ($messages as $type => $items): foreach ($items as $message): ?>
             <?php $path=$item->entryType==='movie'?'/filmes/'.$item->sourceId:($item->entryType==='series'?'/series/'.$item->sourceId:'/series/'.$item->sourceId.'/temporadas/'.$item->seasonNumber); ?>
             <article class="schedule-card schedule-card--<?= e($state) ?>">
                 <a class="schedule-card__poster" href="<?= e($path) ?>"><span><?= e(mb_strtoupper(mb_substr($item->title,0,1))) ?></span><?php if(isset($posterUrls[$item->id])):?><img src="<?= e($posterUrls[$item->id]) ?>" alt="" decoding="async"><?php endif;?></a>
-                <div class="schedule-card__body"><p class="eyebrow"><?= e($item->entryType==='movie'?'Filme':'Série') ?></p><h3><a href="<?= e($path) ?>"><?= e($item->title) ?></a></h3>
+                <div class="schedule-card__body"><p class="eyebrow"><?= $item->isAnime === true ? 'Anime · ' : '' ?><?= e($item->entryType==='movie'?'Filme':'Série') ?></p><h3><a href="<?= e($path) ?>"><?= e($item->title) ?></a></h3>
                     <?php if($item->entryType==='episode'):?><p>T<?= e((string)$item->seasonNumber) ?>E<?= e((string)$item->episodeNumber) ?> · <?= e($item->episodeTitle ?? '') ?></p><?php elseif($item->year()!==null):?><p><?= e((string)$item->year()) ?></p><?php endif;?>
                     <strong><?= e($state==='today'?'Hoje':($state==='overdue'?'Atrasado':'Próximo')) ?> · <?= e((new DateTimeImmutable($item->scheduledOn))->format('d/m/Y')) ?></strong></div>
                 <div class="schedule-card__actions"><form method="post" action="/agenda/<?= e((string)$item->id) ?>"><?= $csrf->field() ?><label for="scheduled-<?= e((string)$item->id) ?>">Reagendar</label><input id="scheduled-<?= e((string)$item->id) ?>" type="date" name="scheduled_on" value="<?= e(max($today,$item->scheduledOn)) ?>" min="<?= e($today) ?>" required><button class="button button--ghost" type="submit">Salvar</button></form><form method="post" action="/agenda/<?= e((string)$item->id) ?>/remover"><?= $csrf->field() ?><button class="button button--ghost" type="submit">Remover</button></form></div>

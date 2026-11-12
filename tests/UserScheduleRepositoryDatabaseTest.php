@@ -23,8 +23,9 @@ final class UserScheduleRepositoryDatabaseTest extends TestCase
     public function testSchemaUniqueIndexesCascadeAndUserScope():void
     {
         $pdo=$this->database->connection();$names=array_unique(array_column($pdo->query('SHOW INDEX FROM user_schedule')->fetchAll(),'Key_name'));
-        self::assertContains('uq_user_schedule_identity',$names);self::assertContains('idx_user_schedule_chronology',$names);self::assertContains('idx_user_schedule_type',$names);
+        self::assertContains('uq_user_schedule_identity',$names);self::assertContains('idx_user_schedule_chronology',$names);self::assertContains('idx_user_schedule_type',$names);self::assertContains('idx_user_schedule_anime_chronology',$names);
         self::assertStringContainsString('ON DELETE CASCADE',(string)$pdo->query('SHOW CREATE TABLE user_schedule')->fetchColumn(1));
+        self::assertStringContainsString('`is_anime` tinyint(1) default null',strtolower((string)$pdo->query('SHOW CREATE TABLE user_schedule')->fetchColumn(1)));
         $one=$this->users->create('schedule.one',null);$two=$this->users->create('schedule.two',null);$item=$this->movie('2030-01-02');
         self::assertTrue($this->schedule->create($one,$item));self::assertFalse($this->schedule->create($one,$this->movie('2030-01-03')));self::assertSame(1,$this->schedule->countForUser($one));self::assertSame('2030-01-03',$this->schedule->findForUserIdentity($one,'tmdb','movie',603)?->scheduledOn);self::assertTrue($this->schedule->create($two,$item));
         $series=new ScheduleItem('tmdb','series',1396,0,0,'Breaking Bad',null,null,'2008-01-20',null,'2030-01-02');
@@ -33,6 +34,19 @@ final class UserScheduleRepositoryDatabaseTest extends TestCase
         self::assertTrue($this->schedule->create($one,$episode));self::assertFalse($this->schedule->create($one,$episode));
         self::assertTrue($this->schedule->create($one,new ScheduleItem('tmdb','episode',1396,0,2,'Breaking Bad',null,'Segundo',null,null,'2030-01-02')));
         $pdo->prepare('DELETE FROM users WHERE id=:id')->execute(['id'=>$one]);self::assertSame(0,$this->schedule->countForUser($one));
+    }
+    public function testAnimeMappingAndFilterAcrossMovieSeriesEpisode():void
+    {
+        $u=$this->users->create('schedule.anime',null);
+        $this->schedule->create($u,new ScheduleItem('tmdb','movie',1,0,0,'Movie',null,null,null,null,'2030-01-01',true));
+        $this->schedule->create($u,new ScheduleItem('tmdb','series',2,0,0,'Series',null,null,null,null,'2030-01-02',true));
+        $this->schedule->create($u,new ScheduleItem('tmdb','episode',2,1,1,'Series',null,'Episode',null,null,'2030-01-03',true));
+        $this->schedule->create($u,new ScheduleItem('tmdb','movie',3,0,0,'No',null,null,null,null,'2030-01-04',false));
+        $this->schedule->create($u,new ScheduleItem('tmdb','movie',4,0,0,'Unknown',null,null,null,null,'2030-01-05',null));
+        $anime=$this->schedule->paginateForUser($u,null,'2030-01-01',1,30,true);
+        self::assertSame(3,$anime->total);self::assertEqualsCanonicalizing(['movie','series','episode'],array_map(fn($i)=>$i->entryType,$anime->items));
+        self::assertNull($this->schedule->findForUserIdentity($u,'tmdb','movie',4)?->isAnime);
+        self::assertFalse($this->schedule->findForUserIdentity($u,'tmdb','movie',3)?->isAnime);
     }
     public function testTypesOrderingFilteringEpisodeMapOwnershipUpdateAndDelete():void
     {

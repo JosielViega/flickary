@@ -92,7 +92,23 @@ categoria visual Anime
 
 Anime não é `media_type` e não é `source`. `TmdbAnimeClassifier` aplica a política central `original_language = ja` mais gênero Animation aos dados já normalizados, sem request adicional por card. `/anime` usa operações concretas de TMDB Discover para Movie e TV e continua levando a `/filmes/{id}` ou `/series/{id}`. O filtro não exige país de origem, keyword editorial ou popularidade mínima.
 
-O TMDB não fornece uma flag oficial `is_anime`; a classificação é uma regra transparente do Flickary. Snapshots locais ainda não armazenam essa categoria, portanto Minha Lista, Histórico, Agenda e Estatísticas não a filtram nem consultam o TMDB para recalculá-la. Uma etapa futura poderá decidir congelar a classificação no snapshot caso isso seja necessário, com migration própria — nenhuma alteração de schema pertence a esta etapa.
+O TMDB não fornece uma flag oficial `is_anime`; a classificação é uma regra transparente do Flickary. O catálogo público continua classificando ao vivo. Para dados pessoais, a classificação é congelada no momento em que o snapshot é criado:
+
+```text
+TMDB Details
+     ↓
+TmdbAnimeClassifier
+     ↓
+snapshot is_anime
+     ↓
+MySQL
+
+Minha Lista / Histórico / Agenda / Estatísticas
+     ↓
+somente MySQL
+```
+
+`NULL`, `false` e `true` permanecem estados distintos: desconhecido, classificado como não Anime e classificado como Anime. Mudanças posteriores no TMDB não sincronizam automaticamente snapshots existentes. O backfill CLI é a única correção em massa desta etapa e deduplica identidades TMDB entre domínios antes de consultar detalhes.
 
 O Flickary não mantém um espelho completo do TMDB. Quando uma mídia entra na Minha Lista, persiste somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + media_type + source_id`.
 

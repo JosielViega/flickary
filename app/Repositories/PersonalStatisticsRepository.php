@@ -35,6 +35,7 @@ final class PersonalStatisticsRepository implements StatisticsReader
         [$libraryByStatus, $libraryTotal] = $this->library($userId);
         $progress = $this->count('user_series_episode_progress', $userId);
         $schedule = $this->schedule($userId, $today);
+        $anime = $this->anime($userId);
 
         return new PersonalStatistics(
             (int) $history['total_views'],
@@ -56,6 +57,10 @@ final class PersonalStatisticsRepository implements StatisticsReader
             (int) $schedule['today'],
             (int) $schedule['future'],
             (int) $schedule['overdue'],
+            $anime['history'],
+            $anime['library'],
+            $anime['schedule'],
+            $anime['unknown'],
         );
     }
 
@@ -141,5 +146,28 @@ final class PersonalStatisticsRepository implements StatisticsReader
         $statement->execute(['today_equal'=>$today,'today_future'=>$today,'today_overdue'=>$today,'user_id'=>$userId]);
         $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
         return ['total'=>(int)($row['total']??0),'today'=>(int)($row['today']??0),'future'=>(int)($row['future']??0),'overdue'=>(int)($row['overdue']??0)];
+    }
+
+    /** @return array{history:int,library:int,schedule:int,unknown:int} */
+    private function anime(int $userId): array
+    {
+        $counts = [];
+        foreach (['history'=>'watch_history','library'=>'user_media','schedule'=>'user_schedule'] as $key => $table) {
+            $statement = $this->database->connection()->prepare(
+                'SELECT COALESCE(SUM(is_anime = 1), 0) AS anime, COALESCE(SUM(is_anime IS NULL), 0) AS unknown '
+                . 'FROM ' . $table . ' WHERE user_id = :user_id',
+            );
+            $statement->execute(['user_id' => $userId]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+            $counts[$key] = (int) ($row['anime'] ?? 0);
+            $counts['unknown_' . $key] = (int) ($row['unknown'] ?? 0);
+        }
+
+        return [
+            'history' => $counts['history'],
+            'library' => $counts['library'],
+            'schedule' => $counts['schedule'],
+            'unknown' => $counts['unknown_history'] + $counts['unknown_library'] + $counts['unknown_schedule'],
+        ];
     }
 }
