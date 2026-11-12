@@ -20,6 +20,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- favoritos privados e avaliação pessoal inteira de 1 a 10, independentes da Minha Lista
+- páginas locais e paginadas de Favoritos e Avaliações, com filtros Filme, Série e Anime
+- métricas de favoritos, títulos avaliados e nota média pessoal nas Estatísticas
 - classificação Anime persistida como snapshot nullable em Minha Lista, Histórico e Agenda
 - filtros locais Anime nas três áreas pessoais e métricas Anime com cobertura transparente nas Estatísticas
 - backfill manual e idempotente de snapshots antigos, com deduplicação global de Movies e Series

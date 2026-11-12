@@ -36,6 +36,7 @@ final class PersonalStatisticsRepository implements StatisticsReader
         $progress = $this->count('user_series_episode_progress', $userId);
         $schedule = $this->schedule($userId, $today);
         $anime = $this->anime($userId);
+        $preferences = $this->preferences($userId);
 
         return new PersonalStatistics(
             (int) $history['total_views'],
@@ -61,6 +62,9 @@ final class PersonalStatisticsRepository implements StatisticsReader
             $anime['library'],
             $anime['schedule'],
             $anime['unknown'],
+            $preferences['favorites'],
+            $preferences['rated'],
+            $preferences['average'],
         );
     }
 
@@ -168,6 +172,24 @@ final class PersonalStatisticsRepository implements StatisticsReader
             'library' => $counts['library'],
             'schedule' => $counts['schedule'],
             'unknown' => $counts['unknown_history'] + $counts['unknown_library'] + $counts['unknown_schedule'],
+        ];
+    }
+
+    /** @return array{favorites:int,rated:int,average:?float} */
+    private function preferences(int $userId): array
+    {
+        $statement = $this->database->connection()->prepare(
+            'SELECT COALESCE(SUM(is_favorite = 1), 0) AS favorites, '
+            . 'COALESCE(SUM(rating IS NOT NULL), 0) AS rated, AVG(rating) AS average_rating '
+            . 'FROM user_media_preferences WHERE user_id = :user_id',
+        );
+        $statement->execute(['user_id' => $userId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'favorites' => (int) ($row['favorites'] ?? 0),
+            'rated' => (int) ($row['rated'] ?? 0),
+            'average' => $row['average_rating'] === null ? null : (float) $row['average_rating'],
         ];
     }
 }

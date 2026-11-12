@@ -21,6 +21,7 @@ use App\Media\UserMediaStore;
 use App\Media\UserSeriesProgressStore;
 use App\History\WatchHistoryRequestKey;
 use App\Schedule\ScheduleStore;
+use App\Preferences\UserMediaPreferenceStore;
 
 final class MediaDetailsController
 {
@@ -35,6 +36,7 @@ final class MediaDetailsController
         private readonly ?Session $session = null,
         private readonly ?UserSeriesProgressStore $seriesProgress = null,
         private readonly ?ScheduleStore $schedule = null,
+        private readonly ?UserMediaPreferenceStore $preferences = null,
         ?TmdbAnimeClassifier $animeClassifier = null,
     ) {
         $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
@@ -80,6 +82,9 @@ final class MediaDetailsController
         $scheduleItem = $userId === null || $this->schedule === null
             ? null
             : $this->schedule->findForUserIdentity($userId, 'tmdb', $type, $id);
+        $userPreference = $userId === null || $this->preferences === null
+            ? null
+            : $this->preferences->findForUser($userId, 'tmdb', $type, $id);
 
         return $this->render([
             'title' => $details->title . ' — Flickary',
@@ -97,6 +102,7 @@ final class MediaDetailsController
                 : null,
             'today' => date('Y-m-d'),
             'scheduleItem' => $scheduleItem,
+            'userPreference' => $userPreference,
             'isAnime' => $this->animeClassifier->details($details),
         ]);
     }
@@ -151,6 +157,7 @@ final class MediaDetailsController
             'historyRequestKey' => null,
             'today' => date('Y-m-d'),
             'scheduleItem' => null,
+            'userPreference' => null,
             'isAnime' => false,
         ], $status);
     }

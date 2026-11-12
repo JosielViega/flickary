@@ -11,6 +11,7 @@ declare(strict_types=1);
 /** @var array<string,string> $statusOptions */
 /** @var array<string,list<string>> $messages */
 /** @var null|\App\Schedule\ScheduleEntry $scheduleItem */
+/** @var null|\App\Preferences\UserMediaPreference $userPreference */
 /** @var bool $isAnime */
 ?>
 <?php foreach ($messages ?? [] as $type => $items): ?>
@@ -87,7 +88,7 @@ declare(strict_types=1);
                         <?php endif; ?>
                         <?php if ($details->voteAverage !== null): ?>
                             <div class="media-detail__rating">
-                                <dt>Nota</dt>
+                                <dt>Avaliação do catálogo</dt>
                                 <dd>TMDB <?= e(number_format($details->voteAverage, 1, ',', '')) ?><?php if ($details->voteCount !== null): ?> <small>(<?= e(number_format($details->voteCount, 0, ',', '.')) ?> votos)</small><?php endif; ?></dd>
                             </div>
                         <?php endif; ?>
@@ -122,6 +123,30 @@ declare(strict_types=1);
                 <?php endif; ?>
             <?php else: ?>
                 <a class="button button--primary" href="/login">Entre para adicionar à sua lista</a>
+            <?php endif; ?>
+        </section>
+
+        <section class="preference-control" aria-labelledby="media-preference-title">
+            <div>
+                <p class="eyebrow">Sua opinião</p>
+                <h2 id="media-preference-title">Favorito e avaliação pessoal</h2>
+                <p>A sua nota é privada, independente da nota TMDB e não altera Minha Lista, Histórico ou Agenda.</p>
+                <?php if ($userPreference?->rating !== null): ?><strong class="preference-control__summary">Sua nota <?= e((string)$userPreference->rating) ?>/10</strong><?php endif; ?>
+            </div>
+            <?php if (isset($auth) && $auth instanceof \App\Core\Auth && $auth->check() && isset($csrf)): ?>
+                <?php $preferencePath = ($details->mediaType === 'movie' ? '/filmes/' : '/series/') . $details->sourceId . '/preferencias'; ?>
+                <form class="preference-control__form" method="post" action="<?= e($preferencePath) ?>">
+                    <?= $csrf->field() ?>
+                    <label class="preference-control__favorite"><input type="checkbox" name="favorite" value="1"<?= $userPreference?->isFavorite ? ' checked' : '' ?>> Marcar como favorito</label>
+                    <label for="personal-rating">Sua nota</label>
+                    <select id="personal-rating" name="rating">
+                        <option value="">Sem nota</option>
+                        <?php for ($rating = 1; $rating <= 10; $rating++): ?><option value="<?= e((string)$rating) ?>"<?= $userPreference?->rating === $rating ? ' selected' : '' ?>><?= e((string)$rating) ?>/10</option><?php endfor; ?>
+                    </select>
+                    <button class="button button--primary" type="submit">Salvar preferências</button>
+                </form>
+            <?php else: ?>
+                <a class="button button--primary" href="/login">Entre para favoritar e avaliar</a>
             <?php endif; ?>
         </section>
 

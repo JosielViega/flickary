@@ -2896,7 +2896,8 @@ code {
 .button--ghost { background: var(--color-surface-soft); }
 .button:focus-visible, .library-card a:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
 
-.media-list-control {
+.media-list-control,
+.preference-control {
     display: grid;
     gap: var(--space-4);
     padding: clamp(1.25rem, 4vw, 2.25rem);
@@ -2905,10 +2906,10 @@ code {
     background: linear-gradient(145deg, rgb(30 58 138 / 30%), rgb(16 26 42 / 96%));
 }
 
-.media-list-control h2 { margin-bottom: var(--space-2); }
-.media-list-control p { margin-bottom: 0; color: var(--color-text-secondary); }
-.media-list-control__form { display: grid; gap: var(--space-2); }
-.media-list-control select, .library-filters select {
+.media-list-control h2, .preference-control h2 { margin-bottom: var(--space-2); }
+.media-list-control p, .preference-control p { margin-bottom: 0; color: var(--color-text-secondary); }
+.media-list-control__form, .preference-control__form { display: grid; gap: var(--space-2); }
+.media-list-control select, .preference-control select, .library-filters select {
     min-height: 2.8rem;
     width: 100%;
     padding: 0 var(--space-3);
@@ -2917,6 +2918,10 @@ code {
     background: var(--color-background-deep);
     color: white;
 }
+.preference-control__favorite { display: flex; align-items: center; gap: .65rem; min-height: 2.75rem; font-weight: 700; }
+.preference-control__favorite input { width: 1.2rem; height: 1.2rem; accent-color: var(--color-primary); }
+.preference-control__summary { display: block; margin-top: var(--space-3); color: var(--color-primary-hover); font-size: 1.1rem; }
+.preference-control select:focus-visible, .preference-control input:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
 
 .library-page { display: grid; gap: var(--space-6); max-width: var(--content-max); margin: 0 auto; }
 .library-hero {
@@ -2943,7 +2948,7 @@ code {
 
 @media (hover: hover) { .library-card:hover { transform: translateY(-.2rem); border-color: var(--color-border-strong); } }
 @media (min-width: 42rem) {
-    .media-list-control { grid-template-columns: minmax(0, 1fr) minmax(18rem, .7fr); align-items: end; }
+    .media-list-control, .preference-control { grid-template-columns: minmax(0, 1fr) minmax(18rem, .7fr); align-items: end; }
     .library-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; }
     .library-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -2961,8 +2966,11 @@ code {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-pill);
     background: var(--color-background-deep);
+    overflow-x: auto;
+    scrollbar-width: none;
 }
-.personal-subnav a { padding: .6rem 1rem; border-radius: var(--radius-pill); color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; }
+.personal-subnav::-webkit-scrollbar { display: none; }
+.personal-subnav a { flex: 0 0 auto; padding: .6rem 1rem; border-radius: var(--radius-pill); color: var(--color-text-secondary); font-size: .8rem; font-weight: 700; }
 .personal-subnav a.is-active { background: var(--color-surface-soft); color: var(--color-primary-hover); box-shadow: inset 0 0 0 1px var(--color-border-strong); }
 .personal-subnav a:focus-visible,
 .history-card a:focus-visible,

@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal e Estatísticas pessoais. Favoritos, perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações pessoais e Estatísticas pessoais. Perfil público e recursos sociais ainda não foram implementados.
 
 ## Stack
 
@@ -132,13 +132,19 @@ Séries possuem temporadas navegáveis em `GET /series/{id}/temporadas/{season}`
 
 Registrar histórico não altera automaticamente Minha Lista nem progresso de episódios. Da mesma forma, mudar status, marcar progresso, remover uma mídia da lista ou limpar uma temporada não cria nem apaga eventos históricos.
 
+## Favoritos e avaliações pessoais
+
+`GET /favoritos` e `GET /avaliacoes` são subáreas privadas de Minha Lista. Favorito e Sua nota inteira de 1 a 10 coexistem no snapshot mínimo local `user_media_preferences`; remover as duas preferências exclui a linha. A primeira gravação obtém identidade, título, imagem e classificação Anime no servidor, enquanto edições posteriores e as listagens funcionam somente com dados locais.
+
+Essas preferências não exigem nem criam itens em Minha Lista, Histórico, Agenda ou progresso. Remover dados de qualquer um desses domínios também não remove favoritos ou avaliações. A nota pessoal não substitui a avaliação do catálogo TMDB.
+
 ## Agenda pessoal
 
 `GET /agenda` organiza intenções futuras escolhidas explicitamente pelo usuário para filmes, séries e episódios, sempre com uma data diária. Itens que passam da data são preservados como atrasados até serem reagendados ou removidos. A Agenda usa snapshots mínimos locais e permanece independente de Minha Lista, progresso e Histórico: nenhuma ação em um desses domínios altera automaticamente os demais. Não há descoberta automática de lançamentos, horários ou notificações nesta etapa.
 
 ## Estatísticas pessoais
 
-`GET /estatisticas` apresenta a jornada privada em números usando exclusivamente dados locais de Histórico, Minha Lista, progresso e Agenda. A leitura não consulta o TMDB. Novos eventos históricos congelam a duração conhecida do filme ou episódio; quando ela for desconhecida, a interface informa explicitamente que o tempo registrado é parcial.
+`GET /estatisticas` apresenta a jornada privada em números usando exclusivamente dados locais de Histórico, Minha Lista, progresso, Agenda e preferências. A leitura não consulta o TMDB e inclui totais de favoritos, títulos avaliados e média pessoal. Novos eventos históricos congelam a duração conhecida do filme ou episódio; quando ela for desconhecida, a interface informa explicitamente que o tempo registrado é parcial.
 
 Eventos antigos continuam válidos com duração `NULL`. O comando manual e idempotente `composer history:backfill-duration` consulta no máximo uma vez cada filme e cada temporada TMDB necessários, preenche somente `duration_minutes` e nunca exibe o token. Ele não possui retry ou espera automática.
 
@@ -203,10 +209,13 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;
 - `GET /filmes/{id}` — detalhes públicos básicos de um filme TMDB;
 - `GET /series/{id}` — detalhes públicos básicos de uma série TMDB;
+- `POST /filmes/{id}/preferencias` e `POST /series/{id}/preferencias` — salva Favorito e Sua nota autenticados;
 - `GET /series/{id}/temporadas/{season}` — temporada pública e episódios, com progresso e registro histórico autenticados;
 - `POST /filmes/{id}/historico` — registra uma visualização de filme autenticada;
 - `POST /series/{id}/temporadas/{season}/episodios/{episode}/historico` — registra uma visualização de episódio autenticada;
 - `GET /minha-lista` — estado atual privado de filmes e séries;
+- `GET /favoritos` — favoritos privados, filtráveis e paginados;
+- `GET /avaliacoes` — avaliações pessoais privadas, filtráveis e paginadas;
 - `GET /historico` — linha do tempo privada, filtrável e paginada;
 - `GET /agenda` — agenda pessoal privada, filtrável e paginada de filmes, séries e episódios;
 - `GET /estatisticas` — estatísticas pessoais privadas calculadas somente com dados locais;

@@ -62,6 +62,15 @@ final class PersonalStatisticsRepositoryDatabaseTest extends TestCase
         self::assertSame(4,$stats->totalViews);self::assertSame(3,$stats->libraryTotal);self::assertSame(2,$stats->scheduleTotal);
     }
 
+    public function testPreferenceMetricsAverageAndUserIsolation():void
+    {
+        $user=$this->users->create('stats.preferences',null);$other=$this->users->create('stats.preferences.other',null);
+        $this->preference($user,1,true,8);$this->preference($user,2,true,10);$this->preference($user,3,false,7);$this->preference($user,4,true,null);$this->preference($other,5,true,1);
+        $stats=$this->statistics->readForUser($user,'2026-11-12');
+        self::assertSame(3,$stats->favoriteItems);self::assertSame(3,$stats->ratedItems);self::assertEqualsWithDelta(8.3333,$stats->averagePersonalRating,0.0001);self::assertTrue($stats->hasAnyData());
+        $empty=$this->statistics->readForUser($this->users->create('stats.preferences.empty',null),'2026-11-12');self::assertNull($empty->averagePersonalRating);
+    }
+
     private function history(int$user,array$e,string$key,?bool$anime=null):void
     {
         [$type,$sourceId,$season,$episode,$date,$duration]=$e;$s=$this->database->connection()->prepare('INSERT INTO watch_history(user_id,source,entry_type,source_id,season_number,episode_number,title,episode_title,watched_on,request_key,duration_minutes,is_anime) VALUES(:u,\'tmdb\',:t,:sid,:sn,:en,:title,:episode_title,:watched,:request_key,:duration,:anime)');
@@ -70,5 +79,6 @@ final class PersonalStatisticsRepositoryDatabaseTest extends TestCase
     private function media(int$user,int$id,string$status,?bool$anime=null):void{$s=$this->database->connection()->prepare('INSERT INTO user_media(user_id,source,media_type,source_id,status,title,is_anime)VALUES(:u,\'tmdb\',\'movie\',:id,:status,\'Title\',:anime)');$s->execute(['u'=>$user,'id'=>$id,'status'=>$status,'anime'=>$anime===null?null:(int)$anime]);}
     private function progress(int$user,int$episode):void{$s=$this->database->connection()->prepare('INSERT INTO user_series_episode_progress(user_id,source,series_source_id,season_number,episode_number)VALUES(:u,\'tmdb\',1396,1,:e)');$s->execute(['u'=>$user,'e'=>$episode]);}
     private function schedule(int$user,int$id,string$date,?bool$anime=null):void{$s=$this->database->connection()->prepare('INSERT INTO user_schedule(user_id,source,entry_type,source_id,title,scheduled_on,is_anime)VALUES(:u,\'tmdb\',\'movie\',:id,\'Title\',:d,:anime)');$s->execute(['u'=>$user,'id'=>$id,'d'=>$date,'anime'=>$anime===null?null:(int)$anime]);}
-    private function clear():void{$pdo=$this->database->connection();$pdo->exec('DELETE FROM user_schedule');$pdo->exec('DELETE FROM watch_history');$pdo->exec('DELETE FROM user_series_episode_progress');$pdo->exec('DELETE FROM user_media');$pdo->exec('DELETE FROM user_external_identities');$pdo->exec('DELETE FROM user_profiles');$pdo->exec('DELETE FROM users');}
+    private function preference(int$user,int$id,bool$favorite,?int$rating):void{$s=$this->database->connection()->prepare('INSERT INTO user_media_preferences(user_id,source,media_type,source_id,title,is_favorite,rating)VALUES(:u,\'tmdb\',\'movie\',:id,\'Title\',:favorite,:rating)');$s->execute(['u'=>$user,'id'=>$id,'favorite'=>(int)$favorite,'rating'=>$rating]);}
+    private function clear():void{$pdo=$this->database->connection();$pdo->exec('DELETE FROM user_media_preferences');$pdo->exec('DELETE FROM user_schedule');$pdo->exec('DELETE FROM watch_history');$pdo->exec('DELETE FROM user_series_episode_progress');$pdo->exec('DELETE FROM user_media');$pdo->exec('DELETE FROM user_external_identities');$pdo->exec('DELETE FROM user_profiles');$pdo->exec('DELETE FROM users');}
 }

@@ -183,6 +183,31 @@ final class ApplicationRoutesTest extends TestCase
         }
     }
 
+    public function testPreferenceRoutesArePrivateAndUseLibraryNavigation(): void
+    {
+        foreach (['/favoritos', '/avaliacoes'] as $path) {
+            $_SESSION = [];
+            $visitorRequest = $this->request('GET', $path);
+            $visitor = $this->router($visitorRequest)->dispatch($visitorRequest);
+            self::assertSame(303, $visitor->status());
+            self::assertSame('/login', $visitor->headers()['Location']);
+
+            $_SESSION = [];
+            $ownerRequest = $this->request('GET', $path);
+            $owner = $this->router($ownerRequest, true)->dispatch($ownerRequest);
+            self::assertSame(200, $owner->status());
+            self::assertStringContainsString('href="/minha-lista" aria-current="page"', $owner->body());
+        }
+
+        foreach (['/filmes/603/preferencias', '/series/1396/preferencias'] as $path) {
+            $_SESSION = [];
+            $request = $this->request('POST', $path);
+            $response = $this->router($request)->dispatch($request);
+            self::assertSame(303, $response->status());
+            self::assertSame('/login', $response->headers()['Location']);
+        }
+    }
+
     private function router(Request $request, bool $authenticated = false): Router
     {
         $session = new Session(false);
@@ -263,6 +288,15 @@ final class ApplicationRoutesTest extends TestCase
                 public function delete(int $userId, string $source, string $mediaType, int $sourceId): bool { return false; }
                 public function paginateForUser(int $userId, ?string $status, ?string $mediaType, int $page, int $perPage, bool $animeOnly = false): \App\Media\UserMediaPage { return new \App\Media\UserMediaPage([], 0, $page, $perPage); }
                 public function countForUser(int $userId): int { return 0; }
+            },
+            'media_preferences' => new class implements \App\Preferences\UserMediaPreferenceStore {
+                public function findForUser(int$userId,string$source,string$mediaType,int$sourceId):?\App\Preferences\UserMediaPreference{return null;}
+                public function create(int$userId,\App\Preferences\UserMediaPreferenceDraft$draft):bool{return true;}
+                public function update(int$userId,string$source,string$mediaType,int$sourceId,bool$favorite,?int$rating):bool{return false;}
+                public function delete(int$userId,string$source,string$mediaType,int$sourceId):bool{return false;}
+                public function paginateFavorites(int$userId,?string$mediaType,bool$animeOnly,int$page,int$perPage):\App\Preferences\UserMediaPreferencePage{return new \App\Preferences\UserMediaPreferencePage([],0,$page,$perPage);}
+                public function paginateRated(int$userId,?string$mediaType,bool$animeOnly,int$page,int$perPage):\App\Preferences\UserMediaPreferencePage{return new \App\Preferences\UserMediaPreferencePage([],0,$page,$perPage);}
+                public function countFavorites(int$userId):int{return 0;}public function countRated(int$userId):int{return 0;}
             },
             'tmdb' => new class implements TmdbCatalog {
                 public function configured(): bool { return false; }

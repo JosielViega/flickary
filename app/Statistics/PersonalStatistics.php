@@ -31,12 +31,16 @@ final readonly class PersonalStatistics
         public int $animeLibraryItems = 0,
         public int $animeScheduleItems = 0,
         public int $unknownAnimeSnapshots = 0,
+        public int $favoriteItems = 0,
+        public int $ratedItems = 0,
+        public ?float $averagePersonalRating = null,
     ) {
     }
 
     public function hasAnyData(): bool
     {
         return $this->totalViews > 0 || $this->libraryTotal > 0
-            || $this->watchedEpisodeProgress > 0 || $this->scheduleTotal > 0;
+            || $this->watchedEpisodeProgress > 0 || $this->scheduleTotal > 0
+            || $this->favoriteItems > 0 || $this->ratedItems > 0;
     }
 }

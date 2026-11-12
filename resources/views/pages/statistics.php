@@ -11,11 +11,7 @@ $unknownDurationLabel = $statistics->unknownDurationEvents === 1
     : 'visualizações ainda não possuem duração e não entram neste total.';
 ?>
 <section class="statistics-page" aria-labelledby="statistics-title">
-    <nav class="personal-subnav" aria-label="Sua jornada pessoal">
-        <a href="/minha-lista">Minha Lista</a>
-        <a href="/historico">Histórico</a>
-        <a class="is-active" href="/estatisticas" aria-current="page">Estatísticas</a>
-    </nav>
+    <?php $personalSection = 'statistics'; require dirname(__DIR__) . '/components/personal-subnav.php'; ?>
 
     <header class="statistics-hero">
         <p class="eyebrow">Passado · Presente · Futuro</p>
@@ -95,5 +91,14 @@ $unknownDurationLabel = $statistics->unknownDurationEvents === 1
         <?php if ($statistics->unknownAnimeSnapshots > 0): ?>
             <p class="statistics-coverage" role="note">Alguns registros antigos ainda não possuem classificação Anime local (<?= e((string) $statistics->unknownAnimeSnapshots) ?>).</p>
         <?php endif; ?>
+    </section>
+
+    <section class="statistics-section" aria-labelledby="statistics-preferences">
+        <header><p class="eyebrow">Sua opinião</p><h2 id="statistics-preferences">Suas preferências</h2></header>
+        <div class="statistics-metrics">
+            <article><strong><?= e((string)$statistics->favoriteItems) ?></strong><span>Favoritos</span></article>
+            <article><strong><?= e((string)$statistics->ratedItems) ?></strong><span>Títulos avaliados</span></article>
+            <article><strong><?= $statistics->averagePersonalRating === null ? '—' : e(number_format($statistics->averagePersonalRating, 1, ',', '')) . '/10' ?></strong><span><?= $statistics->averagePersonalRating === null ? 'Ainda sem avaliações' : 'Nota média' ?></span></article>
+        </div>
     </section>
 </section>

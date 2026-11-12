@@ -33,11 +33,7 @@ $currentDate = null;
         <?php endforeach; ?>
     <?php endforeach; ?>
 
-    <nav class="personal-subnav" aria-label="Sua coleção e histórico">
-        <a href="/minha-lista">Minha Lista</a>
-        <a class="is-active" href="/historico" aria-current="page">Histórico</a>
-        <a href="/estatisticas">Estatísticas</a>
-    </nav>
+    <?php $personalSection = 'history'; require dirname(__DIR__) . '/components/personal-subnav.php'; ?>
 
     <header class="history-hero">
         <p class="eyebrow">Sua linha do tempo</p>

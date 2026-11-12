@@ -20,6 +20,7 @@ use App\Controllers\WatchHistoryController;
 use App\Controllers\UserScheduleController;
 use App\Controllers\StatisticsController;
 use App\Controllers\AnimeController;
+use App\Controllers\UserMediaPreferenceController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -97,6 +98,7 @@ $mediaDetails = new MediaDetailsController(
     $app['session'],
     $app['series_progress'],
     $app['user_schedule'],
+    $app['media_preferences'],
 );
 $userMedia = new UserMediaController(
     $app['view'],
@@ -104,6 +106,14 @@ $userMedia = new UserMediaController(
     $app['csrf'],
     $app['session'],
     $app['user_media'],
+    $app['tmdb'],
+);
+$mediaPreferences = new UserMediaPreferenceController(
+    $app['view'],
+    $app['auth'],
+    $app['csrf'],
+    $app['session'],
+    $app['media_preferences'],
     $app['tmdb'],
 );
 $season = new SeriesSeasonController(
@@ -180,9 +190,11 @@ $router->post('/filmes/{id}/lista', static fn (string $id): Response => $userMed
 $router->post('/filmes/{id}/lista/remover', static fn (string $id): Response => $userMedia->remove($app['request'], $id, 'movie'));
 $router->post('/filmes/{id}/historico', static fn (string $id): Response => $history->createMovie($app['request'], $id));
 $router->post('/filmes/{id}/agenda', static fn (string $id): Response => $schedule->createMedia($app['request'], $id, 'movie'));
+$router->post('/filmes/{id}/preferencias', static fn (string $id): Response => $mediaPreferences->save($app['request'], $id, 'movie'));
 $router->post('/series/{id}/lista', static fn (string $id): Response => $userMedia->save($app['request'], $id, 'series'));
 $router->post('/series/{id}/lista/remover', static fn (string $id): Response => $userMedia->remove($app['request'], $id, 'series'));
 $router->post('/series/{id}/agenda', static fn (string $id): Response => $schedule->createMedia($app['request'], $id, 'series'));
+$router->post('/series/{id}/preferencias', static fn (string $id): Response => $mediaPreferences->save($app['request'], $id, 'series'));
 $router->post(
     '/series/{id}/temporadas/{season}/episodios/{episode}/historico',
     static fn (string $id, string $seasonNumber, string $episode): Response =>
@@ -194,6 +206,8 @@ $router->post(
         $schedule->createEpisode($app['request'], $id, $seasonNumber, $episode),
 );
 $router->get('/minha-lista', static fn (): Response => $userMedia->index($app['request']));
+$router->get('/favoritos', static fn (): Response => $mediaPreferences->favorites($app['request']));
+$router->get('/avaliacoes', static fn (): Response => $mediaPreferences->ratings($app['request']));
 $router->get('/historico', static fn (): Response => $history->index($app['request']));
 $router->post('/historico/{id}', static fn (string $id): Response => $history->update($app['request'], $id));
 $router->post('/historico/{id}/remover', static fn (string $id): Response => $history->remove($app['request'], $id));

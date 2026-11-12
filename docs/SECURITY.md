@@ -65,6 +65,10 @@ As mutations exigem autenticação e CSRF, e o ownership deriva exclusivamente d
 
 Mutations de progresso de séries seguem o mesmo ownership e CSRF. Uma nova marcação só aceita episódios presentes no payload de temporada consultado server-side; números enviados na URL não bastam. Queries de progresso sempre incluem o usuário autenticado, e a constraint única torna marcações repetidas idempotentes.
 
+## Favoritos e avaliações pessoais
+
+As mutations exigem autenticação e CSRF; ownership deriva exclusivamente de `Auth::id()` e todas as leituras e escritas incluem `user_id`. A rota fornece a identidade TMDB, e o browser controla somente `favorite` com allowlist exata e `rating` inteira de 1 a 10 ou vazia. Título, imagem, tipo, usuário e classificação Anime do primeiro snapshot vêm de detalhes server-side. A constraint única protege contra double-submit, e preferências existentes são editadas localmente sem recalcular o snapshot.
+
 ## Histórico de visualização
 
 Criação, correção de data e remoção exigem autenticação e CSRF. Ownership vem exclusivamente de `Auth::id()` e toda busca, atualização ou exclusão inclui `user_id`; recursos de outro usuário respondem como não encontrados. O browser controla apenas `watched_on` e a `request_key` técnica: provider, tipo, IDs, títulos, episódio, imagem e usuário são validados ou obtidos server-side.
