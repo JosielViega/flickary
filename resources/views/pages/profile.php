@@ -90,6 +90,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
     </article>
 
     <div class="profile-grid">
+        <a class="profile-public-link" href="/u/<?= rawurlencode($username) ?>">
+            <span><span class="eyebrow">Sua página social</span><strong>Ver meu perfil público</strong></span>
+            <span aria-hidden="true">→</span>
+        </a>
         <a class="profile-statistics-link" href="/estatisticas">
             <span><span class="eyebrow">Sua jornada</span><strong>Ver minhas estatísticas</strong></span>
             <span aria-hidden="true">→</span>

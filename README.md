@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações pessoais e Estatísticas pessoais. Perfil público e recursos sociais ainda não foram implementados.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos e relações simples de seguidores.
 
 ## Stack
 
@@ -156,6 +156,12 @@ Cada projeto recebe uma reserva por caminho absoluto. O registro continua em `~/
 
 O registro é local, fica fora do Git e não contém credenciais. Consulte [desenvolvimento local](docs/LOCAL_DEVELOPMENT.md).
 
+## Perfis públicos e seguidores
+
+`GET /u/{username}` apresenta identidade pública, contadores sociais e, quando permitido, agregados locais e até seis favoritos. Perfis privados exibem somente identidade, bio, data de entrada e contadores; seguir alguém não concede acesso ao conteúdo privado. O proprietário pode conferir a prévia completa e editar a visibilidade em `/perfil`.
+
+As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. A relação social nesta versão é apenas seguir/deixar de seguir: ainda não existem feed, solicitações de acesso, likes, comentários, mensagens ou notificações.
+
 ## Arquitetura
 
 ```text
@@ -204,6 +210,10 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /auth/facebook/callback` — valida `state`, troca o código no servidor e resolve a identidade Facebook;
 - `GET|POST /onboarding/username` — conclui uma nova conta com username;
 - `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
+- `GET /u/{username}` — perfil público resolvido exclusivamente pelo username;
+- `GET /u/{username}/seguidores` e `GET /u/{username}/seguindo` — conexões sociais paginadas;
+- `POST /u/{username}/seguir` e `POST /u/{username}/deixar-de-seguir` — relação autenticada e protegida por CSRF;
+- `GET /usuarios` — busca pública local por username ou nome de exibição;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;

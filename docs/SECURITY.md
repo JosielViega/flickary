@@ -85,6 +85,12 @@ As estatísticas exigem autenticação, aceitam somente GET e aplicam `user_id` 
 
 O comando manual de backfill lê a credencial TMDB apenas da configuração server-side, nunca a imprime e encerra de forma controlada diante de falhas de autenticação, limite ou rede. Ele só preenche durações nulas, usa prepared statements e não modifica identidade, data ou snapshot de qualquer evento.
 
+## Perfis públicos e seguidores
+
+Perfis são resolvidos somente por `users.username` validado pela política canônica; consultas públicas não selecionam e-mail, IDs de provedores, tokens ou estado de sessão. Avatar e capa aceitam apenas URL HTTPS válida e limitada. Todo conteúdo persistido é escapado na renderização.
+
+Follow e unfollow são POST protegidos por CSRF. O follower sempre vem de `Auth::id()` e o target é resolvido pelo username da rota, nunca por ID enviado pelo navegador. Self-follow é recusado e duplicatas são idempotentes. A privacidade é aplicada no servidor: seguir um perfil privado não libera favoritos, coleção, avaliações, histórico, progresso, Agenda ou estatísticas pessoais.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

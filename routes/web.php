@@ -21,6 +21,9 @@ use App\Controllers\UserScheduleController;
 use App\Controllers\StatisticsController;
 use App\Controllers\AnimeController;
 use App\Controllers\UserMediaPreferenceController;
+use App\Controllers\PublicProfileController;
+use App\Controllers\FollowController;
+use App\Controllers\UserSearchController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -145,6 +148,15 @@ $about = new AboutController(
     $app['auth'],
     $app['csrf'],
 );
+$publicProfile = new PublicProfileController(
+    $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
+    $app['public_profiles'], $app['user_follows'], $app['tmdb'],
+);
+$follow = new FollowController(
+    $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
+    $app['public_profiles'], $app['user_follows'],
+);
+$userSearch = new UserSearchController($app['view'], $app['auth'], $app['csrf'], $app['public_profiles']);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -159,6 +171,12 @@ $router->get('/perfil', [$profile, 'show']);
 $router->post('/perfil', static fn (): Response => $profile->update($app['request']));
 $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookConnection->store($app['request']));
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
+$router->get('/usuarios', static fn (): Response => $userSearch->index($app['request']));
+$router->get('/u/{username}', static fn (string $username): Response => $publicProfile->show($username));
+$router->get('/u/{username}/seguidores', static fn (string $username): Response => $publicProfile->followers($app['request'], $username));
+$router->get('/u/{username}/seguindo', static fn (string $username): Response => $publicProfile->following($app['request'], $username));
+$router->post('/u/{username}/seguir', static fn (string $username): Response => $follow->follow($app['request'], $username));
+$router->post('/u/{username}/deixar-de-seguir', static fn (string $username): Response => $follow->unfollow($app['request'], $username));
 $router->get('/anime', static fn (): Response => $anime->index($app['request']));
 $router->get('/filmes/{id}', static fn (string $id): Response => $mediaDetails->movie($id));
 $router->get('/series/{id}', static fn (string $id): Response => $mediaDetails->series($id));

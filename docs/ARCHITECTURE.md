@@ -159,6 +159,22 @@ StatisticsController → PersonalStatisticsRepository → MySQL
 
 O backfill manual de duração é um fluxo CLI separado. Ele agrupa filmes por identidade e episódios por série/temporada antes de consultar o TMDB, atualiza exclusivamente eventos com duração `NULL` e não possui retry, `sleep()` ou execução automática em requests HTTP.
 
+## Perfis públicos e relações sociais
+
+```text
+users + user_profiles
+        ↓
+PublicProfileReader
+        ↓
+/u/{username}
+
+user_follows
+        ↓
+FollowStore
+```
+
+`PublicProfile` seleciona apenas identidade publicável e sanitiza URLs HTTPS. Estatísticas e favoritos usam readers de escopo público, sem entregar `PersonalStatistics` nem consultar detalhes do TMDB. `user_follows` mantém a relação simples com PK composta e cascata nas duas direções; contadores são calculados, nunca denormalizados. A regra central é `follow relationship != privacy authorization`: um follower continua sem acesso ao conteúdo de perfil privado.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

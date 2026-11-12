@@ -281,6 +281,21 @@ final class ApplicationRoutesTest extends TestCase
                 ): void {
                 }
             },
+            'public_profiles' => new class implements \App\Social\PublicProfileReader {
+                public function findByUsername(string $username): ?\App\Social\PublicProfile { return null; }
+                public function statisticsForUser(int $userId): \App\Social\PublicProfileStatistics { return new \App\Social\PublicProfileStatistics(0,0,0,null,0,0,0); }
+                public function recentFavorites(int $userId, int $limit=6): array { return []; }
+                public function search(string $query,int $page,int $perPage): \App\Social\PublicProfilePage { return new \App\Social\PublicProfilePage([],0,$page,$perPage); }
+            },
+            'user_follows' => new class implements \App\Social\FollowStore {
+                public function follow(int $followerUserId,int $followedUserId):void{}
+                public function unfollow(int $followerUserId,int $followedUserId):void{}
+                public function isFollowing(int $followerUserId,int $followedUserId):bool{return false;}
+                public function countFollowers(int $userId):int{return 0;}
+                public function countFollowing(int $userId):int{return 0;}
+                public function paginateFollowers(int $userId,int $page,int $perPage):\App\Social\PublicProfilePage{return new \App\Social\PublicProfilePage([],0,$page,$perPage);}
+                public function paginateFollowing(int $userId,int $page,int $perPage):\App\Social\PublicProfilePage{return new \App\Social\PublicProfilePage([],0,$page,$perPage);}
+            },
             'user_media' => new class implements \App\Media\UserMediaStore {
                 public function findForUser(int $userId, string $source, string $mediaType, int $sourceId): ?\App\Media\UserMediaItem { return null; }
                 public function create(int $userId, \App\Integrations\Tmdb\TmdbMediaDetails $details, string $status, ?bool $isAnime = null): bool { return true; }

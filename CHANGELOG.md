@@ -6,6 +6,16 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ## [Unreleased]
 
+### Added
+
+- perfil público cinematográfico por username, com agregados locais e até seis favoritos
+- seguidores e seguindo com mutations CSRF, idempotência, contadores e páginas paginadas
+- busca pública local de usuários por username e nome de exibição
+
+### Security
+
+- privacidade pública/privada aplicada no servidor; follow não autoriza conteúdo privado
+
 ### Changed
 
 - cards da busca agora levam às rotas públicas reais de filmes e séries

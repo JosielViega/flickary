@@ -41,7 +41,10 @@ $filterUrl = static fn (string $filter): string => '/buscar?' . http_build_query
                 </a>
             <?php endforeach; ?>
         </nav>
-        <a class="search-anime-cta" href="/anime">Explorar Anime →</a>
+        <div class="search-discovery-links">
+            <a class="search-anime-cta" href="/anime">Explorar Anime →</a>
+            <a class="search-anime-cta" href="/usuarios">Encontrar pessoas →</a>
+        </div>
     </header>
 
     <?php if ($validationError !== null): ?>

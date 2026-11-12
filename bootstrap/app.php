@@ -28,6 +28,8 @@ use App\Repositories\UserScheduleRepository;
 use App\Repositories\PersonalStatisticsRepository;
 use App\Repositories\AnimeSnapshotRepository;
 use App\Repositories\UserMediaPreferenceRepository;
+use App\Repositories\PublicProfileRepository;
+use App\Repositories\UserFollowRepository;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -81,6 +83,8 @@ $userSchedule = new UserScheduleRepository($database);
 $personalStatistics = new PersonalStatisticsRepository($database);
 $animeSnapshots = new AnimeSnapshotRepository($database);
 $mediaPreferences = new UserMediaPreferenceRepository($database);
+$publicProfiles = new PublicProfileRepository($database);
+$userFollows = new UserFollowRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -120,6 +124,8 @@ return [
     'personal_statistics' => $personalStatistics,
     'anime_snapshots' => $animeSnapshots,
     'media_preferences' => $mediaPreferences,
+    'public_profiles' => $publicProfiles,
+    'user_follows' => $userFollows,
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,
