@@ -60,6 +60,8 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('method="get" action="/buscar"', $response->body());
         self::assertStringNotContainsString('href="#"', $response->body());
         self::assertStringContainsString('href="/login"', $response->body());
+        self::assertStringContainsString('title="Entre para acessar o Social"', $response->body());
+        self::assertStringNotContainsString('href="/social"', $response->body());
     }
 
     public function testHealthRemainsSmallAndSafe(): void
@@ -146,6 +148,22 @@ final class ApplicationRoutesTest extends TestCase
         self::assertSame(200, $authenticated->status());
         self::assertStringContainsString('Route Profile', $authenticated->body());
         self::assertStringContainsString('href="/perfil" aria-current="page"', $authenticated->body());
+    }
+
+    public function testSocialRouteIsPrivateAndActivatesSocialNavigation(): void
+    {
+        $visitorRequest = $this->request('GET', '/social');
+        $visitor = $this->router($visitorRequest)->dispatch($visitorRequest);
+        self::assertSame(303, $visitor->status());
+        self::assertSame('/login', $visitor->headers()['Location']);
+
+        $_SESSION = [];
+        $authenticatedRequest = $this->request('GET', '/social');
+        $authenticated = $this->router($authenticatedRequest, true)->dispatch($authenticatedRequest);
+        self::assertSame(200, $authenticated->status());
+        self::assertStringContainsString('Seu Social ainda está vazio', $authenticated->body());
+        self::assertStringContainsString('href="/social" aria-current="page"', $authenticated->body());
+        self::assertStringContainsString('bottom-nav__item is-active', $authenticated->body());
     }
 
     public function testSearchAndAboutArePublicRealRoutesWithActiveNavigation(): void
@@ -270,6 +288,8 @@ final class ApplicationRoutesTest extends TestCase
                         'avatar_url' => null,
                         'cover_url' => null,
                         'is_private' => 0,
+                        'share_watch_activity' => 0,
+                        'share_watch_activity_since' => null,
                         'created_at' => '2026-09-17 10:00:00',
                     ];
                 }
@@ -349,9 +369,12 @@ final class ApplicationRoutesTest extends TestCase
                 public function readForUser(int $userId,string $today):\App\Statistics\PersonalStatistics{return new \App\Statistics\PersonalStatistics(0,0,0,0,0,0,0,0,0,0,0,[],array_fill_keys(array_keys(\App\Media\UserMediaStatus::options()),0),0,0,0,0,0,0);}
             },
             'user_follow_requests' => new \App\Social\NullFollowRequestStore(),
+            'social_feed' => new class implements \App\Social\SocialFeedReader {
+                public function paginateForViewer(int$userId,int$page,int$perPage):\App\Social\SocialFeedPage{return new \App\Social\SocialFeedPage([],0,$page,$perPage);}
+            },
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
-                public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate):void{}
+                public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate,bool$shareWatchActivity):void{}
             },
         ];
 

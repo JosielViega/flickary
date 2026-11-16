@@ -103,6 +103,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
             <span><span class="eyebrow">Sua comunidade</span><strong>Solicitações de seguidores · <?= e((string) $pendingRequestCount) ?></strong></span>
             <span aria-hidden="true">→</span>
         </a>
+        <a class="profile-social-link" href="/social">
+            <span><span class="eyebrow">Atividade compartilhada</span><strong>Abrir meu Social</strong></span>
+            <span aria-hidden="true">→</span>
+        </a>
         <section class="profile-story" aria-labelledby="profile-story-title">
             <p class="eyebrow">Identidade pessoal</p>
             <h2 id="profile-story-title">Seu espaço entre histórias.</h2>
@@ -175,6 +179,26 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
                         <small>Salva sua preferência para os futuros recursos sociais.</small>
                     </span>
                 </label>
+
+                <section class="profile-sharing" aria-labelledby="profile-sharing-title">
+                    <div>
+                        <p class="eyebrow">Compartilhamento social</p>
+                        <h3 id="profile-sharing-title">Suas histórias, quando você decidir.</h3>
+                    </div>
+                    <label class="privacy-toggle" for="share_watch_activity">
+                        <input id="share_watch_activity"
+                               name="share_watch_activity"
+                               type="checkbox"
+                               value="1"
+                               <?= (bool) ($form['share_watch_activity'] ?? false) ? 'checked' : '' ?>>
+                        <span class="privacy-toggle__control" aria-hidden="true"><span></span></span>
+                        <span>
+                            <strong>Compartilhar minhas visualizações no Social</strong>
+                            <small>Suas novas visualizações poderão aparecer no feed das pessoas que seguem você. Seu Histórico anterior não será publicado.</small>
+                        </span>
+                    </label>
+                    <p>Agenda, Minha Lista, notas, favoritos e progresso continuam fora do feed.</p>
+                </section>
 
                 <button class="button button--primary button--wide" type="submit">Salvar alterações</button>
                 <p class="profile-form__scope">Username, e-mail, avatar e capa não são alterados nesta etapa.</p>

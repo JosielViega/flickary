@@ -32,6 +32,7 @@ use App\Repositories\UserMediaPreferenceRepository;
 use App\Repositories\PublicProfileRepository;
 use App\Repositories\UserFollowRepository;
 use App\Repositories\UserFollowRequestRepository;
+use App\Repositories\SocialFeedRepository;
 use App\Profiles\ProfileUpdateService;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
@@ -90,6 +91,7 @@ $mediaPreferences = new UserMediaPreferenceRepository($database);
 $publicProfiles = new PublicProfileRepository($database);
 $userFollows = new UserFollowRepository($database);
 $userFollowRequests = new UserFollowRequestRepository($database);
+$socialFeed = new SocialFeedRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -133,8 +135,9 @@ return [
     'public_profiles' => $publicProfiles,
     'user_follows' => $userFollows,
     'user_follow_requests' => $userFollowRequests,
+    'social_feed' => $socialFeed,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
-    'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests),
+    'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

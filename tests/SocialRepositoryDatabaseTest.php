@@ -108,8 +108,8 @@ final class SocialRepositoryDatabaseTest extends TestCase
         $target=$this->create('publish.user','Publish',true);
         $a=$this->create('publish.a','A'); $b=$this->create('publish.b','B');
         $this->followRequests->request($a,$target); $this->followRequests->request($b,$target);
-        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests))
-            ->update($target,'Publish',null,true,false);
+        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests,$this->profiles))
+            ->update($target,'Publish',null,true,false,false);
         self::assertSame(0,$this->followRequests->countIncoming($target));
         self::assertTrue($this->follows->isFollowing($a,$target));
         self::assertTrue($this->follows->isFollowing($b,$target));
@@ -119,8 +119,8 @@ final class SocialRepositoryDatabaseTest extends TestCase
     {
         $target=$this->create('privacy.target','Target'); $follower=$this->create('privacy.follower','Follower');
         $this->follows->follow($follower,$target);
-        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests))
-            ->update($target,'Target',null,false,true);
+        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests,$this->profiles))
+            ->update($target,'Target',null,false,true,false);
         self::assertTrue($this->follows->isFollowing($follower,$target));
         self::assertTrue($this->publicProfiles->findByUsername('privacy.target')?->isPrivate);
     }

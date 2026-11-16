@@ -16,7 +16,8 @@ $aboutIsActive = ($currentRoute ?? null) === 'about';
 $libraryIsActive = ($currentRoute ?? null) === 'library';
 $agendaIsActive = ($currentRoute ?? null) === 'agenda';
 $statisticsIsActive = ($currentRoute ?? null) === 'statistics';
-$profileBottomIsActive = $profileIsActive || $statisticsIsActive;
+$socialIsActive = ($currentRoute ?? null) === 'social';
+$profileBottomIsActive = $profileIsActive || $statisticsIsActive || $socialIsActive;
 $searchQuery = is_string($searchQuery ?? null) ? $searchQuery : '';
 $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->check();
 ?>
@@ -117,10 +118,15 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
                         <span>Perfil</span>
                     </span>
                 <?php endif; ?>
-                <span class="nav-item is-disabled" aria-disabled="true" title="Em breve">
-                    <svg aria-hidden="true"><use href="#icon-users"/></svg>
-                    <span>Social</span>
-                </span>
+                <?php if ($isAuthenticated): ?>
+                    <a class="nav-item<?= $socialIsActive ? ' is-active' : '' ?>" href="/social"<?= $socialIsActive ? ' aria-current="page"' : '' ?>>
+                        <svg aria-hidden="true"><use href="#icon-users"/></svg><span>Social</span>
+                    </a>
+                <?php else: ?>
+                    <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar o Social">
+                        <svg aria-hidden="true"><use href="#icon-users"/></svg><span>Social</span>
+                    </span>
+                <?php endif; ?>
             </nav>
 
             <a class="sidebar__about<?= $aboutIsActive ? ' is-active' : '' ?>" href="/sobre"<?= $aboutIsActive ? ' aria-current="page"' : '' ?>>Sobre</a>

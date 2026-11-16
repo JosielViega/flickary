@@ -81,6 +81,7 @@ final class ProfileController
         $this->profileUpdater->update(
             $userId, $form['display_name'], $form['bio'],
             (bool) $profile['is_private'], $form['is_private'],
+            $form['share_watch_activity'],
         );
         $this->session->flash('success', 'Perfil atualizado com sucesso.');
 
@@ -132,6 +133,7 @@ final class ProfileController
             'display_name' => $displayName,
             'bio' => $bio === '' ? null : $bio,
             'is_private' => $request->input('is_private') === '1',
+            'share_watch_activity' => $request->input('share_watch_activity') === '1',
         ], $errors];
     }
 
@@ -154,6 +156,10 @@ final class ProfileController
             'avatar_url' => $this->safeHttpsUrl($profile['avatar_url'] ?? null),
             'cover_url' => $this->safeHttpsUrl($profile['cover_url'] ?? null),
             'is_private' => (bool) ($profile['is_private'] ?? false),
+            'share_watch_activity' => (bool) ($profile['share_watch_activity'] ?? false),
+            'share_watch_activity_since' => is_string($profile['share_watch_activity_since'] ?? null)
+                ? $profile['share_watch_activity_since']
+                : null,
             'created_at' => $createdAt,
         ];
     }
@@ -186,6 +192,7 @@ final class ProfileController
                 'display_name' => $profile['display_name'],
                 'bio' => $profile['bio'],
                 'is_private' => $profile['is_private'],
+                'share_watch_activity' => $profile['share_watch_activity'],
             ],
             'errors' => $errors,
             'messages' => $messages,

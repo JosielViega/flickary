@@ -14,6 +14,7 @@ use App\Core\View;
 use App\Profiles\ProfileStore;
 use App\Profiles\ProfileUpdater;
 use App\Social\NullFollowRequestStore;
+use App\Social\WatchActivitySharingStore;
 use PHPUnit\Framework\TestCase;
 
 final class ProfileControllerTest extends TestCase
@@ -69,6 +70,9 @@ final class ProfileControllerTest extends TestCase
         self::assertStringContainsString('Contas conectadas', $response->body());
         self::assertStringContainsString('Google', $response->body());
         self::assertStringContainsString('Facebook', $response->body());
+        self::assertStringContainsString('name="share_watch_activity"', $response->body());
+        self::assertStringContainsString('Seu Histórico anterior não será publicado', $response->body());
+        self::assertStringContainsString('href="/social"', $response->body());
         self::assertStringNotContainsString('person@example.com', $response->body());
         self::assertStringNotContainsString('google-secret-subject', $response->body());
         self::assertStringNotContainsString('<script> especiais', $response->body());
@@ -157,6 +161,19 @@ final class ProfileControllerTest extends TestCase
         self::assertSame(303, $response->status());
         self::assertFalse($store->updates[0]['is_private']);
         self::assertNull($store->updates[0]['bio']);
+        self::assertSame([false], $store->sharingUpdates);
+    }
+
+    public function testSharingCheckboxOnlyAcceptsExactOne(): void
+    {
+        $this->auth->login(23);
+        $store = $this->store($this->profile());
+        $controller = $this->controller($store);
+
+        $controller->update($this->request(['display_name' => 'Name', 'bio' => '', 'share_watch_activity' => 'yes']));
+        $controller->update($this->request(['display_name' => 'Name', 'bio' => '', 'share_watch_activity' => '1']));
+
+        self::assertSame([false, true], $store->sharingUpdates);
     }
 
     public function testMissingAuthenticatedUserLogsOutSafely(): void
@@ -188,8 +205,13 @@ final class ProfileControllerTest extends TestCase
             false,
             new class($store) implements ProfileUpdater {
                 public function __construct(private readonly ProfileStore $store) {}
-                public function update(int $userId,string $displayName,?string $bio,bool $wasPrivate,bool $isPrivate):void
-                { $this->store->updateProfile($userId,$displayName,$bio,$isPrivate); }
+                public function update(int $userId,string $displayName,?string $bio,bool $wasPrivate,bool $isPrivate,bool $shareWatchActivity):void
+                {
+                    $this->store->updateProfile($userId,$displayName,$bio,$isPrivate);
+                    if ($this->store instanceof WatchActivitySharingStore) {
+                        $this->store->setEnabled($userId, $shareWatchActivity);
+                    }
+                }
             },
             new NullFollowRequestStore(),
         );
@@ -210,6 +232,8 @@ final class ProfileControllerTest extends TestCase
             'avatar_url' => 'https://example.test/avatar.jpg',
             'cover_url' => null,
             'is_private' => 1,
+            'share_watch_activity' => 0,
+            'share_watch_activity_since' => null,
             'created_at' => '2026-09-17 10:00:00',
             'provider_user_id' => 'google-secret-subject',
         ];
@@ -217,9 +241,10 @@ final class ProfileControllerTest extends TestCase
 
     private function store(?array $profile): ProfileStore
     {
-        return new class($profile) implements ProfileStore {
+        return new class($profile) implements ProfileStore, WatchActivitySharingStore {
             public array $findUserIds = [];
             public array $updates = [];
+            public array $sharingUpdates = [];
 
             public function __construct(private ?array $profile)
             {
@@ -243,6 +268,14 @@ final class ProfileControllerTest extends TestCase
                     $this->profile['display_name'] = $displayName;
                     $this->profile['bio'] = $bio;
                     $this->profile['is_private'] = $isPrivate;
+                }
+            }
+
+            public function setEnabled(int $userId, bool $enabled): void
+            {
+                $this->sharingUpdates[] = $enabled;
+                if ($this->profile !== null) {
+                    $this->profile['share_watch_activity'] = $enabled;
                 }
             }
         };

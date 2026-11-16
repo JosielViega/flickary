@@ -25,6 +25,7 @@ use App\Controllers\PublicProfileController;
 use App\Controllers\FollowController;
 use App\Controllers\FollowRequestController;
 use App\Controllers\UserSearchController;
+use App\Controllers\SocialFeedController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -167,6 +168,9 @@ $followRequests = new FollowRequestController(
     $app['public_profiles'], $followRequestStore,
 );
 $userSearch = new UserSearchController($app['view'], $app['auth'], $app['csrf'], $app['public_profiles']);
+$socialFeed = new SocialFeedController(
+    $app['view'], $app['auth'], $app['csrf'], $app['social_feed'], $app['user_follows'], $app['tmdb'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -182,6 +186,7 @@ $router->post('/perfil', static fn (): Response => $profile->update($app['reques
 $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookConnection->store($app['request']));
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/usuarios', static fn (): Response => $userSearch->index($app['request']));
+$router->get('/social', static fn (): Response => $socialFeed->index($app['request']));
 $router->get('/u/{username}', static fn (string $username): Response => $publicProfile->show($username));
 $router->get('/u/{username}/seguidores', static fn (string $username): Response => $publicProfile->followers($app['request'], $username));
 $router->get('/u/{username}/seguindo', static fn (string $username): Response => $publicProfile->following($app['request'], $username));

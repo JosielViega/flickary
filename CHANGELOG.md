@@ -8,6 +8,10 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Feed Social cronológico de visualizações reais, derivado de `watch_history` e ativado na navegação autenticada
+- opt-in privado de atividade, com cutoff de consentimento sem publicação retroativa
+- cutoff de início do follow aprovado, excluindo backlog e solicitações pendentes
+
 - solicitações para seguir perfis privados, com aceitar, recusar, cancelar e acesso aprovado ao conteúdo público do perfil
 - área paginada de solicitações recebidas e contador no perfil autenticado
 - migration segura que converte follows sociais antigos de targets privados em solicitações pendentes

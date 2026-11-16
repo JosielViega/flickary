@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, relações simples de seguidores e compartilhamento público com prévias sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in e compartilhamento público com prévias sociais.
 
 ## Stack
 
@@ -160,7 +160,15 @@ O registro é local, fica fora do Git e não contém credenciais. Consulte [dese
 
 `GET /u/{username}` apresenta identidade pública, contadores sociais e, quando permitido, agregados locais e até seis favoritos. Perfis privados exibem somente identidade, bio, data de entrada e contadores; seguir alguém não concede acesso ao conteúdo privado. O proprietário pode conferir a prévia completa e editar a visibilidade em `/perfil`.
 
-As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. A relação social nesta versão é apenas seguir/deixar de seguir: ainda não existem feed, solicitações de acesso, likes, comentários, mensagens ou notificações.
+As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. Perfis privados recebem solicitações que precisam ser aceitas; pending nunca equivale a follow ativo. Ainda não existem likes, comentários, mensagens ou notificações.
+
+## Feed Social de visualizações
+
+`GET /social` é privado e apresenta, em ordem cronológica de registro, somente eventos reais de `watch_history` compartilhados pelas pessoas que o usuário segue. O feed é uma projeção local desse event log, não uma segunda fonte de eventos: corrigir `watched_on` atualiza o card, apagar o Histórico remove a atividade e reassistidas continuam separadas. Agenda, Minha Lista, progresso, favoritos e avaliações nunca entram no feed.
+
+O compartilhamento nasce desativado e exige opt-in em `/perfil`. A ativação grava um cutoff; nenhum Histórico anterior é publicado retroativamente. O início do follow aprovado cria um segundo cutoff, de modo que novos followers também não recebem backlog. A visibilidade é exatamente `accepted follow AND sharing enabled AND event.created_at >= sharing_since AND event.created_at >= follow.created_at`. Requests pendentes de perfis privados não autorizam nada.
+
+Desativar a preferência oculta imediatamente todas as atividades, pois o feed não persiste cópias. Reativá-la cria um novo cutoff e não restaura eventos anteriores. A listagem usa SQL paginado e snapshots locais; pode consultar `/configuration` uma vez para pôsteres, mas permanece funcional quando o TMDB está offline.
 
 ## Compartilhamento e prévias sociais
 
@@ -215,13 +223,14 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /auth/facebook` — inicia o Authorization Code Flow do Facebook para visitantes;
 - `GET /auth/facebook/callback` — valida `state`, troca o código no servidor e resolve a identidade Facebook;
 - `GET|POST /onboarding/username` — conclui uma nova conta com username;
-- `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
+- `GET|POST /perfil` — exibe e atualiza display name, bio, privacidade e opt-in do Feed Social do usuário autenticado;
 - `GET /u/{username}` — perfil público resolvido exclusivamente pelo username;
 - `GET /u/{username}/seguidores` e `GET /u/{username}/seguindo` — conexões sociais paginadas;
 - `POST /u/{username}/seguir`, `POST /u/{username}/cancelar-solicitacao` e `POST /u/{username}/deixar-de-seguir` — follow público imediato ou solicitação privada, sempre com CSRF;
 - `GET /perfil/solicitacoes` — solicitações pendentes recebidas, paginadas em SQL;
 - `POST /perfil/solicitacoes/{username}/aceitar|recusar` — decisão do proprietário autenticado sobre uma solicitação;
 - `GET /usuarios` — busca pública local por username ou nome de exibição;
+- `GET /social` — feed privado e cronológico de visualizações compartilhadas por follows aceitos;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;

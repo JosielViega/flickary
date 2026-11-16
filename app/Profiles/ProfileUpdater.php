@@ -12,5 +12,6 @@ interface ProfileUpdater
         ?string $bio,
         bool $wasPrivate,
         bool $isPrivate,
+        bool $shareWatchActivity,
     ): void;
 }

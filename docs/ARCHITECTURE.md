@@ -193,6 +193,24 @@ share-actions (Web Share / Clipboard / fallback manual)
 
 Metadados públicos são deliberadamente estáveis: `metadata pública != estado pessoal do viewer`. Perfil privado usa descrição genérica, enquanto Movie e Series ignoram lista, favorito, nota pessoal, progresso, agenda e histórico. Imagens de mídia seguem backdrop, poster e fallback estático; falha isolada da configuração TMDB mantém o fallback Flickary.
 
+## Feed Social de visualizações
+
+```text
+user_follows
+        +
+user_profiles.share_watch_activity
+        +
+watch_history
+        ↓
+SocialFeedRepository
+        ↓
+/social
+```
+
+`Feed social = projeção de watch_history`: não existe tabela paralela, sincronização de eventos ou read receipt. A query parte de `user_follows`, junta apenas a identidade mínima do ator e aplica a regra `accepted follow AND sharing enabled AND event.created_at >= sharing_since AND event.created_at >= follow.created_at`. Assim, pending, evento anterior ao consentimento e evento anterior à relação aprovada nunca aparecem.
+
+A paginação e o `COUNT` usam os mesmos filtros no MariaDB e a ordenação é `watch_history.created_at DESC, id DESC`; `watched_on` permanece a data humana exibida. O controller pode pedir somente a configuração de imagens do TMDB uma vez por request, sem details por card. Falha completa do TMDB mantém títulos, ator, episódio e datas locais disponíveis.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.
