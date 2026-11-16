@@ -103,6 +103,21 @@ $avatar = static function (?string $value): ?string {
                                 <span class="social-activity-card__date">Assistiu em <?= e($date($activity->watchedOn)) ?></span>
                             </span>
                         </a>
+                        <footer class="social-activity-card__social">
+                            <form method="post" action="/social/atividades/<?= e((string) $activity->historyId) ?>/<?= $activity->viewerLiked ? 'descurtir' : 'curtir' ?>">
+                                <?= $csrf->field() ?>
+                                <input type="hidden" name="page" value="<?= e((string) $activities->page) ?>">
+                                <button
+                                    class="social-activity-card__like<?= $activity->viewerLiked ? ' is-liked' : '' ?>"
+                                    type="submit"
+                                    aria-pressed="<?= $activity->viewerLiked ? 'true' : 'false' ?>"
+                                    aria-label="<?= $activity->viewerLiked ? 'Descurtir' : 'Curtir' ?> <?= e($activity->title) ?>"
+                                >
+                                    <span aria-hidden="true"><?= $activity->viewerLiked ? '♥' : '♡' ?></span>
+                                    <?= $activity->viewerLiked ? 'Curtido' : 'Curtir' ?> · <?= e((string) $activity->likeCount) ?>
+                                </button>
+                            </form>
+                        </footer>
                     </article>
                 </li>
             <?php endforeach; ?>

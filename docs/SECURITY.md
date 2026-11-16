@@ -115,5 +115,7 @@ O builder HostGator usa allowlist e falha se detectar configurações do servido
 - Solicitação pendente nunca é critério de autorização; somente um follow aceito libera os agregados da página pública.
 - Accept/reject usam o usuário autenticado como target e o username validado da rota como requester; IDs do POST são ignorados.
 - Todas as mutations sociais exigem CSRF e usam PRG.
+- Curtir exige autenticação, CSRF, ID interno positivo e a mesma visibilidade do Feed Social; atividade inexistente ou oculta responde 404.
+- A autorização e o INSERT da curtida ocorrem na mesma operação SQL e não consultam o TMDB. Descurtir remove somente a linha do usuário autenticado, inclusive após perda de visibilidade.
 - Metadata de perfil privado é genérica até para owner e follower aprovado.
 - Agenda, histórico detalhado e lista completa não são expostos pela autorização social.

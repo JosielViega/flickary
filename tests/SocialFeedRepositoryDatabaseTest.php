@@ -166,6 +166,35 @@ final class SocialFeedRepositoryDatabaseTest extends TestCase
         self::assertSame(['Arrival', 'Matrix', 'Matrix'], array_map(static fn ($item): string => $item->title, $page->items));
     }
 
+    public function testLikesAreAggregatedWithoutDuplicatingPaginationOrChangingOrder(): void
+    {
+        $viewer = $this->createUser('aggregate.viewer', 'Viewer');
+        $other = $this->createUser('aggregate.other', 'Other');
+        $actor = $this->createUser('aggregate.actor', 'Actor');
+        $this->sharingAt($actor, true, '2026-11-01 00:00:00');
+        $this->followAt($viewer, $actor, '2026-11-02 00:00:00');
+        $older = $this->history($actor, 'Older', 'movie', '2026-11-03 00:00:00', '2026-11-03');
+        $newer = $this->history($actor, 'Newer', 'episode', '2026-11-04 00:00:00', '2026-11-04', 1, 1);
+        $likers = [$viewer, $other];
+        for ($index = 1; $index <= 18; $index++) {
+            $likers[] = $this->createUser('aggregate.liker.' . $index, 'Liker ' . $index);
+        }
+        $statement = $this->database->connection()->prepare('INSERT INTO social_activity_likes(history_id,user_id) VALUES (?,?)');
+        foreach ($likers as $liker) {
+            $statement->execute([$newer, $liker]);
+        }
+
+        $page = $this->feed->paginateForViewer($viewer, 1, 1);
+        self::assertSame(2, $page->total);
+        self::assertSame($newer, $page->items[0]->historyId);
+        self::assertSame(20, $page->items[0]->likeCount);
+        self::assertTrue($page->items[0]->viewerLiked);
+        $second = $this->feed->paginateForViewer($viewer, 2, 1);
+        self::assertSame($older, $second->items[0]->historyId);
+        self::assertSame(0, $second->items[0]->likeCount);
+        self::assertFalse($second->items[0]->viewerLiked);
+    }
+
     private function createUser(string $username, string $displayName, bool $private = false): int
     {
         $id = $this->users->create($username, null);
@@ -226,6 +255,7 @@ final class SocialFeedRepositoryDatabaseTest extends TestCase
     private function clear(): void
     {
         $pdo = $this->database->connection();
+        $pdo->exec('DELETE FROM social_activity_likes');
         $pdo->exec('DELETE FROM user_follow_requests');
         $pdo->exec('DELETE FROM user_follows');
         $pdo->exec('DELETE FROM watch_history');

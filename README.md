@@ -160,7 +160,7 @@ O registro é local, fica fora do Git e não contém credenciais. Consulte [dese
 
 `GET /u/{username}` apresenta identidade pública, contadores sociais e, quando permitido, agregados locais e até seis favoritos. Perfis privados exibem somente identidade, bio, data de entrada e contadores; seguir alguém não concede acesso ao conteúdo privado. O proprietário pode conferir a prévia completa e editar a visibilidade em `/perfil`.
 
-As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. Perfis privados recebem solicitações que precisam ser aceitas; pending nunca equivale a follow ativo. Ainda não existem likes, comentários, mensagens ou notificações.
+As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. Perfis privados recebem solicitações que precisam ser aceitas; pending nunca equivale a follow ativo. Ainda não existem comentários, mensagens ou notificações.
 
 ## Feed Social de visualizações
 
@@ -169,6 +169,8 @@ As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginaç�
 O compartilhamento nasce desativado e exige opt-in em `/perfil`. A ativação grava um cutoff; nenhum Histórico anterior é publicado retroativamente. O início do follow aprovado cria um segundo cutoff, de modo que novos followers também não recebem backlog. A visibilidade é exatamente `accepted follow AND sharing enabled AND event.created_at >= sharing_since AND event.created_at >= follow.created_at`. Requests pendentes de perfis privados não autorizam nada.
 
 Desativar a preferência oculta imediatamente todas as atividades, pois o feed não persiste cópias. Reativá-la cria um novo cutoff e não restaura eventos anteriores. A listagem usa SQL paginado e snapshots locais; pode consultar `/configuration` uma vez para pôsteres, mas permanece funcional quando o TMDB está offline.
+
+Cada atividade visível pode receber uma curtida por usuário. A mesma regra do feed autoriza `POST /social/atividades/{id}/curtir`; a PK composta de `social_activity_likes` garante idempotência e o card traz contagem e estado pessoal sem N+1. A curtida não cria atividade, não altera `watch_history`, não gera notificação nem expõe lista de pessoas. Apagar o evento no Histórico remove suas curtidas por cascade.
 
 ## Compartilhamento e prévias sociais
 
@@ -231,6 +233,7 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `POST /perfil/solicitacoes/{username}/aceitar|recusar` — decisão do proprietário autenticado sobre uma solicitação;
 - `GET /usuarios` — busca pública local por username ou nome de exibição;
 - `GET /social` — feed privado e cronológico de visualizações compartilhadas por follows aceitos;
+- `POST /social/atividades/{id}/curtir|descurtir` — interação idempotente sobre atividade visível do feed;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;

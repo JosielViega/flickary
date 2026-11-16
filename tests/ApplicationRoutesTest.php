@@ -164,6 +164,14 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('Seu Social ainda está vazio', $authenticated->body());
         self::assertStringContainsString('href="/social" aria-current="page"', $authenticated->body());
         self::assertStringContainsString('bottom-nav__item is-active', $authenticated->body());
+
+        foreach (['/social/atividades/31/curtir', '/social/atividades/31/descurtir'] as $path) {
+            $_SESSION = [];
+            $mutation = $this->request('POST', $path);
+            $visitorMutation = $this->router($mutation)->dispatch($mutation);
+            self::assertSame(303, $visitorMutation->status());
+            self::assertSame('/login', $visitorMutation->headers()['Location']);
+        }
     }
 
     public function testSearchAndAboutArePublicRealRoutesWithActiveNavigation(): void
@@ -371,6 +379,10 @@ final class ApplicationRoutesTest extends TestCase
             'user_follow_requests' => new \App\Social\NullFollowRequestStore(),
             'social_feed' => new class implements \App\Social\SocialFeedReader {
                 public function paginateForViewer(int$userId,int$page,int$perPage):\App\Social\SocialFeedPage{return new \App\Social\SocialFeedPage([],0,$page,$perPage);}
+            },
+            'social_activity_likes' => new class implements \App\Social\SocialActivityLikeStore {
+                public function likeVisibleActivity(int$viewerUserId,int$historyId):\App\Social\SocialActivityLikeResult{return \App\Social\SocialActivityLikeResult::Hidden;}
+                public function unlike(int$viewerUserId,int$historyId):void{}
             },
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {

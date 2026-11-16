@@ -8,6 +8,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Curtidas em atividades do Feed Social, com contagem, estado pessoal e autorização pela mesma visibilidade do feed
 - Feed Social cronológico de visualizações reais, derivado de `watch_history` e ativado na navegação autenticada
 - opt-in privado de atividade, com cutoff de consentimento sem publicação retroativa
 - cutoff de início do follow aprovado, excluindo backlog e solicitações pendentes

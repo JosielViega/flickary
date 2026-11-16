@@ -14,6 +14,8 @@ use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
 use App\Social\FollowStore;
+use App\Social\SocialActivityLikeResult;
+use App\Social\SocialActivityLikeStore;
 use App\Social\SocialFeedReader;
 
 final class SocialFeedController
@@ -26,8 +28,50 @@ final class SocialFeedController
         private readonly Csrf $csrf,
         private readonly SocialFeedReader $feed,
         private readonly FollowStore $follows,
+        private readonly SocialActivityLikeStore $likes,
         private readonly TmdbCatalog $tmdb,
     ) {
+    }
+
+    public function like(Request $request, string $id): Response
+    {
+        $userId = $this->auth->id();
+        if ($userId === null) {
+            return Response::redirect('/login', 303);
+        }
+        if (!$this->csrf->verify($request->input('_token'))) {
+            return Response::html('A sessão de formulário expirou.', 403);
+        }
+        $historyId = $this->historyId($id);
+        if ($historyId === null) {
+            return $this->notFound($id);
+        }
+
+        $result = $this->likes->likeVisibleActivity($userId, $historyId);
+        if ($result === SocialActivityLikeResult::Hidden) {
+            return $this->notFound($id);
+        }
+
+        return Response::redirect($this->socialLocation($request->input('page')), 303);
+    }
+
+    public function unlike(Request $request, string $id): Response
+    {
+        $userId = $this->auth->id();
+        if ($userId === null) {
+            return Response::redirect('/login', 303);
+        }
+        if (!$this->csrf->verify($request->input('_token'))) {
+            return Response::html('A sessão de formulário expirou.', 403);
+        }
+        $historyId = $this->historyId($id);
+        if ($historyId === null) {
+            return $this->notFound($id);
+        }
+
+        $this->likes->unlike($userId, $historyId);
+
+        return Response::redirect($this->socialLocation($request->input('page')), 303);
     }
 
     public function index(Request $request): Response
@@ -85,5 +129,33 @@ final class SocialFeedController
         $page = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 10000]]);
 
         return $page === false ? 1 : (int) $page;
+    }
+
+    private function historyId(string $value): ?int
+    {
+        if ($value === '' || preg_match('/^[1-9][0-9]*$/D', $value) !== 1) {
+            return null;
+        }
+        $id = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $id === false ? null : (int) $id;
+    }
+
+    private function socialLocation(mixed $page): string
+    {
+        $parsed = filter_var($page, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 10000]]);
+
+        return $parsed === false ? '/social' : '/social?page=' . (int) $parsed;
+    }
+
+    private function notFound(string $id): Response
+    {
+        return Response::html($this->view->render('pages/404', [
+            'title' => 'Atividade não encontrada',
+            'path' => '/social/atividades/' . $id,
+            'currentRoute' => 'social',
+            'auth' => $this->auth,
+            'csrf' => $this->csrf,
+        ]), 404);
     }
 }

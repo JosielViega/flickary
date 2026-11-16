@@ -6,18 +6,13 @@ namespace App\Repositories;
 
 use App\Core\Database;
 use App\Social\SocialActivity;
+use App\Social\SocialActivityVisibility;
 use App\Social\SocialFeedPage;
 use App\Social\SocialFeedReader;
 use PDO;
 
 final class SocialFeedRepository implements SocialFeedReader
 {
-    private const VISIBILITY = 'f.follower_user_id = :viewer_user_id '
-        . 'AND p.share_watch_activity = 1 '
-        . 'AND p.share_watch_activity_since IS NOT NULL '
-        . 'AND wh.created_at >= p.share_watch_activity_since '
-        . 'AND wh.created_at >= f.created_at';
-
     public function __construct(private readonly Database $database)
     {
     }
@@ -31,10 +26,11 @@ final class SocialFeedRepository implements SocialFeedReader
         $from = ' FROM user_follows f '
             . 'INNER JOIN user_profiles p ON p.user_id = f.followed_user_id '
             . 'INNER JOIN users u ON u.id = p.user_id '
-            . 'INNER JOIN watch_history wh ON wh.user_id = p.user_id '
-            . 'WHERE ' . self::VISIBILITY;
+            . 'INNER JOIN watch_history wh ON wh.user_id = p.user_id ';
 
-        $count = $this->database->connection()->prepare('SELECT COUNT(*)' . $from);
+        $count = $this->database->connection()->prepare(
+            'SELECT COUNT(*)' . $from . 'WHERE ' . SocialActivityVisibility::SQL,
+        );
         $count->bindValue(':viewer_user_id', $viewerUserId, PDO::PARAM_INT);
         $count->execute();
         $total = (int) $count->fetchColumn();
@@ -44,10 +40,16 @@ final class SocialFeedRepository implements SocialFeedReader
             . 'p.display_name AS actor_display_name, p.avatar_url AS actor_avatar_url, '
             . 'wh.source, wh.entry_type, wh.source_id, wh.season_number, wh.episode_number, '
             . 'wh.title, wh.episode_title, wh.content_date, wh.poster_path, wh.is_anime, '
-            . 'wh.watched_on, wh.created_at' . $from
+            . 'wh.watched_on, wh.created_at, COALESCE(lc.like_count, 0) AS like_count, '
+            . 'CASE WHEN vl.user_id IS NULL THEN 0 ELSE 1 END AS viewer_liked' . $from
+            . ' LEFT JOIN (SELECT history_id, COUNT(*) AS like_count FROM social_activity_likes GROUP BY history_id) lc '
+            . 'ON lc.history_id = wh.id '
+            . 'LEFT JOIN social_activity_likes vl ON vl.history_id = wh.id AND vl.user_id = :viewer_like_user_id'
+            . ' WHERE ' . SocialActivityVisibility::SQL
             . ' ORDER BY wh.created_at DESC, wh.id DESC LIMIT :limit OFFSET :offset',
         );
         $statement->bindValue(':viewer_user_id', $viewerUserId, PDO::PARAM_INT);
+        $statement->bindValue(':viewer_like_user_id', $viewerUserId, PDO::PARAM_INT);
         $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $statement->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
         $statement->execute();
@@ -71,6 +73,8 @@ final class SocialFeedRepository implements SocialFeedReader
                 $row['is_anime'] === null ? null : (bool) (int) $row['is_anime'],
                 (string) $row['watched_on'],
                 (string) $row['created_at'],
+                (int) $row['like_count'],
+                (bool) (int) $row['viewer_liked'],
             ),
             $statement->fetchAll(PDO::FETCH_ASSOC),
         );

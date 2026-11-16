@@ -16,6 +16,8 @@ use App\Integrations\Tmdb\TmdbImageConfiguration;
 use App\Social\FollowStore;
 use App\Social\PublicProfilePage;
 use App\Social\SocialActivity;
+use App\Social\SocialActivityLikeResult;
+use App\Social\SocialActivityLikeStore;
 use App\Social\SocialFeedPage;
 use App\Social\SocialFeedReader;
 use PHPUnit\Framework\TestCase;
@@ -67,7 +69,7 @@ final class SocialFeedControllerTest extends TestCase
     public function testRendersLocalMovieEpisodeAnimeAndEscapesSnapshotsWithoutDetailCalls(): void
     {
         $this->auth->login(7);
-        $movie = $this->activity(31, 'movie', '<script>Matrix</script>', null, null, null, true);
+        $movie = $this->activity(31, 'movie', '<script>Matrix</script>', null, null, null, true, 3, true);
         $episode = $this->activity(32, 'episode', 'Breaking Bad', '<img src=x onerror=alert(1)>', 1, 1, false);
         $tmdb = new SocialFeedTmdbFake();
         $response = $this->controller(new SocialFeedPage([$episode, $movie], 31, 1, 30), 1, $tmdb)
@@ -87,6 +89,11 @@ final class SocialFeedControllerTest extends TestCase
         self::assertStringContainsString('href="/u/actor.user"', $response->body());
         self::assertStringContainsString('href="/social" aria-current="page"', $response->body());
         self::assertStringContainsString('Página 1 de 2', $response->body());
+        self::assertStringContainsString('action="/social/atividades/31/descurtir"', $response->body());
+        self::assertStringContainsString('aria-pressed="true"', $response->body());
+        self::assertStringContainsString('Curtido · 3', $response->body());
+        self::assertStringContainsString('action="/social/atividades/32/curtir"', $response->body());
+        self::assertStringContainsString('Curtir · 0', $response->body());
         self::assertSame(5, preg_match_all('/<(?:a|span) class="bottom-nav__item/', $response->body()));
         self::assertStringContainsString('bottom-nav__item is-active', $response->body());
     }
@@ -105,7 +112,60 @@ final class SocialFeedControllerTest extends TestCase
         self::assertStringNotContainsString('image.tmdb.test', $response->body());
     }
 
-    private function controller(SocialFeedPage $page, int $following = 0, ?SocialFeedTmdbFake $tmdb = null): SocialFeedController
+    public function testLikeRequiresAuthCsrfAndValidInternalId(): void
+    {
+        $likes = new SocialActivityLikeStoreFake();
+        $controller = $this->controller(new SocialFeedPage([], 0, 1, 30), likes: $likes);
+        self::assertSame(303, $controller->like(new Request(), '31')->status());
+
+        $this->auth->login(7);
+        self::assertSame(403, $controller->like(new Request(), '31')->status());
+        $request = new Request(parsedBody: ['_token' => (new Csrf($this->session))->token()]);
+        self::assertSame(404, $controller->like($request, '0')->status());
+        self::assertSame(404, $controller->like($request, '12x')->status());
+        self::assertSame([], $likes->likeCalls);
+    }
+
+    public function testLikeHidesInvisibleActivityAndUsesPrgWithValidatedPage(): void
+    {
+        $this->auth->login(7);
+        $likes = new SocialActivityLikeStoreFake(SocialActivityLikeResult::Hidden);
+        $controller = $this->controller(new SocialFeedPage([], 0, 1, 30), likes: $likes);
+        $csrf = (new Csrf($this->session))->token();
+        self::assertSame(404, $controller->like(new Request(parsedBody: ['_token' => $csrf]), '31')->status());
+
+        $likes->result = SocialActivityLikeResult::Liked;
+        $response = $controller->like(new Request(parsedBody: ['_token' => $csrf, 'page' => '2']), '31');
+        self::assertSame(303, $response->status());
+        self::assertSame('/social?page=2', $response->headers()['Location']);
+
+        $likes->result = SocialActivityLikeResult::AlreadyLiked;
+        $duplicate = $controller->like(new Request(parsedBody: ['_token' => $csrf, 'page' => 'bad']), '31');
+        self::assertSame('/social', $duplicate->headers()['Location']);
+        self::assertSame([[7, 31], [7, 31], [7, 31]], $likes->likeCalls);
+    }
+
+    public function testUnlikeIsIdempotentAndCanRemoveAfterVisibilityIsLost(): void
+    {
+        $likes = new SocialActivityLikeStoreFake();
+        $controller = $this->controller(new SocialFeedPage([], 0, 1, 30), likes: $likes);
+        self::assertSame(303, $controller->unlike(new Request(), '31')->status());
+
+        $this->auth->login(7);
+        $csrf = (new Csrf($this->session))->token();
+        self::assertSame(403, $controller->unlike(new Request(), '31')->status());
+        $response = $controller->unlike(new Request(parsedBody: ['_token' => $csrf, 'page' => '10001']), '31');
+        self::assertSame(303, $response->status());
+        self::assertSame('/social', $response->headers()['Location']);
+        self::assertSame([[7, 31]], $likes->unlikeCalls);
+    }
+
+    private function controller(
+        SocialFeedPage $page,
+        int $following = 0,
+        ?SocialFeedTmdbFake $tmdb = null,
+        ?SocialActivityLikeStoreFake $likes = null,
+    ): SocialFeedController
     {
         $reader = new class($page) implements SocialFeedReader {
             public function __construct(private readonly SocialFeedPage $page) {}
@@ -128,6 +188,7 @@ final class SocialFeedControllerTest extends TestCase
             new Csrf($this->session),
             $reader,
             $follows,
+            $likes ?? new SocialActivityLikeStoreFake(),
             $tmdb ?? new SocialFeedTmdbFake(),
         );
     }
@@ -140,12 +201,31 @@ final class SocialFeedControllerTest extends TestCase
         ?int $season = null,
         ?int $episode = null,
         ?bool $anime = false,
+        int $likeCount = 0,
+        bool $viewerLiked = false,
     ): SocialActivity {
         return new SocialActivity(
             $id, 20, 'actor.user', '<Actor>', 'https://example.test/avatar.jpg', 'tmdb', $type, 603,
             $season, $episode, $title, $episodeTitle, '1999-03-31', '/poster.jpg', $anime,
-            '1999-05-21', '2026-11-16 12:00:00',
+            '1999-05-21', '2026-11-16 12:00:00', $likeCount, $viewerLiked,
         );
+    }
+}
+
+final class SocialActivityLikeStoreFake implements SocialActivityLikeStore
+{
+    public array $likeCalls = [];
+    public array $unlikeCalls = [];
+
+    public function __construct(public SocialActivityLikeResult $result = SocialActivityLikeResult::Liked) {}
+    public function likeVisibleActivity(int $viewerUserId, int $historyId): SocialActivityLikeResult
+    {
+        $this->likeCalls[] = [$viewerUserId, $historyId];
+        return $this->result;
+    }
+    public function unlike(int $viewerUserId, int $historyId): void
+    {
+        $this->unlikeCalls[] = [$viewerUserId, $historyId];
     }
 }
 

@@ -24,6 +24,8 @@ final readonly class SocialActivity
         public ?bool $isAnime,
         public string $watchedOn,
         public string $createdAt,
+        public int $likeCount,
+        public bool $viewerLiked,
     ) {
     }
 }

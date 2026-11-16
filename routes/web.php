@@ -169,7 +169,8 @@ $followRequests = new FollowRequestController(
 );
 $userSearch = new UserSearchController($app['view'], $app['auth'], $app['csrf'], $app['public_profiles']);
 $socialFeed = new SocialFeedController(
-    $app['view'], $app['auth'], $app['csrf'], $app['social_feed'], $app['user_follows'], $app['tmdb'],
+    $app['view'], $app['auth'], $app['csrf'], $app['social_feed'], $app['user_follows'],
+    $app['social_activity_likes'], $app['tmdb'],
 );
 $router = $app['router'];
 
@@ -187,6 +188,8 @@ $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookCo
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/usuarios', static fn (): Response => $userSearch->index($app['request']));
 $router->get('/social', static fn (): Response => $socialFeed->index($app['request']));
+$router->post('/social/atividades/{id}/curtir', static fn (string $id): Response => $socialFeed->like($app['request'], $id));
+$router->post('/social/atividades/{id}/descurtir', static fn (string $id): Response => $socialFeed->unlike($app['request'], $id));
 $router->get('/u/{username}', static fn (string $username): Response => $publicProfile->show($username));
 $router->get('/u/{username}/seguidores', static fn (string $username): Response => $publicProfile->followers($app['request'], $username));
 $router->get('/u/{username}/seguindo', static fn (string $username): Response => $publicProfile->following($app['request'], $username));
