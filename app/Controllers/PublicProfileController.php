@@ -18,6 +18,9 @@ use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
 use App\Social\FollowStore;
+use App\Social\FollowRequestStore;
+use App\Social\FollowRelationshipState;
+use App\Social\PrivateProfileAccessPolicy;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
 
@@ -35,6 +38,8 @@ final class PublicProfileController
         private readonly FollowStore $follows,
         private readonly TmdbCatalog $tmdb,
         private readonly PublicUrl $publicUrl,
+        private readonly FollowRequestStore $followRequests,
+        private readonly PrivateProfileAccessPolicy $accessPolicy,
     ) {
     }
 
@@ -61,7 +66,14 @@ final class PublicProfileController
 
         $viewerUserId = $this->auth->id();
         $isOwner = $viewerUserId === $profile->userId;
-        $canViewContent = !$profile->isPrivate || $isOwner;
+        $isFollowing = $viewerUserId !== null && !$isOwner
+            ? $this->follows->isFollowing($viewerUserId, $profile->userId) : false;
+        $isPending = $viewerUserId !== null && !$isOwner && !$isFollowing
+            ? $this->followRequests->isPending($viewerUserId, $profile->userId) : false;
+        $relationshipState = $isFollowing
+            ? FollowRelationshipState::Following
+            : ($isPending ? FollowRelationshipState::Pending : FollowRelationshipState::None);
+        $canViewContent = $this->accessPolicy->canView($profile, $viewerUserId, $isFollowing);
         $favorites = $canViewContent ? $this->profiles->recentFavorites($profile->userId, 6) : [];
         $posterUrls = $this->posterUrls($favorites);
 
@@ -72,8 +84,7 @@ final class PublicProfileController
             'csrf' => $this->csrf,
             'profile' => $profile,
             'isOwner' => $isOwner,
-            'isFollowing' => $viewerUserId !== null && !$isOwner
-                ? $this->follows->isFollowing($viewerUserId, $profile->userId) : false,
+            'relationshipState' => $relationshipState,
             'canViewContent' => $canViewContent,
             'followersCount' => $this->follows->countFollowers($profile->userId),
             'followingCount' => $this->follows->countFollowing($profile->userId),

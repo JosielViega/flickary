@@ -8,6 +8,10 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- solicitações para seguir perfis privados, com aceitar, recusar, cancelar e acesso aprovado ao conteúdo público do perfil
+- área paginada de solicitações recebidas e contador no perfil autenticado
+- migration segura que converte follows sociais antigos de targets privados em solicitações pendentes
+
 - compartilhamento nativo progressivo de perfis e títulos, com copiar link e fallback manual acessível
 - URLs canônicas derivadas de `APP_URL` e prévias Open Graph server-side com imagem Flickary estática
 
@@ -17,7 +21,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Security
 
-- privacidade pública/privada aplicada no servidor; follow não autoriza conteúdo privado
+- pending nunca autoriza conteúdo privado; somente um follow aceito libera a página pública do perfil
+- accept e reject derivam o target de `Auth::id()`, resolvem requester pela rota e exigem CSRF
+- metadata social de perfil privado permanece genérica e independente do viewer
 
 ### Changed
 

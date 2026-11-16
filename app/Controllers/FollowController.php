@@ -11,6 +11,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
+use App\Social\FollowRequestStore;
 use App\Social\FollowStore;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
@@ -25,6 +26,7 @@ final class FollowController
         private readonly UsernamePolicy $usernamePolicy,
         private readonly PublicProfileReader $profiles,
         private readonly FollowStore $follows,
+        private readonly FollowRequestStore $followRequests,
     ) {
     }
 
@@ -38,6 +40,27 @@ final class FollowController
         return $this->mutate($request, $username, false);
     }
 
+    public function cancel(Request $request, string $username): Response
+    {
+        $viewerUserId = $this->auth->id();
+        if ($viewerUserId === null) {
+            return Response::redirect('/login', 303);
+        }
+        if (!$this->csrf->verify($request->input('_token'))) {
+            return Response::html('A sessão de formulário expirou.', 403);
+        }
+        $profile = $this->resolve($username);
+        if ($profile === null) {
+            return $this->notFound($username);
+        }
+        if ($viewerUserId === $profile->userId) {
+            return Response::html('Você não pode solicitar o próprio perfil.', 422);
+        }
+        $this->followRequests->cancel($viewerUserId, $profile->userId);
+        $this->session->flash('success', 'Solicitação cancelada.');
+        return Response::redirect('/u/' . $profile->username, 303);
+    }
+
     private function mutate(Request $request, string $username, bool $follow): Response
     {
         $viewerUserId = $this->auth->id();
@@ -49,16 +72,25 @@ final class FollowController
         }
         $profile = $this->resolve($username);
         if ($profile === null) {
-            return Response::html($this->view->render('pages/404', [
-                'title'=>'Perfil não encontrado','path'=>'/u/'.$username,'currentRoute'=>null,'auth'=>$this->auth,'csrf'=>$this->csrf,
-            ]), 404);
+            return $this->notFound($username);
         }
         if ($viewerUserId === $profile->userId) {
             return Response::html('Você não pode seguir o próprio perfil.', 422);
         }
         if ($follow) {
-            $this->follows->follow($viewerUserId, $profile->userId);
-            $this->session->flash('success', 'Agora você segue @' . $profile->username . '.');
+            if ($this->follows->isFollowing($viewerUserId, $profile->userId)) {
+                $this->session->flash('success', 'Você já segue @' . $profile->username . '.');
+            } elseif ($profile->isPrivate) {
+                $alreadyPending = $this->followRequests->isPending($viewerUserId, $profile->userId);
+                $this->followRequests->request($viewerUserId, $profile->userId);
+                $this->session->flash('success', $alreadyPending
+                    ? 'Solicitação já enviada.'
+                    : 'Solicitação enviada para @' . $profile->username . '.');
+            } else {
+                $this->follows->follow($viewerUserId, $profile->userId);
+                $this->followRequests->cancel($viewerUserId, $profile->userId);
+                $this->session->flash('success', 'Agora você segue @' . $profile->username . '.');
+            }
         } else {
             $this->follows->unfollow($viewerUserId, $profile->userId);
             $this->session->flash('success', 'Você deixou de seguir @' . $profile->username . '.');
@@ -73,5 +105,12 @@ final class FollowController
             return null;
         }
         return $this->profiles->findByUsername($normalized);
+    }
+
+    private function notFound(string $username): Response
+    {
+        return Response::html($this->view->render('pages/404', [
+            'title'=>'Perfil não encontrado','path'=>'/u/'.$username,'currentRoute'=>null,'auth'=>$this->auth,'csrf'=>$this->csrf,
+        ]), 404);
     }
 }

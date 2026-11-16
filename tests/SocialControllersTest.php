@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Authentication\UsernamePolicy;
 use App\Controllers\FollowController;
+use App\Controllers\FollowRequestController;
 use App\Controllers\PublicProfileController;
 use App\Controllers\UserSearchController;
 use App\Core\Auth;
@@ -20,6 +21,10 @@ use App\Integrations\Tmdb\TmdbImageConfiguration;
 use App\Integrations\Tmdb\TmdbMediaDetails;
 use App\Integrations\Tmdb\TmdbSeasonDetails;
 use App\Social\FollowStore;
+use App\Social\FollowRequestPage;
+use App\Social\FollowRequestStore;
+use App\Social\FollowRequest;
+use App\Social\PrivateProfileAccessPolicy;
 use App\Social\PublicFavorite;
 use App\Social\PublicProfile;
 use App\Social\PublicProfilePage;
@@ -36,12 +41,13 @@ final class SocialControllersTest extends TestCase
     private Csrf $csrf;
     private SocialProfileReaderFake $profiles;
     private FollowStoreFake $follows;
+    private FollowRequestStoreFake $followRequests;
 
     protected function setUp(): void
     {
         $this->sessionExisted=isset($_SESSION); $this->previousSession=$_SESSION??[]; $_SESSION=[];
         $this->session=new Session(false); $this->auth=new Auth($this->session); $this->csrf=new Csrf($this->session);
-        $this->profiles=new SocialProfileReaderFake(); $this->follows=new FollowStoreFake();
+        $this->profiles=new SocialProfileReaderFake(); $this->follows=new FollowStoreFake(); $this->followRequests=new FollowRequestStoreFake();
     }
 
     protected function tearDown(): void
@@ -63,17 +69,35 @@ final class SocialControllersTest extends TestCase
         self::assertStringNotContainsString('scheduled_on',$response->body());
     }
 
-    public function testPrivateProfileHidesContentEvenFromFollower(): void
+    public function testPrivateProfileAllowsAcceptedFollower(): void
     {
         $this->profiles->profile=$this->profile(true);
         $this->auth->login(22); $this->follows->following=true;
         $response=$this->publicController()->show('social.user');
         self::assertSame(200,$response->status());
-        self::assertStringContainsString('Perfil privado',$response->body());
-        self::assertStringContainsString('não libera o conteúdo privado',$response->body());
+        self::assertStringContainsString('Seguindo',$response->body());
+        self::assertStringContainsString('Na coleção',$response->body());
+        self::assertSame(1,$this->profiles->statisticsCalls);
+        self::assertSame(1,$this->profiles->favoriteCalls);
+    }
+
+    public function testPendingPrivateRequestRemainsLocked(): void
+    {
+        $this->profiles->profile=$this->profile(true); $this->auth->login(22); $this->followRequests->pending=true;
+        $response=$this->publicController()->show('social.user');
+        self::assertStringContainsString('Solicitação enviada',$response->body());
+        self::assertStringContainsString('aguardando aprovação',$response->body());
         self::assertStringNotContainsString('Na coleção',$response->body());
-        self::assertSame(0,$this->profiles->statisticsCalls);
-        self::assertSame(0,$this->profiles->favoriteCalls);
+    }
+
+    public function testPrivateFollowCreatesOneRequestAndNoFollow(): void
+    {
+        $this->profiles->profile=$this->profile(true); $this->auth->login(22);
+        $request=new Request(parsedBody:['_token'=>$this->csrf->token()]); $controller=$this->followController();
+        self::assertSame(303,$controller->follow($request,'social.user')->status());
+        self::assertSame(303,$controller->follow($request,'social.user')->status());
+        self::assertSame([[22,10]],$this->followRequests->requestCalls);
+        self::assertSame([],$this->follows->followCalls);
     }
 
     public function testPrivateOwnerSeesFullPreviewAndEditLink(): void
@@ -105,11 +129,18 @@ final class SocialControllersTest extends TestCase
         $visitor = $this->publicController()->show('social.user')->body();
         $visitorHead = strstr($visitor, '</head>', true);
 
+        $this->auth->login(22); $this->followRequests->pending=true;
+        $pendingHead = strstr($this->publicController()->show('social.user')->body(), '</head>', true);
+        $this->followRequests->pending=false; $this->follows->following=true;
+        $approvedHead = strstr($this->publicController()->show('social.user')->body(), '</head>', true);
+        $this->auth->logout();
         $this->auth->login(10);
         $owner = $this->publicController()->show('social.user')->body();
         $ownerHead = strstr($owner, '</head>', true);
 
         self::assertSame($visitorHead, $ownerHead);
+        self::assertSame($visitorHead, $pendingHead);
+        self::assertSame($visitorHead, $approvedHead);
         self::assertStringContainsString('Perfil privado de @social.user no Flickary.', $visitorHead);
         self::assertStringNotContainsString('BIO SECRET 123', $visitorHead);
         self::assertStringNotContainsString('Na coleção', $visitorHead);
@@ -158,6 +189,22 @@ final class SocialControllersTest extends TestCase
         self::assertSame(303,$response->status()); self::assertSame('/u/social.user',$response->headers()['Location']);
     }
 
+    public function testIncomingRequestsRequireAuthRenderSafelyAndAcceptWithCsrf(): void
+    {
+        $controller=new FollowRequestController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->followRequests);
+        self::assertSame(303,$controller->index(new Request())->status());
+        $this->auth->login(22); $this->profiles->profile=$this->profile(true,'<script>Requester</script>');
+        $this->followRequests->pending=true;
+        $this->followRequests->items=[new FollowRequest($this->profiles->profile,'2026-11-16 10:00:00')];
+        $page=$controller->index(new Request());
+        self::assertStringContainsString('&lt;script&gt;Requester&lt;/script&gt;',$page->body());
+        self::assertStringNotContainsString('<script>Requester</script>',$page->body());
+        self::assertSame(403,$controller->accept(new Request(),'social.user')->status());
+        $response=$controller->accept(new Request(parsedBody:['_token'=>$this->csrf->token()]),'social.user');
+        self::assertSame(303,$response->status()); self::assertFalse($this->followRequests->pending);
+        self::assertSame(404,$controller->accept(new Request(parsedBody:['_token'=>$this->csrf->token()]),'social.user')->status());
+    }
+
     public function testUserSearchValidatesAndEscapesResults(): void
     {
         $this->profiles->profile=$this->profile(false,'<b>Name</b>');
@@ -171,11 +218,11 @@ final class SocialControllersTest extends TestCase
 
     private function publicController(): PublicProfileController
     {
-        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog(),new PublicUrl('https://app.example.test/base/'));
+        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog(),new PublicUrl('https://app.example.test/base/'),$this->followRequests,new PrivateProfileAccessPolicy());
     }
     private function followController(): FollowController
     {
-        return new FollowController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows);
+        return new FollowController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,$this->followRequests);
     }
     private function view(): View { return new View(dirname(__DIR__).'/resources/views'); }
     private function profile(bool $private,string $name='Social User',?string $bio='Cinema & séries'): PublicProfile
@@ -200,6 +247,19 @@ final class FollowStoreFake implements FollowStore
     public function countFollowers(int $userId):int{return 3;} public function countFollowing(int $userId):int{return 2;}
     public function paginateFollowers(int $userId,int $page,int $perPage):PublicProfilePage{return new PublicProfilePage([],0,$page,$perPage);}
     public function paginateFollowing(int $userId,int $page,int $perPage):PublicProfilePage{return new PublicProfilePage([],0,$page,$perPage);}
+}
+
+final class FollowRequestStoreFake implements FollowRequestStore
+{
+    public bool $pending=false; public array $requestCalls=[]; public array $items=[];
+    public function request(int $requesterUserId,int $targetUserId):void{if(!$this->pending){$this->requestCalls[]=[$requesterUserId,$targetUserId];}$this->pending=true;}
+    public function cancel(int $requesterUserId,int $targetUserId):void{$this->pending=false;}
+    public function isPending(int $requesterUserId,int $targetUserId):bool{return $this->pending;}
+    public function countIncoming(int $targetUserId):int{return $this->pending?1:0;}
+    public function paginateIncoming(int $targetUserId,int $page,int $perPage):FollowRequestPage{return new FollowRequestPage($this->items,count($this->items),$page,$perPage);}
+    public function accept(int $requesterUserId,int $targetUserId):bool{$was=$this->pending;$this->pending=false;return $was;}
+    public function reject(int $requesterUserId,int $targetUserId):bool{$was=$this->pending;$this->pending=false;return $was;}
+    public function acceptAllForTarget(int $targetUserId):void{$this->pending=false;}
 }
 
 final class OfflineTmdbCatalog implements TmdbCatalog

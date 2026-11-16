@@ -12,6 +12,8 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\View;
 use App\Profiles\ProfileStore;
+use App\Profiles\ProfileUpdater;
+use App\Social\FollowRequestStore;
 
 final class ProfileController
 {
@@ -23,6 +25,8 @@ final class ProfileController
         private readonly ProfileStore $profiles,
         private readonly ConnectedProviderReader $providers,
         private readonly bool $facebookEnabled,
+        private readonly ProfileUpdater $profileUpdater,
+        private readonly FollowRequestStore $followRequests,
     ) {
     }
 
@@ -39,6 +43,7 @@ final class ProfileController
             $profile,
             providers: $this->providers->providersForUser($userId),
             messages: $this->session->consumeFlash(),
+            pendingRequestCount: $this->followRequests->countIncoming($userId),
         );
     }
 
@@ -56,6 +61,7 @@ final class ProfileController
                 $profile,
                 errors: ['form' => 'Sua sessão de formulário expirou. Atualize a página e tente novamente.'],
                 providers: $this->providers->providersForUser($userId),
+                pendingRequestCount: $this->followRequests->countIncoming($userId),
                 status: 403,
             );
         }
@@ -67,15 +73,14 @@ final class ProfileController
                 form: $form,
                 errors: $errors,
                 providers: $this->providers->providersForUser($userId),
+                pendingRequestCount: $this->followRequests->countIncoming($userId),
                 status: 422,
             );
         }
 
-        $this->profiles->updateProfile(
-            $userId,
-            $form['display_name'],
-            $form['bio'],
-            $form['is_private'],
+        $this->profileUpdater->update(
+            $userId, $form['display_name'], $form['bio'],
+            (bool) $profile['is_private'], $form['is_private'],
         );
         $this->session->flash('success', 'Perfil atualizado com sucesso.');
 
@@ -168,6 +173,7 @@ final class ProfileController
         array $errors = [],
         array $messages = [],
         array $providers = [],
+        int $pendingRequestCount = 0,
         int $status = 200,
     ): Response {
         return Response::html($this->view->render('pages/profile', [
@@ -185,6 +191,7 @@ final class ProfileController
             'messages' => $messages,
             'connectedProviders' => $providers,
             'facebookEnabled' => $this->facebookEnabled,
+            'pendingRequestCount' => $pendingRequestCount,
         ]), $status);
     }
 

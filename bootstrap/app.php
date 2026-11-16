@@ -31,6 +31,9 @@ use App\Repositories\AnimeSnapshotRepository;
 use App\Repositories\UserMediaPreferenceRepository;
 use App\Repositories\PublicProfileRepository;
 use App\Repositories\UserFollowRepository;
+use App\Repositories\UserFollowRequestRepository;
+use App\Profiles\ProfileUpdateService;
+use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
 use Dotenv\Dotenv;
 
@@ -86,6 +89,7 @@ $animeSnapshots = new AnimeSnapshotRepository($database);
 $mediaPreferences = new UserMediaPreferenceRepository($database);
 $publicProfiles = new PublicProfileRepository($database);
 $userFollows = new UserFollowRepository($database);
+$userFollowRequests = new UserFollowRequestRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -128,6 +132,9 @@ return [
     'media_preferences' => $mediaPreferences,
     'public_profiles' => $publicProfiles,
     'user_follows' => $userFollows,
+    'user_follow_requests' => $userFollowRequests,
+    'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
+    'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests),
     'account_creator' => new AccountOnboardingService(
         $database,
         $users,

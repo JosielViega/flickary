@@ -196,3 +196,16 @@ Metadados públicos são deliberadamente estáveis: `metadata pública != estado
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.
+
+## Solicitações de seguidores privados
+
+O domínio social separa intenção pendente de relação aceita:
+
+```text
+public target  -> user_follows
+private target -> user_follow_requests -> accept -> user_follows
+```
+
+Uma row em `user_follow_requests` significa apenas `pending`; não há status nem histórico de recusas. `user_follows` contém exclusivamente relações ativas usadas por contadores, listagens e pela `PrivateProfileAccessPolicy`. Assim, `pending != authorized` e `accepted follow == private profile access`, somente para os agregados já disponíveis em `/u/{username}`.
+
+O aceite individual e a transição `private -> public` são transacionais. A transição inversa preserva followers aceitos. A migration `000010` é a exceção de legado: ela converte follows preexistentes para targets privados em requests antes que follows passem a autorizar acesso.

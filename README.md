@@ -218,7 +218,9 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET|POST /perfil` — exibe e atualiza display name, bio e preferência de privacidade do usuário autenticado;
 - `GET /u/{username}` — perfil público resolvido exclusivamente pelo username;
 - `GET /u/{username}/seguidores` e `GET /u/{username}/seguindo` — conexões sociais paginadas;
-- `POST /u/{username}/seguir` e `POST /u/{username}/deixar-de-seguir` — relação autenticada e protegida por CSRF;
+- `POST /u/{username}/seguir`, `POST /u/{username}/cancelar-solicitacao` e `POST /u/{username}/deixar-de-seguir` — follow público imediato ou solicitação privada, sempre com CSRF;
+- `GET /perfil/solicitacoes` — solicitações pendentes recebidas, paginadas em SQL;
+- `POST /perfil/solicitacoes/{username}/aceitar|recusar` — decisão do proprietário autenticado sobre uma solicitação;
 - `GET /usuarios` — busca pública local por username ou nome de exibição;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
@@ -245,6 +247,12 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - demais combinações de método e caminho — página 404.
 
 O endpoint `/health` não consulta banco nem expõe ambiente, servidor, caminhos ou configurações internas.
+
+## Seguidores e perfis privados
+
+Perfis públicos recebem follows imediatamente. Perfis privados recebem uma solicitação pendente, que não conta como follower e não autoriza conteúdo; somente a aceitação cria `user_follows` e libera os agregados já exibidos por `/u/{username}`. A página `/perfil/solicitacoes` permite aceitar ou recusar, e o requester pode cancelar antes da decisão.
+
+Mudar de público para privado preserva followers já aceitos. Mudar de privado para público converte, na mesma transação da atualização do perfil, todas as solicitações pendentes em follows. A migration `000010` trata o legado de forma distinta: follows antigos direcionados a perfis privados viram solicitações, evitando concessão silenciosa de acesso.
 
 ## Identidade visual
 

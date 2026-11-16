@@ -7,8 +7,10 @@ namespace Tests;
 use App\Core\Database;
 use App\Repositories\PublicProfileRepository;
 use App\Repositories\UserFollowRepository;
+use App\Repositories\UserFollowRequestRepository;
 use App\Repositories\UserProfileRepository;
 use App\Repositories\UserRepository;
+use App\Profiles\ProfileUpdateService;
 use PHPUnit\Framework\TestCase;
 
 final class SocialRepositoryDatabaseTest extends TestCase
@@ -18,6 +20,7 @@ final class SocialRepositoryDatabaseTest extends TestCase
     private UserProfileRepository $profiles;
     private PublicProfileRepository $publicProfiles;
     private UserFollowRepository $follows;
+    private UserFollowRequestRepository $followRequests;
 
     protected function setUp(): void
     {
@@ -26,6 +29,7 @@ final class SocialRepositoryDatabaseTest extends TestCase
         $this->database=new Database(['host'=>getenv('FLICKARY_TEST_DB_HOST')?:'127.0.0.1','port'=>(int)(getenv('FLICKARY_TEST_DB_PORT')?:3306),'database'=>$name,'username'=>getenv('FLICKARY_TEST_DB_USERNAME')?:'','password'=>getenv('FLICKARY_TEST_DB_PASSWORD')?:'','charset'=>'utf8mb4']);
         $this->users=new UserRepository($this->database); $this->profiles=new UserProfileRepository($this->database);
         $this->publicProfiles=new PublicProfileRepository($this->database); $this->follows=new UserFollowRepository($this->database);
+        $this->followRequests=new UserFollowRequestRepository($this->database);
         $this->clear();
     }
 
@@ -58,6 +62,69 @@ final class SocialRepositoryDatabaseTest extends TestCase
         self::assertNull($this->publicProfiles->findByUsername('missing.user'));
     }
 
+    public function testFollowRequestLifecycleIsIdempotentPaginatedAndAcceptedAtomically():void
+    {
+        $requester=$this->create('requester.user','Requester'); $target=$this->create('target.user','Target',true);
+        $this->followRequests->request($requester,$target); $this->followRequests->request($requester,$target);
+        self::assertTrue($this->followRequests->isPending($requester,$target));
+        self::assertSame(1,$this->followRequests->countIncoming($target));
+        $page=$this->followRequests->paginateIncoming($target,1,30);
+        self::assertSame('requester.user',$page->items[0]->requester->username);
+        self::assertTrue($this->followRequests->accept($requester,$target));
+        self::assertFalse($this->followRequests->accept($requester,$target));
+        self::assertTrue($this->follows->isFollowing($requester,$target));
+        self::assertFalse($this->followRequests->isPending($requester,$target));
+        $this->follows->unfollow($requester,$target);
+        $this->followRequests->request($requester,$target);
+        self::assertTrue($this->followRequests->reject($requester,$target));
+        self::assertFalse($this->followRequests->reject($requester,$target));
+        self::assertFalse($this->follows->isFollowing($requester,$target));
+        $this->followRequests->cancel($requester,$target);
+    }
+
+    public function testSelfRequestAndAcceptedRelationshipCannotCreatePendingRow():void
+    {
+        $a=$this->create('guard.user','Guard'); $b=$this->create('accepted.user','Accepted');
+        $this->followRequests->request($a,$a);
+        $this->follows->follow($a,$b); $this->followRequests->request($a,$b);
+        self::assertFalse($this->followRequests->isPending($a,$a));
+        self::assertFalse($this->followRequests->isPending($a,$b));
+    }
+
+    public function testFollowRequestsCascadeWhenRequesterOrTargetIsDeleted():void
+    {
+        $requester=$this->create('cascade.requester','Requester'); $target=$this->create('cascade.target','Target',true);
+        $this->followRequests->request($requester,$target);
+        $this->database->connection()->exec('DELETE FROM users WHERE id='.(int)$requester);
+        self::assertSame(0,$this->followRequests->countIncoming($target));
+        $requester=$this->create('cascade.requester2','Requester 2');
+        $this->followRequests->request($requester,$target);
+        $this->database->connection()->exec('DELETE FROM users WHERE id='.(int)$target);
+        self::assertFalse($this->followRequests->isPending($requester,$target));
+    }
+
+    public function testPublishingPrivateProfileAcceptsAllPendingRequestsTransactionally():void
+    {
+        $target=$this->create('publish.user','Publish',true);
+        $a=$this->create('publish.a','A'); $b=$this->create('publish.b','B');
+        $this->followRequests->request($a,$target); $this->followRequests->request($b,$target);
+        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests))
+            ->update($target,'Publish',null,true,false);
+        self::assertSame(0,$this->followRequests->countIncoming($target));
+        self::assertTrue($this->follows->isFollowing($a,$target));
+        self::assertTrue($this->follows->isFollowing($b,$target));
+    }
+
+    public function testMakingPublicProfilePrivatePreservesAcceptedFollowers():void
+    {
+        $target=$this->create('privacy.target','Target'); $follower=$this->create('privacy.follower','Follower');
+        $this->follows->follow($follower,$target);
+        (new ProfileUpdateService($this->database,$this->profiles,$this->followRequests))
+            ->update($target,'Target',null,false,true);
+        self::assertTrue($this->follows->isFollowing($follower,$target));
+        self::assertTrue($this->publicProfiles->findByUsername('privacy.target')?->isPrivate);
+    }
+
     public function testSchemaHasCompositePrimaryReverseIndexAndTwoCascadeForeignKeys():void
     {
         $pdo=$this->database->connection(); $schema=$pdo->query('SELECT DATABASE()')->fetchColumn();
@@ -65,6 +132,15 @@ final class SocialRepositoryDatabaseTest extends TestCase
         self::assertSame('follower_user_id,followed_user_id',$pk->fetchColumn());
         $index=$pdo->prepare("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=:schema AND table_name='user_follows' AND index_name='idx_user_follows_followed'");$index->execute(['schema'=>$schema]);self::assertSame(2,(int)$index->fetchColumn());
         $fks=$pdo->prepare("SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=:schema AND table_name='user_follows' AND delete_rule='CASCADE'");$fks->execute(['schema'=>$schema]);self::assertSame(2,(int)$fks->fetchColumn());
+    }
+
+    public function testFollowRequestSchemaHasCompositePrimaryReverseIndexAndCascadeForeignKeys():void
+    {
+        $pdo=$this->database->connection(); $schema=$pdo->query('SELECT DATABASE()')->fetchColumn();
+        $pk=$pdo->prepare("SELECT GROUP_CONCAT(column_name ORDER BY ordinal_position) FROM information_schema.key_column_usage WHERE table_schema=:schema AND table_name='user_follow_requests' AND constraint_name='PRIMARY'");$pk->execute(['schema'=>$schema]);
+        self::assertSame('requester_user_id,target_user_id',$pk->fetchColumn());
+        $index=$pdo->prepare("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=:schema AND table_name='user_follow_requests' AND index_name='idx_user_follow_requests_target'");$index->execute(['schema'=>$schema]);self::assertSame(2,(int)$index->fetchColumn());
+        $fks=$pdo->prepare("SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema=:schema AND table_name='user_follow_requests' AND delete_rule='CASCADE'");$fks->execute(['schema'=>$schema]);self::assertSame(2,(int)$fks->fetchColumn());
     }
 
     public function testPublicStatisticsAndFavoritesAreLocalLimitedAndIsolated():void
@@ -89,6 +165,6 @@ final class SocialRepositoryDatabaseTest extends TestCase
     }
     private function clear():void
     {
-        $pdo=$this->database->connection();$pdo->exec('DELETE FROM user_follows');$pdo->exec('DELETE FROM user_external_identities');$pdo->exec('DELETE FROM user_profiles');$pdo->exec('DELETE FROM users');
+        $pdo=$this->database->connection();$pdo->exec('DELETE FROM user_follow_requests');$pdo->exec('DELETE FROM user_follows');$pdo->exec('DELETE FROM user_external_identities');$pdo->exec('DELETE FROM user_profiles');$pdo->exec('DELETE FROM users');
     }
 }

@@ -8,6 +8,7 @@ declare(strict_types=1);
 /** @var array $messages */
 /** @var array $connectedProviders */
 /** @var bool $facebookEnabled */
+/** @var int $pendingRequestCount */
 
 $displayName = (string) $profile['display_name'];
 $username = (string) $profile['username'];
@@ -96,6 +97,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
         </a>
         <a class="profile-statistics-link" href="/estatisticas">
             <span><span class="eyebrow">Sua jornada</span><strong>Ver minhas estatísticas</strong></span>
+            <span aria-hidden="true">→</span>
+        </a>
+        <a class="profile-follow-requests-link" href="/perfil/solicitacoes">
+            <span><span class="eyebrow">Sua comunidade</span><strong>Solicitações de seguidores · <?= e((string) $pendingRequestCount) ?></strong></span>
             <span aria-hidden="true">→</span>
         </a>
         <section class="profile-story" aria-labelledby="profile-story-title">

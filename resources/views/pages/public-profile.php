@@ -1,6 +1,7 @@
 <?php
 /** @var \App\Social\PublicProfile $profile */
 /** @var ?\App\Social\PublicProfileStatistics $statistics */
+/** @var \App\Social\FollowRelationshipState $relationshipState */
 $initial = mb_strtoupper(mb_substr($profile->displayName !== '' ? $profile->displayName : $profile->username, 0, 1));
 $joined = $profile->createdAt;
 try { $joined = (new DateTimeImmutable($joined))->format('d/m/Y'); } catch (Throwable) {}
@@ -41,10 +42,19 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
                     <a class="button button--secondary" href="/perfil">Editar perfil</a>
                 <?php elseif (!$auth->check()): ?>
                     <a class="button button--primary" href="/login">Entre para seguir</a>
+                <?php elseif ($relationshipState === \App\Social\FollowRelationshipState::Following): ?>
+                    <span class="relationship-state">Seguindo</span>
+                    <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/deixar-de-seguir">
+                        <?= $csrf->field() ?><button class="button button--secondary" type="submit">Deixar de seguir</button>
+                    </form>
+                <?php elseif ($relationshipState === \App\Social\FollowRelationshipState::Pending): ?>
+                    <span class="relationship-state">Solicitação enviada</span>
+                    <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/cancelar-solicitacao">
+                        <?= $csrf->field() ?><button class="button button--secondary" type="submit">Cancelar solicitação</button>
+                    </form>
                 <?php else: ?>
-                    <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/<?= $isFollowing ? 'deixar-de-seguir' : 'seguir' ?>">
-                        <?= $csrf->field() ?>
-                        <button class="button <?= $isFollowing ? 'button--secondary' : 'button--primary' ?>" type="submit"><?= $isFollowing ? 'Deixar de seguir' : 'Seguir' ?></button>
+                    <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/seguir">
+                        <?= $csrf->field() ?><button class="button button--primary" type="submit"><?= $profile->isPrivate ? 'Solicitar para seguir' : 'Seguir' ?></button>
                     </form>
                 <?php endif; ?>
                 <?php if (is_array($shareData ?? null)): ?>
@@ -61,10 +71,12 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
 
     <?php if ($profile->isPrivate && $isOwner): ?>
         <div class="public-profile__notice" role="status"><strong>Seu perfil está privado.</strong> Outras pessoas não veem os conteúdos exibidos nesta prévia.</div>
-    <?php elseif ($profile->isPrivate): ?>
+    <?php elseif ($profile->isPrivate && !$canViewContent): ?>
         <section class="public-profile__locked" aria-labelledby="private-profile-title">
             <span aria-hidden="true">●</span><div><p class="eyebrow">Conteúdo reservado</p><h2 id="private-profile-title">Perfil privado</h2>
-            <p>Favoritos, coleção e estatísticas pessoais não estão visíveis. Seguir este perfil não libera o conteúdo privado.</p></div>
+            <p><?= $relationshipState === \App\Social\FollowRelationshipState::Pending
+                ? 'Sua solicitação está aguardando aprovação.'
+                : 'Este perfil é privado. Envie uma solicitação para acompanhar a jornada.' ?></p></div>
         </section>
     <?php endif; ?>
 

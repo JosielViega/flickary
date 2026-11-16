@@ -12,6 +12,8 @@ use App\Core\Request;
 use App\Core\Session;
 use App\Core\View;
 use App\Profiles\ProfileStore;
+use App\Profiles\ProfileUpdater;
+use App\Social\NullFollowRequestStore;
 use PHPUnit\Framework\TestCase;
 
 final class ProfileControllerTest extends TestCase
@@ -184,6 +186,12 @@ final class ProfileControllerTest extends TestCase
                 public function providersForUser(int $userId): array { return ['google']; }
             },
             false,
+            new class($store) implements ProfileUpdater {
+                public function __construct(private readonly ProfileStore $store) {}
+                public function update(int $userId,string $displayName,?string $bio,bool $wasPrivate,bool $isPrivate):void
+                { $this->store->updateProfile($userId,$displayName,$bio,$isPrivate); }
+            },
+            new NullFollowRequestStore(),
         );
     }
 

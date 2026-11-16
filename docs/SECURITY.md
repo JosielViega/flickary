@@ -108,3 +108,12 @@ Tarefas críticas não devem rodar durante uma visita HTTP. Use cron chamando sc
 ## Mirror de produção
 
 O builder HostGator usa allowlist e falha se detectar configurações do servidor, secrets, certificados ou diretórios de dados no mirror. `.env`, `.htaccess`, uploads, logs e cache permanecem próprios de cada instalação. O builder não transmite arquivos e não executa migrations.
+
+## Privacidade social
+
+- A migration social converte follows legados de perfis privados em pendências para impedir escalada silenciosa de acesso.
+- Solicitação pendente nunca é critério de autorização; somente um follow aceito libera os agregados da página pública.
+- Accept/reject usam o usuário autenticado como target e o username validado da rota como requester; IDs do POST são ignorados.
+- Todas as mutations sociais exigem CSRF e usam PRG.
+- Metadata de perfil privado é genérica até para owner e follower aprovado.
+- Agenda, histórico detalhado e lista completa não são expostos pela autorização social.

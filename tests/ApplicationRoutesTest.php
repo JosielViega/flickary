@@ -348,6 +348,11 @@ final class ApplicationRoutesTest extends TestCase
             'personal_statistics' => new class implements \App\Statistics\StatisticsReader {
                 public function readForUser(int $userId,string $today):\App\Statistics\PersonalStatistics{return new \App\Statistics\PersonalStatistics(0,0,0,0,0,0,0,0,0,0,0,[],array_fill_keys(array_keys(\App\Media\UserMediaStatus::options()),0),0,0,0,0,0,0);}
             },
+            'user_follow_requests' => new \App\Social\NullFollowRequestStore(),
+            'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
+            'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
+                public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate):void{}
+            },
         ];
 
         return require dirname(__DIR__) . '/routes/web.php';
