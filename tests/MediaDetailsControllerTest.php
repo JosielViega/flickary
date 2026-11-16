@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Controllers\MediaDetailsController;
 use App\Core\View;
+use App\Core\PublicUrl;
 use App\Integrations\Tmdb\TmdbCatalog;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageConfiguration;
@@ -36,6 +37,10 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('href="/login"', $response->body());
         self::assertStringContainsString('Entre para adicionar à sua lista', $response->body());
         self::assertStringNotContainsString('IMDb', $response->body());
+        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/filmes/603">', $response->body());
+        self::assertStringContainsString('<meta property="og:title" content="Matrix · Flickary">', $response->body());
+        self::assertStringContainsString('<meta property="og:image" content="https://image.tmdb.org/t/p/w1280/backdrop.jpg">', $response->body());
+        self::assertStringContainsString('data-share-url="https://app.example.test/base/filmes/603"', $response->body());
     }
 
     public function testSeriesRendersAggregatesWithoutSeasonNavigation(): void
@@ -50,6 +55,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('<dt>Episódios</dt><dd>62</dd>', $response->body());
         self::assertStringNotContainsString('Temporada 1', $response->body());
         self::assertStringNotContainsString('/temporadas/', $response->body());
+        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/series/1396">', $response->body());
     }
 
     public function testAnimeMovieAndSeriesShowClassificationWithoutAdditionalRequests(): void
@@ -115,6 +121,8 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringNotContainsString('Secret Overview', $response->body());
         self::assertStringNotContainsString('/poster.jpg', $response->body());
         self::assertStringNotContainsString('/backdrop.jpg', $response->body());
+        self::assertStringNotContainsString('rel="canonical"', $response->body());
+        self::assertStringNotContainsString('property="og:title"', $response->body());
     }
 
     public function testDetailsWithoutImagesAvoidConfigurationAndUseFallbacks(): void
@@ -125,6 +133,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertSame([['movie', 603]], $catalog->calls);
         self::assertStringContainsString('media-detail__poster', $response->body());
         self::assertStringNotContainsString('<img src=', $response->body());
+        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
         self::assertStringContainsString('Matrix', $response->body());
     }
 
@@ -138,6 +147,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('Matrix', $response->body());
         self::assertStringContainsString('Uma escolha muda tudo.', $response->body());
         self::assertStringNotContainsString('<img src=', $response->body());
+        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
     }
 
     public function testEscapesEveryExternalTextField(): void
@@ -159,6 +169,7 @@ final class MediaDetailsControllerTest extends TestCase
         return new MediaDetailsController(
             new View(dirname(__DIR__) . '/resources/views'),
             $catalog,
+            publicUrl: new PublicUrl('https://app.example.test/base/'),
         );
     }
 

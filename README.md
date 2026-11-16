@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos e relações simples de seguidores.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, relações simples de seguidores e compartilhamento público com prévias sociais.
 
 ## Stack
 
@@ -161,6 +161,12 @@ O registro é local, fica fora do Git e não contém credenciais. Consulte [dese
 `GET /u/{username}` apresenta identidade pública, contadores sociais e, quando permitido, agregados locais e até seis favoritos. Perfis privados exibem somente identidade, bio, data de entrada e contadores; seguir alguém não concede acesso ao conteúdo privado. O proprietário pode conferir a prévia completa e editar a visibilidade em `/perfil`.
 
 As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. A relação social nesta versão é apenas seguir/deixar de seguir: ainda não existem feed, solicitações de acesso, likes, comentários, mensagens ou notificações.
+
+## Compartilhamento e prévias sociais
+
+Perfis em `/u/{username}` e detalhes em `/filmes/{id}` e `/series/{id}` publicam canonical e Open Graph no HTML server-side. A base absoluta vem exclusivamente de `APP_URL`, inclusive quando a aplicação usa um path-base; por isso essa variável deve representar o endereço público correto em produção.
+
+As páginas oferecem Web Share nativo quando suportado, cópia via Clipboard API e um link readonly para cópia manual sem JavaScript. O comportamento é progressive enhancement: nenhuma plataforma social, SDK externo, token, contador ou parâmetro de tracking é integrado diretamente. Perfis privados recebem descrição social genérica, e metadados de mídia nunca incluem o estado pessoal do visitante.
 
 ## Arquitetura
 

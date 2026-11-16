@@ -13,6 +13,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
 use App\Core\View;
+use App\Core\PublicUrl;
 use App\Integrations\Tmdb\TmdbCatalog;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageConfiguration;
@@ -85,6 +86,46 @@ final class SocialControllersTest extends TestCase
         self::assertStringNotContainsString('>Seguir<',$response->body());
     }
 
+    public function testPublicProfileHasCanonicalOpenGraphAndShareActions(): void
+    {
+        $this->profiles->profile = $this->profile(false, 'Social User', "Cinema\n  & séries");
+        $response = $this->publicController()->show('social.user');
+
+        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/u/social.user">', $response->body());
+        self::assertStringContainsString('<meta property="og:title" content="Social User (@social.user) · Flickary">', $response->body());
+        self::assertStringContainsString('<meta property="og:description" content="Cinema &amp; séries">', $response->body());
+        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
+        self::assertStringContainsString('data-share-url="https://app.example.test/base/u/social.user"', $response->body());
+        self::assertStringContainsString('<script src="/assets/js/share.js" defer></script>', $response->body());
+    }
+
+    public function testPrivateProfileMetadataIsStableAndDoesNotExposeBioOrViewerContent(): void
+    {
+        $this->profiles->profile = $this->profile(true, 'Private User', 'BIO SECRET 123');
+        $visitor = $this->publicController()->show('social.user')->body();
+        $visitorHead = strstr($visitor, '</head>', true);
+
+        $this->auth->login(10);
+        $owner = $this->publicController()->show('social.user')->body();
+        $ownerHead = strstr($owner, '</head>', true);
+
+        self::assertSame($visitorHead, $ownerHead);
+        self::assertStringContainsString('Perfil privado de @social.user no Flickary.', $visitorHead);
+        self::assertStringNotContainsString('BIO SECRET 123', $visitorHead);
+        self::assertStringNotContainsString('Na coleção', $visitorHead);
+    }
+
+    public function testProfileMetadataPrefersCoverThenAvatar(): void
+    {
+        $this->profiles->profile = new PublicProfile(10, 'social.user', 'Social User', null,
+            'https://images.example/avatar.jpg', 'https://images.example/cover.jpg', false, '2026-01-02 10:00:00');
+        self::assertStringContainsString('content="https://images.example/cover.jpg"', $this->publicController()->show('social.user')->body());
+
+        $this->profiles->profile = new PublicProfile(10, 'social.user', 'Social User', null,
+            'https://images.example/avatar.jpg', null, false, '2026-01-02 10:00:00');
+        self::assertStringContainsString('content="https://images.example/avatar.jpg"', $this->publicController()->show('social.user')->body());
+    }
+
     public function testInvalidAndMissingUsernameReturnNotFoundWithoutReaderLookup(): void
     {
         self::assertSame(404,$this->publicController()->show('../bad')->status());
@@ -130,7 +171,7 @@ final class SocialControllersTest extends TestCase
 
     private function publicController(): PublicProfileController
     {
-        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog());
+        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog(),new PublicUrl('https://app.example.test/base/'));
     }
     private function followController(): FollowController
     {

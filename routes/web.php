@@ -102,6 +102,7 @@ $mediaDetails = new MediaDetailsController(
     $app['series_progress'],
     $app['user_schedule'],
     $app['media_preferences'],
+    publicUrl: $app['public_url'],
 );
 $userMedia = new UserMediaController(
     $app['view'],
@@ -150,7 +151,7 @@ $about = new AboutController(
 );
 $publicProfile = new PublicProfileController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
-    $app['public_profiles'], $app['user_follows'], $app['tmdb'],
+    $app['public_profiles'], $app['user_follows'], $app['tmdb'], $app['public_url'],
 );
 $follow = new FollowController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],

@@ -7,6 +7,7 @@ declare(strict_types=1);
 /** @var null|string $currentRoute */
 /** @var null|\App\Core\Auth $auth */
 /** @var null|\App\Core\Csrf $csrf */
+/** @var null|\App\Core\PageMeta $pageMeta */
 
 $homeIsActive = ($currentRoute ?? null) === 'home';
 $profileIsActive = ($currentRoute ?? null) === 'profile';
@@ -26,6 +27,18 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0B1220">
     <title><?= e($title ?? 'Flickary') ?></title>
+    <?php if (($pageMeta ?? null) instanceof \App\Core\PageMeta): ?>
+        <meta name="description" content="<?= e($pageMeta->description) ?>">
+        <link rel="canonical" href="<?= e($pageMeta->canonicalUrl) ?>">
+        <meta property="og:title" content="<?= e($pageMeta->title) ?>">
+        <meta property="og:type" content="<?= e($pageMeta->type) ?>">
+        <meta property="og:url" content="<?= e($pageMeta->canonicalUrl) ?>">
+        <meta property="og:description" content="<?= e($pageMeta->description) ?>">
+        <meta property="og:site_name" content="Flickary">
+        <meta property="og:locale" content="pt_BR">
+        <meta property="og:image" content="<?= e($pageMeta->imageUrl) ?>">
+        <meta property="og:image:alt" content="<?= e($pageMeta->imageAlt) ?>">
+    <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -184,5 +197,8 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
             <?php endif; ?>
         </nav>
     </div>
+    <?php if (($hasShareActions ?? false) === true): ?>
+        <script src="/assets/js/share.js" defer></script>
+    <?php endif; ?>
 </body>
 </html>

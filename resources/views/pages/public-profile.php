@@ -47,6 +47,9 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
                         <button class="button <?= $isFollowing ? 'button--secondary' : 'button--primary' ?>" type="submit"><?= $isFollowing ? 'Deixar de seguir' : 'Seguir' ?></button>
                     </form>
                 <?php endif; ?>
+                <?php if (is_array($shareData ?? null)): ?>
+                    <?php require dirname(__DIR__) . '/components/share-actions.php'; ?>
+                <?php endif; ?>
             </div>
             <div class="public-profile__social">
                 <a href="/u/<?= rawurlencode($profile->username) ?>/seguidores"><strong><?= e((string) $followersCount) ?></strong><span>Seguidores</span></a>

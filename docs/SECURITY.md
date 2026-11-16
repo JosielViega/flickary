@@ -91,6 +91,12 @@ Perfis são resolvidos somente por `users.username` validado pela política can�
 
 Follow e unfollow são POST protegidos por CSRF. O follower sempre vem de `Auth::id()` e o target é resolvido pelo username da rota, nunca por ID enviado pelo navegador. Self-follow é recusado e duplicatas são idempotentes. A privacidade é aplicada no servidor: seguir um perfil privado não libera favoritos, coleção, avaliações, histórico, progresso, Agenda ou estatísticas pessoais.
 
+## Compartilhamento e metadados sociais
+
+Canonical e URLs compartilháveis são construídas exclusivamente a partir de `APP_URL`; `Host`, `X-Forwarded-Host`, query string e `window.location` não participam da decisão. Todos os campos Open Graph são escapados como atributos HTML, descrições viram texto simples limitado e imagens aceitam somente URLs HTTP/HTTPS já validadas.
+
+Perfis privados publicam descrição genérica sem bio protegida, favoritos ou estatísticas. Metadados de mídia não recebem estado pessoal do visitante. A URL compartilhada é a própria rota pública, sem ID interno de usuário, token, assinatura ou tracking; nenhuma credencial é enviada ao navegador e nenhuma ação de share cria persistência ou cookie.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

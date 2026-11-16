@@ -8,6 +8,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- compartilhamento nativo progressivo de perfis e títulos, com copiar link e fallback manual acessível
+- URLs canônicas derivadas de `APP_URL` e prévias Open Graph server-side com imagem Flickary estática
+
 - perfil público cinematográfico por username, com agregados locais e até seis favoritos
 - seguidores e seguindo com mutations CSRF, idempotência, contadores e páginas paginadas
 - busca pública local de usuários por username e nome de exibição

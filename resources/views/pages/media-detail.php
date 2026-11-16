@@ -93,6 +93,9 @@ declare(strict_types=1);
                             </div>
                         <?php endif; ?>
                     </dl>
+                    <?php if (is_array($shareData ?? null)): ?>
+                        <?php require dirname(__DIR__) . '/components/share-actions.php'; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>

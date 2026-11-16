@@ -9,6 +9,8 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\PageMeta;
+use App\Core\PublicUrl;
 use App\Core\Session;
 use App\Core\View;
 use App\Integrations\Tmdb\TmdbCatalog;
@@ -32,6 +34,7 @@ final class PublicProfileController
         private readonly PublicProfileReader $profiles,
         private readonly FollowStore $follows,
         private readonly TmdbCatalog $tmdb,
+        private readonly PublicUrl $publicUrl,
     ) {
     }
 
@@ -41,6 +44,20 @@ final class PublicProfileController
         if ($profile === null) {
             return $this->notFound('/u/' . $username);
         }
+
+        $canonicalUrl = $this->publicUrl->forPath('/u/' . rawurlencode($profile->username));
+        $defaultImage = $this->publicUrl->forPath('/assets/images/flickary-share.png');
+        $pageMeta = new PageMeta(
+            $profile->displayName . ' (@' . $profile->username . ') · Flickary',
+            $profile->isPrivate
+                ? 'Perfil privado de @' . $profile->username . ' no Flickary.'
+                : ($profile->bio ?: 'Conheça a jornada de @' . $profile->username . ' no Flickary.'),
+            $canonicalUrl,
+            $profile->coverUrl ?? $profile->avatarUrl ?? $defaultImage,
+            ($profile->coverUrl ?? $profile->avatarUrl) === null
+                ? 'Flickary — Mais que assistir. Viver histórias.'
+                : 'Perfil de ' . $profile->displayName . ' no Flickary',
+        );
 
         $viewerUserId = $this->auth->id();
         $isOwner = $viewerUserId === $profile->userId;
@@ -64,6 +81,13 @@ final class PublicProfileController
             'favorites' => $favorites,
             'posterUrls' => $posterUrls,
             'messages' => $this->session->consumeFlash(),
+            'pageMeta' => $pageMeta,
+            'shareData' => [
+                'title' => $pageMeta->title,
+                'text' => $pageMeta->description,
+                'url' => $pageMeta->canonicalUrl,
+            ],
+            'hasShareActions' => true,
         ]));
     }
 

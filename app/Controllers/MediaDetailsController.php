@@ -7,6 +7,8 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Response;
+use App\Core\PageMeta;
+use App\Core\PublicUrl;
 use App\Core\Session;
 use App\Core\View;
 use App\Integrations\Tmdb\TmdbCatalog;
@@ -38,6 +40,7 @@ final class MediaDetailsController
         private readonly ?ScheduleStore $schedule = null,
         private readonly ?UserMediaPreferenceStore $preferences = null,
         ?TmdbAnimeClassifier $animeClassifier = null,
+        private readonly ?PublicUrl $publicUrl = null,
     ) {
         $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
@@ -72,6 +75,18 @@ final class MediaDetailsController
         }
 
         [$posterUrl, $backdropUrl] = $this->imageUrls($details);
+        $canonicalUrl = $this->publicUrl?->forPath(
+            ($type === 'movie' ? '/filmes/' : '/series/') . $details->sourceId,
+        );
+        $pageMeta = $canonicalUrl === null ? null : new PageMeta(
+            $details->title . ' · Flickary',
+            $details->overview ?? 'Veja ' . $details->title . ' no Flickary.',
+            $canonicalUrl,
+            $backdropUrl ?? $posterUrl ?? $this->publicUrl->forPath('/assets/images/flickary-share.png'),
+            ($backdropUrl ?? $posterUrl) === null
+                ? 'Flickary — Mais que assistir. Viver histórias.'
+                : 'Imagem de ' . $details->title,
+        );
         $userId = $this->auth?->id();
         $savedMedia = $userId === null || $this->userMedia === null
             ? null
@@ -104,6 +119,13 @@ final class MediaDetailsController
             'scheduleItem' => $scheduleItem,
             'userPreference' => $userPreference,
             'isAnime' => $this->animeClassifier->details($details),
+            'pageMeta' => $pageMeta,
+            'shareData' => $pageMeta === null ? null : [
+                'title' => $pageMeta->title,
+                'text' => $pageMeta->description,
+                'url' => $pageMeta->canonicalUrl,
+            ],
+            'hasShareActions' => $pageMeta !== null,
         ]);
     }
 
@@ -159,6 +181,9 @@ final class MediaDetailsController
             'scheduleItem' => null,
             'userPreference' => null,
             'isAnime' => false,
+            'pageMeta' => null,
+            'shareData' => null,
+            'hasShareActions' => false,
         ], $status);
     }
 

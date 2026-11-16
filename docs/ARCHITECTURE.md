@@ -175,6 +175,24 @@ FollowStore
 
 `PublicProfile` seleciona apenas identidade publicável e sanitiza URLs HTTPS. Estatísticas e favoritos usam readers de escopo público, sem entregar `PersonalStatistics` nem consultar detalhes do TMDB. `user_follows` mantém a relação simples com PK composta e cascata nas duas direções; contadores são calculados, nunca denormalizados. A regra central é `follow relationship != privacy authorization`: um follower continua sem acesso ao conteúdo de perfil privado.
 
+## Compartilhamento público
+
+```text
+APP_URL
+   ↓
+PublicUrl
+   ↓
+PageMeta
+   ↓
+<head> canonical + Open Graph
+   ↓
+share-actions (Web Share / Clipboard / fallback manual)
+```
+
+`PublicUrl` é a única origem das URLs absolutas próprias e preserva um eventual path-base. `PageMeta` mantém somente os campos sociais necessários e normaliza descrições como texto simples. O componente recebe a canonical pronta do servidor e não consulta `window.location`; o JavaScript é enhancement opcional e não cria estado.
+
+Metadados públicos são deliberadamente estáveis: `metadata pública != estado pessoal do viewer`. Perfil privado usa descrição genérica, enquanto Movie e Series ignoram lista, favorito, nota pessoal, progresso, agenda e histórico. Imagens de mídia seguem backdrop, poster e fallback estático; falha isolada da configuração TMDB mantém o fallback Flickary.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

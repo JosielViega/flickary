@@ -230,6 +230,7 @@ final class ApplicationRoutesTest extends TestCase
         $app = [
             'view' => new View(dirname(__DIR__) . '/resources/views'),
             'config' => ['name' => 'Flickary'],
+            'public_url' => new \App\Core\PublicUrl('https://app.example.test/flickary'),
             'router' => new Router(),
             'request' => $request,
             'session' => $session,

@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\Database;
 use App\Core\ErrorHandler;
 use App\Core\Logger;
+use App\Core\PublicUrl;
 use App\Core\Request;
 use App\Core\Router;
 use App\Core\Session;
@@ -89,6 +90,7 @@ $facebookConfig = $authConfig['facebook'];
 
 return [
     'config' => $appConfig,
+    'public_url' => new PublicUrl($appConfig['url']),
     'auth_config' => $authConfig,
     'tmdb_config' => $tmdbConfig,
     'request' => Request::capture(),
