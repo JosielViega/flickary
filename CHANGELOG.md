@@ -8,6 +8,7 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Comentários de texto simples nas atividades do Feed Social, com detalhe privado, paginação, moderação e histórico pessoal
 - Curtidas em atividades do Feed Social, com contagem, estado pessoal e autorização pela mesma visibilidade do feed
 - Feed Social cronológico de visualizações reais, derivado de `watch_history` e ativado na navegação autenticada
 - opt-in privado de atividade, com cutoff de consentimento sem publicação retroativa
@@ -26,6 +27,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Security
 
+- Leitura e criação de comentários reutilizam os cutoffs do Feed Social; recursos ocultos e remoções não autorizadas respondem 404
+- Criação e remoção de comentários exigem autenticação e CSRF, com HTML sempre escapado e redirects limitados a contextos internos conhecidos
 - pending nunca autoriza conteúdo privado; somente um follow aceito libera a página pública do perfil
 - accept e reject derivam o target de `Auth::id()`, resolvem requester pela rota e exigem CSRF
 - metadata social de perfil privado permanece genérica e independente do viewer

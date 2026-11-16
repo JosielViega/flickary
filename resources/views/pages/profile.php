@@ -107,6 +107,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
             <span><span class="eyebrow">Atividade compartilhada</span><strong>Abrir meu Social</strong></span>
             <span aria-hidden="true">→</span>
         </a>
+        <a class="profile-comments-link" href="/perfil/comentarios">
+            <span><span class="eyebrow">Sua participação</span><strong>Meus comentários</strong></span>
+            <span aria-hidden="true">→</span>
+        </a>
         <section class="profile-story" aria-labelledby="profile-story-title">
             <p class="eyebrow">Identidade pessoal</p>
             <h2 id="profile-story-title">Seu espaço entre histórias.</h2>

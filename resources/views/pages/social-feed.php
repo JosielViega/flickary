@@ -117,6 +117,9 @@ $avatar = static function (?string $value): ?string {
                                     <?= $activity->viewerLiked ? 'Curtido' : 'Curtir' ?> · <?= e((string) $activity->likeCount) ?>
                                 </button>
                             </form>
+                            <a class="social-activity-card__comments" href="/social/atividades/<?= e((string) $activity->historyId) ?>">
+                                <?= $activity->commentCount === 0 ? 'Comentar' : 'Comentários · ' . e((string) $activity->commentCount) ?>
+                            </a>
                         </footer>
                     </article>
                 </li>

@@ -207,7 +207,7 @@ final class SocialFeedControllerTest extends TestCase
         return new SocialActivity(
             $id, 20, 'actor.user', '<Actor>', 'https://example.test/avatar.jpg', 'tmdb', $type, 603,
             $season, $episode, $title, $episodeTitle, '1999-03-31', '/poster.jpg', $anime,
-            '1999-05-21', '2026-11-16 12:00:00', $likeCount, $viewerLiked,
+            '1999-05-21', '2026-11-16 12:00:00', $likeCount, $viewerLiked, 0,
         );
     }
 }

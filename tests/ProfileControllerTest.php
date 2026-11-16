@@ -73,6 +73,7 @@ final class ProfileControllerTest extends TestCase
         self::assertStringContainsString('name="share_watch_activity"', $response->body());
         self::assertStringContainsString('Seu Histórico anterior não será publicado', $response->body());
         self::assertStringContainsString('href="/social"', $response->body());
+        self::assertStringContainsString('href="/perfil/comentarios"', $response->body());
         self::assertStringNotContainsString('person@example.com', $response->body());
         self::assertStringNotContainsString('google-secret-subject', $response->body());
         self::assertStringNotContainsString('<script> especiais', $response->body());

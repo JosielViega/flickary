@@ -26,6 +26,8 @@ use App\Controllers\FollowController;
 use App\Controllers\FollowRequestController;
 use App\Controllers\UserSearchController;
 use App\Controllers\SocialFeedController;
+use App\Controllers\SocialActivityController;
+use App\Controllers\ProfileCommentsController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -172,6 +174,13 @@ $socialFeed = new SocialFeedController(
     $app['view'], $app['auth'], $app['csrf'], $app['social_feed'], $app['user_follows'],
     $app['social_activity_likes'], $app['tmdb'],
 );
+$socialActivity = new SocialActivityController(
+    $app['view'], $app['auth'], $app['csrf'], $app['social_activity_comments'],
+    $app['social_activity_comments'], $app['tmdb'],
+);
+$profileComments = new ProfileCommentsController(
+    $app['view'], $app['auth'], $app['csrf'], $app['social_activity_comments'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -188,6 +197,9 @@ $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookCo
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/usuarios', static fn (): Response => $userSearch->index($app['request']));
 $router->get('/social', static fn (): Response => $socialFeed->index($app['request']));
+$router->get('/social/atividades/{id}', static fn (string $id): Response => $socialActivity->show($app['request'], $id));
+$router->post('/social/atividades/{id}/comentarios', static fn (string $id): Response => $socialActivity->createComment($app['request'], $id));
+$router->post('/social/comentarios/{id}/remover', static fn (string $id): Response => $socialActivity->deleteComment($app['request'], $id));
 $router->post('/social/atividades/{id}/curtir', static fn (string $id): Response => $socialFeed->like($app['request'], $id));
 $router->post('/social/atividades/{id}/descurtir', static fn (string $id): Response => $socialFeed->unlike($app['request'], $id));
 $router->get('/u/{username}', static fn (string $username): Response => $publicProfile->show($username));
@@ -197,6 +209,7 @@ $router->post('/u/{username}/seguir', static fn (string $username): Response => 
 $router->post('/u/{username}/cancelar-solicitacao', static fn (string $username): Response => $follow->cancel($app['request'], $username));
 $router->post('/u/{username}/deixar-de-seguir', static fn (string $username): Response => $follow->unfollow($app['request'], $username));
 $router->get('/perfil/solicitacoes', static fn (): Response => $followRequests->index($app['request']));
+$router->get('/perfil/comentarios', static fn (): Response => $profileComments->index($app['request']));
 $router->post('/perfil/solicitacoes/{username}/aceitar', static fn (string $username): Response => $followRequests->accept($app['request'], $username));
 $router->post('/perfil/solicitacoes/{username}/recusar', static fn (string $username): Response => $followRequests->reject($app['request'], $username));
 $router->get('/anime', static fn (): Response => $anime->index($app['request']));

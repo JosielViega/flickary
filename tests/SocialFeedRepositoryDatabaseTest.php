@@ -183,16 +183,22 @@ final class SocialFeedRepositoryDatabaseTest extends TestCase
         foreach ($likers as $liker) {
             $statement->execute([$newer, $liker]);
         }
+        $comments = $this->database->connection()->prepare('INSERT INTO social_activity_comments(history_id,user_id,body) VALUES (?,?,?)');
+        foreach (range(1, 10) as $index) {
+            $comments->execute([$newer, $likers[$index], 'Comment ' . $index]);
+        }
 
         $page = $this->feed->paginateForViewer($viewer, 1, 1);
         self::assertSame(2, $page->total);
         self::assertSame($newer, $page->items[0]->historyId);
         self::assertSame(20, $page->items[0]->likeCount);
         self::assertTrue($page->items[0]->viewerLiked);
+        self::assertSame(10, $page->items[0]->commentCount);
         $second = $this->feed->paginateForViewer($viewer, 2, 1);
         self::assertSame($older, $second->items[0]->historyId);
         self::assertSame(0, $second->items[0]->likeCount);
         self::assertFalse($second->items[0]->viewerLiked);
+        self::assertSame(0, $second->items[0]->commentCount);
     }
 
     private function createUser(string $username, string $displayName, bool $private = false): int
@@ -255,6 +261,7 @@ final class SocialFeedRepositoryDatabaseTest extends TestCase
     private function clear(): void
     {
         $pdo = $this->database->connection();
+        $pdo->exec('DELETE FROM social_activity_comments');
         $pdo->exec('DELETE FROM social_activity_likes');
         $pdo->exec('DELETE FROM user_follow_requests');
         $pdo->exec('DELETE FROM user_follows');

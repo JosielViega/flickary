@@ -41,10 +41,13 @@ final class SocialFeedRepository implements SocialFeedReader
             . 'wh.source, wh.entry_type, wh.source_id, wh.season_number, wh.episode_number, '
             . 'wh.title, wh.episode_title, wh.content_date, wh.poster_path, wh.is_anime, '
             . 'wh.watched_on, wh.created_at, COALESCE(lc.like_count, 0) AS like_count, '
-            . 'CASE WHEN vl.user_id IS NULL THEN 0 ELSE 1 END AS viewer_liked' . $from
+            . 'CASE WHEN vl.user_id IS NULL THEN 0 ELSE 1 END AS viewer_liked, '
+            . 'COALESCE(cc.comment_count, 0) AS comment_count' . $from
             . ' LEFT JOIN (SELECT history_id, COUNT(*) AS like_count FROM social_activity_likes GROUP BY history_id) lc '
             . 'ON lc.history_id = wh.id '
             . 'LEFT JOIN social_activity_likes vl ON vl.history_id = wh.id AND vl.user_id = :viewer_like_user_id'
+            . ' LEFT JOIN (SELECT history_id, COUNT(*) AS comment_count FROM social_activity_comments GROUP BY history_id) cc '
+            . 'ON cc.history_id = wh.id'
             . ' WHERE ' . SocialActivityVisibility::SQL
             . ' ORDER BY wh.created_at DESC, wh.id DESC LIMIT :limit OFFSET :offset',
         );
@@ -75,6 +78,7 @@ final class SocialFeedRepository implements SocialFeedReader
                 (string) $row['created_at'],
                 (int) $row['like_count'],
                 (bool) (int) $row['viewer_liked'],
+                (int) $row['comment_count'],
             ),
             $statement->fetchAll(PDO::FETCH_ASSOC),
         );

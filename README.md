@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in e compartilhamento público com prévias sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in com curtidas e comentários, e compartilhamento público com prévias sociais.
 
 ## Stack
 
@@ -172,6 +172,8 @@ Desativar a preferência oculta imediatamente todas as atividades, pois o feed n
 
 Cada atividade visível pode receber uma curtida por usuário. A mesma regra do feed autoriza `POST /social/atividades/{id}/curtir`; a PK composta de `social_activity_likes` garante idempotência e o card traz contagem e estado pessoal sem N+1. A curtida não cria atividade, não altera `watch_history`, não gera notificação nem expõe lista de pessoas. Apagar o evento no Histórico remove suas curtidas por cascade.
 
+`GET /social/atividades/{id}` abre a conversa de uma atividade visível. Comentários são texto simples de até 500 caracteres, paginados do mais recente para o mais antigo, e usam `watch_history.id` como identidade da atividade. Followers só podem ler e publicar enquanto a atividade permanece visível; o autor da atividade conserva acesso de arquivo, mas só comenta quando seu compartilhamento atual inclui o evento. O autor do comentário pode removê-lo mesmo após perder acesso, e o autor da atividade pode moderar sua própria conversa. Unfollow e desativação do compartilhamento não apagam comentários; apagar a atividade ou o autor do comentário remove as linhas relacionadas por cascade. `/perfil/comentarios` reúne o histórico privado do usuário. Comentários não viram eventos. Não há replies, rich text, notificações ou chamadas de detalhes ao TMDB.
+
 ## Compartilhamento e prévias sociais
 
 Perfis em `/u/{username}` e detalhes em `/filmes/{id}` e `/series/{id}` publicam canonical e Open Graph no HTML server-side. A base absoluta vem exclusivamente de `APP_URL`, inclusive quando a aplicação usa um path-base; por isso essa variável deve representar o endereço público correto em produção.
@@ -234,6 +236,9 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /usuarios` — busca pública local por username ou nome de exibição;
 - `GET /social` — feed privado e cronológico de visualizações compartilhadas por follows aceitos;
 - `POST /social/atividades/{id}/curtir|descurtir` — interação idempotente sobre atividade visível do feed;
+- `GET /social/atividades/{id}` e `POST /social/atividades/{id}/comentarios` — detalhe privado e criação de comentário em atividade autorizada;
+- `POST /social/comentarios/{id}/remover` — remoção pelo autor do comentário ou moderação pelo autor da atividade;
+- `GET /perfil/comentarios` — histórico privado e paginado dos comentários do usuário autenticado;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;

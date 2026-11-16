@@ -117,5 +117,10 @@ O builder HostGator usa allowlist e falha se detectar configurações do servido
 - Todas as mutations sociais exigem CSRF e usam PRG.
 - Curtir exige autenticação, CSRF, ID interno positivo e a mesma visibilidade do Feed Social; atividade inexistente ou oculta responde 404.
 - A autorização e o INSERT da curtida ocorrem na mesma operação SQL e não consultam o TMDB. Descurtir remove somente a linha do usuário autenticado, inclusive após perda de visibilidade.
+- Detalhe e criação de comentário exigem autenticação, ID interno positivo e a mesma visibilidade temporal do Feed Social; atividade inexistente ou oculta responde 404.
+- Comentários aceitam somente texto UTF-8 simples, normalizado e limitado a 500 caracteres. NUL, controles inválidos e UTF-8 inválido são rejeitados; toda saída é escapada.
+- Criar e remover exigem CSRF. O `INSERT ... SELECT` revalida a autorização atomicamente; remover é permitido somente ao autor do comentário ou ao proprietário da atividade e redirects usam uma allowlist de contextos internos.
+- O histórico privado permite ao autor apagar seu comentário após unfollow ou perda de visibilidade sem reabrir o conteúdo social oculto.
+- `/perfil/comentarios` exige autenticação. O detalhe usa apenas snapshots locais e, assim como o feed, não executa chamadas de detalhes ao TMDB.
 - Metadata de perfil privado é genérica até para owner e follower aprovado.
 - Agenda, histórico detalhado e lista completa não são expostos pela autorização social.

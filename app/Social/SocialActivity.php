@@ -26,6 +26,7 @@ final readonly class SocialActivity
         public string $createdAt,
         public int $likeCount,
         public bool $viewerLiked,
+        public int $commentCount,
     ) {
     }
 }

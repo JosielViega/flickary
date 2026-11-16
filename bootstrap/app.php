@@ -34,6 +34,7 @@ use App\Repositories\UserFollowRepository;
 use App\Repositories\UserFollowRequestRepository;
 use App\Repositories\SocialFeedRepository;
 use App\Repositories\SocialActivityLikeRepository;
+use App\Repositories\SocialActivityCommentRepository;
 use App\Profiles\ProfileUpdateService;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
@@ -94,6 +95,7 @@ $userFollows = new UserFollowRepository($database);
 $userFollowRequests = new UserFollowRequestRepository($database);
 $socialFeed = new SocialFeedRepository($database);
 $socialActivityLikes = new SocialActivityLikeRepository($database);
+$socialActivityComments = new SocialActivityCommentRepository($database);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -139,6 +141,7 @@ return [
     'user_follow_requests' => $userFollowRequests,
     'social_feed' => $socialFeed,
     'social_activity_likes' => $socialActivityLikes,
+    'social_activity_comments' => $socialActivityComments,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

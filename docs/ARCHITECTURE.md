@@ -207,6 +207,8 @@ SocialFeedRepository
 /social
         ↓
 social_activity_likes
+        +
+social_activity_comments
 ```
 
 `Feed social = projeção de watch_history`: não existe tabela paralela, sincronização de eventos ou read receipt. A query parte de `user_follows`, junta apenas a identidade mínima do ator e aplica a regra `accepted follow AND sharing enabled AND event.created_at >= sharing_since AND event.created_at >= follow.created_at`. Assim, pending, evento anterior ao consentimento e evento anterior à relação aprovada nunca aparecem.
@@ -214,6 +216,8 @@ social_activity_likes
 A paginação e o `COUNT` usam os mesmos filtros no MariaDB e a ordenação é `watch_history.created_at DESC, id DESC`; `watched_on` permanece a data humana exibida. O controller pode pedir somente a configuração de imagens do TMDB uma vez por request, sem details por card. Falha completa do TMDB mantém títulos, ator, episódio e datas locais disponíveis.
 
 `social_activity_likes` referencia diretamente `watch_history.id`; não existe uma identidade paralela. Like não é activity e não muda `watch_history`. A projeção agrega a contagem e associa a curtida do viewer em uma única consulta, sem multiplicar o `COUNT` ou alterar a ordenação. A autorização de like reutiliza `SocialActivityVisibility`, portanto é exatamente a mesma regra de visibilidade do feed. A PK `(history_id, user_id)` torna a operação idempotente e a FK com cascade elimina as curtidas quando o evento é apagado.
+
+`social_activity_comments` também referencia `watch_history.id` e guarda somente autor, texto simples e instante de criação. Comment não é activity e não cria outro evento no feed. A página `/social/atividades/{id}` reutiliza `SocialActivityVisibility` para followers e concede ao proprietário acesso ao arquivo da própria atividade. Criação autorizada ocorre por `INSERT ... SELECT`, combinando a verificação de visibilidade e a escrita; o proprietário só publica enquanto o evento está dentro do opt-in atual. A listagem junta identidade local do autor em uma consulta paginada, e o feed agrega somente a contagem, sem carregar corpos ou multiplicar atividades. FKs com cascade removem comentários quando o evento ou o autor é apagado.
 
 ## Ferramentas da fundação
 

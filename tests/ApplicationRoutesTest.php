@@ -165,12 +165,20 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('href="/social" aria-current="page"', $authenticated->body());
         self::assertStringContainsString('bottom-nav__item is-active', $authenticated->body());
 
-        foreach (['/social/atividades/31/curtir', '/social/atividades/31/descurtir'] as $path) {
+        foreach (['/social/atividades/31/curtir', '/social/atividades/31/descurtir', '/social/atividades/31/comentarios', '/social/comentarios/9/remover'] as $path) {
             $_SESSION = [];
             $mutation = $this->request('POST', $path);
             $visitorMutation = $this->router($mutation)->dispatch($mutation);
             self::assertSame(303, $visitorMutation->status());
             self::assertSame('/login', $visitorMutation->headers()['Location']);
+        }
+
+        foreach (['/social/atividades/31', '/perfil/comentarios'] as $path) {
+            $_SESSION = [];
+            $privateRequest = $this->request('GET', $path);
+            $private = $this->router($privateRequest)->dispatch($privateRequest);
+            self::assertSame(303, $private->status());
+            self::assertSame('/login', $private->headers()['Location']);
         }
     }
 
@@ -243,6 +251,13 @@ final class ApplicationRoutesTest extends TestCase
         }
         $csrf = new Csrf($session);
         $pending = new PendingExternalOnboarding($session);
+        $socialComments = new class implements \App\Social\SocialActivityCommentReader, \App\Social\SocialActivityCommentStore {
+            public function detailForViewer(int$userId,int$historyId):?\App\Social\SocialActivityDetail{return null;}
+            public function paginateForActivity(int$historyId,int$page,int$perPage):\App\Social\SocialActivityCommentPage{return new \App\Social\SocialActivityCommentPage([],0,$page,$perPage);}
+            public function paginateForAuthor(int$userId,int$page,int$perPage):\App\Social\SocialOwnCommentPage{return new \App\Social\SocialOwnCommentPage([],0,$page,$perPage);}
+            public function createAuthorized(int$userId,int$historyId,\App\Social\SocialCommentBody$body):\App\Social\SocialActivityCommentCreateResult{return \App\Social\SocialActivityCommentCreateResult::Hidden;}
+            public function deleteAuthorized(int$userId,int$commentId):?int{return null;}
+        };
         $identities = new class implements ExternalIdentityFinder, ExternalIdentityLinker, ConnectedProviderReader {
             public function findUserId(string $provider, string $providerUserId): ?int { return null; }
             public function link(int $userId, ExternalIdentity $identity): string { return self::LINKED; }
@@ -384,6 +399,7 @@ final class ApplicationRoutesTest extends TestCase
                 public function likeVisibleActivity(int$viewerUserId,int$historyId):\App\Social\SocialActivityLikeResult{return \App\Social\SocialActivityLikeResult::Hidden;}
                 public function unlike(int$viewerUserId,int$historyId):void{}
             },
+            'social_activity_comments' => $socialComments,
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
                 public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate,bool$shareWatchActivity):void{}
