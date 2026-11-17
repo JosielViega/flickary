@@ -17,6 +17,7 @@ final readonly class DirectConversationSummary
         public string $latestMessageAt,
         public int $unreadCount,
         public bool $canSendNow,
+        public bool $pairBlocked = false,
     ) {
     }
 }

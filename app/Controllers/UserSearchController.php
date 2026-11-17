@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\View;
 use App\Social\PublicProfileReader;
+use App\Social\ViewerAwarePublicProfileReader;
 
 final class UserSearchController
 {
@@ -27,7 +28,7 @@ final class UserSearchController
         $query = is_string($raw) ? trim($raw) : '';
         $page = $this->page($request->query('page', 1));
         $error = $query === '' ? null : $this->validateQuery($query);
-        $results = $query !== '' && $error === null ? $this->profiles->search($query, $page, 20) : null;
+        $results=$query!==''&&$error===null?($this->profiles instanceof ViewerAwarePublicProfileReader?$this->profiles->searchForViewer($query,$page,20,$this->auth->id()):$this->profiles->search($query,$page,20)):null;
         return Response::html($this->view->render('pages/user-search', [
             'title'=>'Encontrar pessoas · Flickary','currentRoute'=>'search','auth'=>$this->auth,'csrf'=>$this->csrf,
             'query'=>$query,'validationError'=>$error,'results'=>$results,

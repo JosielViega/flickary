@@ -6,6 +6,11 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ## [Unreleased]
 
+### Social controls
+
+- Bloqueio bilateral de usuários, gerenciamento de bloqueados e integração com follows, perfis, busca, interações e mensagens.
+- Silenciamento unilateral de atividades no Feed Social; Block é fronteira de autorização e Mute é somente preferência de feed.
+
 ### Added
 
 - Mensagens privadas 1:1 para follows mútuos, com caixa paginada, histórico e texto simples

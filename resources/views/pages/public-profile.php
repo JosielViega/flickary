@@ -60,6 +60,18 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
                 <?php if (($canMessage ?? false) === true || ($hasConversation ?? false) === true): ?>
                     <a class="button button--primary" href="/mensagens/com/<?= rawurlencode($profile->username) ?>"><?= ($canMessage ?? false) === true ? 'Mensagem' : 'Ver conversa' ?></a>
                 <?php endif; ?>
+                <?php if (!$isOwner && $auth->check()): ?>
+                    <div class="public-profile__controls">
+                        <?php if ($relationshipState === \App\Social\FollowRelationshipState::Following): ?>
+                            <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/<?= ($isMuted ?? false) ? 'dessilenciar' : 'silenciar' ?>">
+                                <?= $csrf->field() ?><button class="button button--secondary" type="submit"><?= ($isMuted ?? false) ? 'Deixar de silenciar' : 'Silenciar no Social' ?></button>
+                            </form>
+                        <?php endif; ?>
+                        <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/bloquear">
+                            <?= $csrf->field() ?><button class="button button--danger" type="submit">Bloquear</button>
+                        </form>
+                    </div>
+                <?php endif; ?>
                 <?php if (is_array($shareData ?? null)): ?>
                     <?php require dirname(__DIR__) . '/components/share-actions.php'; ?>
                 <?php endif; ?>

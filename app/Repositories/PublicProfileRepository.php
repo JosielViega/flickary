@@ -10,9 +10,10 @@ use App\Social\PublicProfile;
 use App\Social\PublicProfilePage;
 use App\Social\PublicProfileReader;
 use App\Social\PublicProfileStatistics;
+use App\Social\ViewerAwarePublicProfileReader;
 use PDO;
 
-final class PublicProfileRepository implements PublicProfileReader
+final class PublicProfileRepository implements PublicProfileReader, ViewerAwarePublicProfileReader
 {
     public function __construct(private readonly Database $database)
     {
@@ -76,6 +77,9 @@ final class PublicProfileRepository implements PublicProfileReader
     }
 
     public function search(string $query, int $page, int $perPage): PublicProfilePage
+    { return $this->searchForViewer($query,$page,$perPage,null); }
+
+    public function searchForViewer(string $query, int $page, int $perPage, ?int $viewerUserId): PublicProfilePage
     {
         $page = max(1, $page);
         $perPage = max(1, min(50, $perPage));
@@ -83,10 +87,11 @@ final class PublicProfileRepository implements PublicProfileReader
         $contains = '%' . $escaped . '%';
         $prefix = $escaped . '%';
         $where = "(u.username LIKE :contains ESCAPE '\\\\' OR p.display_name LIKE :display_contains ESCAPE '\\\\')";
+        if($viewerUserId!==null){$where.=' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:viewer_block AND b.blocked_user_id=u.id) OR (b.blocker_user_id=u.id AND b.blocked_user_id=:viewer_block_reverse))';}
         $count = $this->database->connection()->prepare(
             'SELECT COUNT(*) FROM users u INNER JOIN user_profiles p ON p.user_id=u.id WHERE ' . $where,
         );
-        $count->execute(['contains'=>$contains,'display_contains'=>$contains]);
+        $countParams=['contains'=>$contains,'display_contains'=>$contains]; if($viewerUserId!==null){$countParams['viewer_block']=$viewerUserId;$countParams['viewer_block_reverse']=$viewerUserId;} $count->execute($countParams);
         $total = (int) $count->fetchColumn();
         $statement = $this->database->connection()->prepare(
             'SELECT p.user_id,u.username,p.display_name,p.bio,p.avatar_url,p.cover_url,p.is_private,u.created_at '
@@ -98,6 +103,7 @@ final class PublicProfileRepository implements PublicProfileReader
         foreach (['contains'=>$contains,'display_contains'=>$contains,'exact'=>$query,'prefix'=>$prefix,'display_prefix'=>$prefix] as $key=>$value) {
             $statement->bindValue(':' . $key, $value);
         }
+        if($viewerUserId!==null){$statement->bindValue(':viewer_block',$viewerUserId,PDO::PARAM_INT);$statement->bindValue(':viewer_block_reverse',$viewerUserId,PDO::PARAM_INT);}
         $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $statement->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
         $statement->execute();

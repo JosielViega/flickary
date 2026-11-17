@@ -111,6 +111,10 @@ $isPrivate = (bool) ($profile['is_private'] ?? false);
             <span><span class="eyebrow">Sua participação</span><strong>Meus comentários</strong></span>
             <span aria-hidden="true">→</span>
         </a>
+        <section class="profile-social-controls" aria-labelledby="profile-social-controls-title">
+            <div><p class="eyebrow">Controles sociais</p><h2 id="profile-social-controls-title">Seu espaço, suas escolhas.</h2><p>Gerencie quem está bloqueado e quais atividades não aparecem no seu Social.</p></div>
+            <div><a class="button button--secondary" href="/perfil/bloqueados">Usuários bloqueados</a><a class="button button--secondary" href="/perfil/silenciados">Usuários silenciados</a></div>
+        </section>
         <section class="profile-story" aria-labelledby="profile-story-title">
             <p class="eyebrow">Identidade pessoal</p>
             <h2 id="profile-story-title">Seu espaço entre histórias.</h2>

@@ -30,6 +30,8 @@ use App\Controllers\SocialActivityController;
 use App\Controllers\ProfileCommentsController;
 use App\Controllers\NotificationController;
 use App\Controllers\DirectMessageController;
+use App\Controllers\SocialControlController;
+use App\Social\NullUserSocialControlStore;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -157,19 +159,21 @@ $about = new AboutController(
     $app['auth'],
     $app['csrf'],
 );
+$socialControlStore=$app['social_controls']??new NullUserSocialControlStore();
 $publicProfile = new PublicProfileController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
     $app['public_profiles'], $app['user_follows'], $app['tmdb'], $app['public_url'],
     $app['user_follow_requests'], $app['private_profile_access_policy'], $app['direct_messages'],
+    $socialControlStore,
 );
 $followRequestStore = $app['user_follow_requests'];
 $follow = new FollowController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
-    $app['public_profiles'], $app['user_follows'], $followRequestStore,
+    $app['public_profiles'], $app['user_follows'], $followRequestStore,$socialControlStore,
 );
 $followRequests = new FollowRequestController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
-    $app['public_profiles'], $followRequestStore,
+    $app['public_profiles'], $followRequestStore,$socialControlStore,
 );
 $userSearch = new UserSearchController($app['view'], $app['auth'], $app['csrf'], $app['public_profiles']);
 $socialFeed = new SocialFeedController(
@@ -189,7 +193,9 @@ $notifications = new NotificationController(
 $directMessages = new DirectMessageController(
     $app['view'], $app['auth'], $app['csrf'], $app['username_policy'], $app['public_profiles'],
     $app['user_follows'], $app['direct_messages'], $app['direct_messages'],
+    $socialControlStore,
 );
+$socialControls=new SocialControlController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['username_policy'],$app['public_profiles'],$socialControlStore);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -225,6 +231,12 @@ $router->get('/u/{username}/seguindo', static fn (string $username): Response =>
 $router->post('/u/{username}/seguir', static fn (string $username): Response => $follow->follow($app['request'], $username));
 $router->post('/u/{username}/cancelar-solicitacao', static fn (string $username): Response => $follow->cancel($app['request'], $username));
 $router->post('/u/{username}/deixar-de-seguir', static fn (string $username): Response => $follow->unfollow($app['request'], $username));
+$router->post('/u/{username}/bloquear',static fn(string$username):Response=>$socialControls->block($app['request'],$username));
+$router->post('/u/{username}/silenciar',static fn(string$username):Response=>$socialControls->mute($app['request'],$username));
+$router->post('/u/{username}/dessilenciar',static fn(string$username):Response=>$socialControls->unmute($app['request'],$username));
+$router->get('/perfil/bloqueados',static fn():Response=>$socialControls->blocked($app['request']));
+$router->post('/perfil/bloqueados/{username}/desbloquear',static fn(string$username):Response=>$socialControls->unblock($app['request'],$username));
+$router->get('/perfil/silenciados',static fn():Response=>$socialControls->muted($app['request']));
 $router->get('/perfil/solicitacoes', static fn (): Response => $followRequests->index($app['request']));
 $router->get('/perfil/comentarios', static fn (): Response => $profileComments->index($app['request']));
 $router->post('/perfil/solicitacoes/{username}/aceitar', static fn (string $username): Response => $followRequests->accept($app['request'], $username));

@@ -59,7 +59,8 @@ final class DirectMessageRepository implements DirectMessageReader, DirectMessag
             . 'latest.created_at AS latest_message_at,'
             . '(SELECT COUNT(*) FROM direct_messages unread WHERE unread.conversation_id=c.id '
             . 'AND unread.sender_user_id<>:viewer_unread AND unread.read_at IS NULL) AS unread_count,'
-            . 'CASE WHEN outgoing.follower_user_id IS NULL OR incoming.follower_user_id IS NULL THEN 0 ELSE 1 END AS can_send_now '
+            . 'CASE WHEN outgoing.follower_user_id IS NULL OR incoming.follower_user_id IS NULL OR pair_block.blocker_user_id IS NOT NULL THEN 0 ELSE 1 END AS can_send_now,'
+            . 'CASE WHEN pair_block.blocker_user_id IS NULL THEN 0 ELSE 1 END AS pair_blocked '
             . 'FROM (SELECT id,user_low_id,user_high_id,last_message_at FROM direct_conversations '
             . 'WHERE user_low_id=:viewer_low OR user_high_id=:viewer_high '
             . 'ORDER BY last_message_at DESC,id DESC LIMIT :limit OFFSET :offset) c '
@@ -68,9 +69,10 @@ final class DirectMessageRepository implements DirectMessageReader, DirectMessag
             . 'INNER JOIN direct_messages latest ON latest.id=(SELECT MAX(newest.id) FROM direct_messages newest WHERE newest.conversation_id=c.id) '
             . 'LEFT JOIN user_follows outgoing ON outgoing.follower_user_id=:viewer_out AND outgoing.followed_user_id=u.id '
             . 'LEFT JOIN user_follows incoming ON incoming.follower_user_id=u.id AND incoming.followed_user_id=:viewer_in '
+            . 'LEFT JOIN user_blocks pair_block ON (pair_block.blocker_user_id=:viewer_block AND pair_block.blocked_user_id=u.id) OR (pair_block.blocker_user_id=u.id AND pair_block.blocked_user_id=:viewer_block_reverse) '
             . 'ORDER BY c.last_message_at DESC,c.id DESC',
         );
-        foreach (['viewer_other', 'viewer_unread', 'viewer_out', 'viewer_in', 'viewer_low', 'viewer_high'] as $name) {
+        foreach (['viewer_other','viewer_unread','viewer_out','viewer_in','viewer_low','viewer_high','viewer_block','viewer_block_reverse'] as $name) {
             $statement->bindValue(':' . $name, $userId, PDO::PARAM_INT);
         }
         $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
@@ -87,6 +89,7 @@ final class DirectMessageRepository implements DirectMessageReader, DirectMessag
             (string) $row['latest_message_at'],
             (int) $row['unread_count'],
             (bool) (int) $row['can_send_now'],
+            (bool) (int) $row['pair_blocked'],
         ), $statement->fetchAll(PDO::FETCH_ASSOC));
 
         return new DirectConversationPage($items, $total, $page, $perPage);
@@ -122,6 +125,7 @@ final class DirectMessageRepository implements DirectMessageReader, DirectMessag
         $ownsTransaction = !$pdo->inTransaction();
         if ($ownsTransaction) { $pdo->beginTransaction(); }
         try {
+            $users=$pdo->prepare('SELECT id FROM users WHERE id IN (:low,:high) ORDER BY id FOR UPDATE');$users->execute(['low'=>$low,'high'=>$high]);
             $mutual = $pdo->prepare(
                 'SELECT follower_user_id FROM user_follows WHERE '
                 . '(follower_user_id=:sender AND followed_user_id=:other) OR '
@@ -137,6 +141,9 @@ final class DirectMessageRepository implements DirectMessageReader, DirectMessag
                 if ($ownsTransaction) { $pdo->rollBack(); }
                 return false;
             }
+            $blocked=$pdo->prepare('SELECT 1 FROM user_blocks WHERE (blocker_user_id=:sender AND blocked_user_id=:other) OR (blocker_user_id=:other_reverse AND blocked_user_id=:sender_reverse) LIMIT 1 FOR UPDATE');
+            $blocked->execute(['sender'=>$senderUserId,'other'=>$otherUserId,'other_reverse'=>$otherUserId,'sender_reverse'=>$senderUserId]);
+            if($blocked->fetchColumn()!==false){if($ownsTransaction){$pdo->rollBack();}return false;}
             $create = $pdo->prepare(
                 'INSERT IGNORE INTO direct_conversations(user_low_id,user_high_id) VALUES (:low,:high)',
             );

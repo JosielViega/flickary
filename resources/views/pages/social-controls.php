@@ -1,0 +1,15 @@
+<?php
+/** @var \App\Social\UserSocialControlPage $controls */
+$kind=$blocked?'bloqueados':'silenciados';$heading=$blocked?'Usuários bloqueados':'Usuários silenciados';
+$date=static function(string$value):string{try{return(new DateTimeImmutable($value))->format('d/m/Y');}catch(Throwable){return$value;}};
+?>
+<section class="social-controls-page" aria-labelledby="social-controls-title">
+ <?php foreach(($messages['success']??[])as$message):?><p class="form-alert form-alert--success" role="status"><?= e((string)$message) ?></p><?php endforeach;?>
+ <header class="social-controls-hero"><div><p class="eyebrow">Controles sociais</p><h1 id="social-controls-title"><?= e($heading) ?></h1><p><?= $blocked?'Bloqueios interrompem a relação social e novas interações.':'Silenciamentos removem apenas as atividades da pessoa do seu Feed Social.' ?></p></div><a class="button button--secondary" href="/perfil">Voltar ao perfil</a></header>
+ <?php if($controls->items===[]):?><section class="social-controls-empty"><h2><?= $blocked?'Nenhum usuário bloqueado.':'Nenhum usuário silenciado.' ?></h2><p><?= $blocked?'Quando você bloquear alguém, poderá gerenciar essa escolha aqui.':'Você ainda não silenciou atividades de ninguém.' ?></p></section>
+ <?php else:?><ol class="social-controls-list"><?php foreach($controls->items as$item):$initial=mb_strtoupper(mb_substr($item->displayName!==''?$item->displayName:$item->username,0,1));?><li><article class="social-control-card">
+  <?php if(!$blocked):?><a class="social-control-card__identity" href="/u/<?= rawurlencode($item->username) ?>"><?php else:?><div class="social-control-card__identity"><?php endif;?><span class="social-control-card__avatar"><b aria-hidden="true"><?= e($initial) ?></b><?php if($item->avatarUrl!==null):?><img src="<?= e($item->avatarUrl) ?>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.hidden=true"><?php endif;?></span><span><strong><?= e($item->displayName) ?></strong><small>@<?= e($item->username) ?> · desde <?= e($date($item->createdAt)) ?></small></span><?php if(!$blocked):?></a><?php else:?></div><?php endif;?>
+  <form method="post" action="<?= $blocked?'/perfil/bloqueados/'.rawurlencode($item->username).'/desbloquear':'/u/'.rawurlencode($item->username).'/dessilenciar' ?>"><?= $csrf->field() ?><button class="button button--secondary" type="submit"><?= $blocked?'Desbloquear':'Deixar de silenciar' ?></button></form>
+ </article></li><?php endforeach;?></ol><?php endif;?>
+ <?php if($controls->totalPages()>1):?><nav class="pagination" aria-label="Paginação"><?php if($controls->page>1):?><a href="/perfil/<?= e($kind) ?>?page=<?= $controls->page-1 ?>">← Anterior</a><?php else:?><span aria-disabled="true">← Anterior</span><?php endif;?><strong>Página <?= $controls->page ?> de <?= $controls->totalPages() ?></strong><?php if($controls->page<$controls->totalPages()):?><a href="/perfil/<?= e($kind) ?>?page=<?= $controls->page+1 ?>">Próxima →</a><?php else:?><span aria-disabled="true">Próxima →</span><?php endif;?></nav><?php endif;?>
+</section>

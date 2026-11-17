@@ -27,11 +27,15 @@ final class SocialFeedRepository implements SocialFeedReader
             . 'INNER JOIN user_profiles p ON p.user_id = f.followed_user_id '
             . 'INNER JOIN users u ON u.id = p.user_id '
             . 'INNER JOIN watch_history wh ON wh.user_id = p.user_id ';
+        $visibility=SocialActivityVisibility::SQL
+            . ' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:viewer_block AND b.blocked_user_id=p.user_id) OR (b.blocker_user_id=p.user_id AND b.blocked_user_id=:viewer_block_reverse))'
+            . ' AND NOT EXISTS (SELECT 1 FROM user_mutes m WHERE m.user_id=:viewer_mute AND m.muted_user_id=p.user_id)';
 
         $count = $this->database->connection()->prepare(
-            'SELECT COUNT(*)' . $from . 'WHERE ' . SocialActivityVisibility::SQL,
+            'SELECT COUNT(*)' . $from . 'WHERE ' . $visibility,
         );
         $count->bindValue(':viewer_user_id', $viewerUserId, PDO::PARAM_INT);
+        $count->bindValue(':viewer_block',$viewerUserId,PDO::PARAM_INT);$count->bindValue(':viewer_block_reverse',$viewerUserId,PDO::PARAM_INT);$count->bindValue(':viewer_mute',$viewerUserId,PDO::PARAM_INT);
         $count->execute();
         $total = (int) $count->fetchColumn();
 
@@ -46,13 +50,14 @@ final class SocialFeedRepository implements SocialFeedReader
             . ' LEFT JOIN (SELECT history_id, COUNT(*) AS like_count FROM social_activity_likes GROUP BY history_id) lc '
             . 'ON lc.history_id = wh.id '
             . 'LEFT JOIN social_activity_likes vl ON vl.history_id = wh.id AND vl.user_id = :viewer_like_user_id'
-            . ' LEFT JOIN (SELECT history_id, COUNT(*) AS comment_count FROM social_activity_comments GROUP BY history_id) cc '
+            . ' LEFT JOIN (SELECT c.history_id,COUNT(*) AS comment_count FROM social_activity_comments c WHERE NOT EXISTS (SELECT 1 FROM user_blocks cb WHERE (cb.blocker_user_id=:comment_viewer AND cb.blocked_user_id=c.user_id) OR (cb.blocker_user_id=c.user_id AND cb.blocked_user_id=:comment_viewer_reverse)) GROUP BY c.history_id) cc '
             . 'ON cc.history_id = wh.id'
-            . ' WHERE ' . SocialActivityVisibility::SQL
+            . ' WHERE ' . $visibility
             . ' ORDER BY wh.created_at DESC, wh.id DESC LIMIT :limit OFFSET :offset',
         );
         $statement->bindValue(':viewer_user_id', $viewerUserId, PDO::PARAM_INT);
         $statement->bindValue(':viewer_like_user_id', $viewerUserId, PDO::PARAM_INT);
+        foreach(['viewer_block','viewer_block_reverse','viewer_mute','comment_viewer','comment_viewer_reverse'] as$name){$statement->bindValue(':'.$name,$viewerUserId,PDO::PARAM_INT);}
         $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $statement->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
         $statement->execute();

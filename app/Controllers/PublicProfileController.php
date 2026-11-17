@@ -24,6 +24,8 @@ use App\Social\PrivateProfileAccessPolicy;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
 use App\Messaging\DirectMessageReader;
+use App\Social\UserSocialControlStore;
+use App\Social\ViewerAwareFollowStore;
 
 final class PublicProfileController
 {
@@ -42,6 +44,7 @@ final class PublicProfileController
         private readonly FollowRequestStore $followRequests,
         private readonly PrivateProfileAccessPolicy $accessPolicy,
         private readonly ?DirectMessageReader $directMessages = null,
+        private readonly ?UserSocialControlStore $socialControls = null,
     ) {
     }
 
@@ -51,6 +54,8 @@ final class PublicProfileController
         if ($profile === null) {
             return $this->notFound('/u/' . $username);
         }
+        $viewerUserId = $this->auth->id();
+        if($viewerUserId!==null&&$viewerUserId!==$profile->userId&&$this->socialControls?->isBlockedEitherDirection($viewerUserId,$profile->userId)===true){return $this->notFound('/u/'.$username);}
 
         $canonicalUrl = $this->publicUrl->forPath('/u/' . rawurlencode($profile->username));
         $defaultImage = $this->publicUrl->forPath('/assets/images/flickary-share.png');
@@ -66,7 +71,6 @@ final class PublicProfileController
                 : 'Perfil de ' . $profile->displayName . ' no Flickary',
         );
 
-        $viewerUserId = $this->auth->id();
         $isOwner = $viewerUserId === $profile->userId;
         $isFollowing = $viewerUserId !== null && !$isOwner
             ? $this->follows->isFollowing($viewerUserId, $profile->userId) : false;
@@ -107,6 +111,7 @@ final class PublicProfileController
             'hasShareActions' => true,
             'canMessage' => $canMessage,
             'hasConversation' => $hasConversation,
+            'isMuted'=>$viewerUserId!==null&&!$isOwner&&$this->socialControls?->isMuted($viewerUserId,$profile->userId)===true,
         ]));
     }
 
@@ -126,10 +131,12 @@ final class PublicProfileController
         if ($profile === null) {
             return $this->notFound('/u/' . $username . ($followers ? '/seguidores' : '/seguindo'));
         }
+        $viewerUserId=$this->auth->id();
+        if($viewerUserId!==null&&$viewerUserId!==$profile->userId&&$this->socialControls?->isBlockedEitherDirection($viewerUserId,$profile->userId)===true){return $this->notFound('/u/'.$username.($followers?'/seguidores':'/seguindo'));}
         $page = $this->page($request->query('page', 1));
-        $profiles = $followers
-            ? $this->follows->paginateFollowers($profile->userId, $page, self::CONNECTIONS_PER_PAGE)
-            : $this->follows->paginateFollowing($profile->userId, $page, self::CONNECTIONS_PER_PAGE);
+        $profiles=$this->follows instanceof ViewerAwareFollowStore
+            ?($followers?$this->follows->paginateFollowersForViewer($profile->userId,$page,self::CONNECTIONS_PER_PAGE,$viewerUserId):$this->follows->paginateFollowingForViewer($profile->userId,$page,self::CONNECTIONS_PER_PAGE,$viewerUserId))
+            :($followers?$this->follows->paginateFollowers($profile->userId,$page,self::CONNECTIONS_PER_PAGE):$this->follows->paginateFollowing($profile->userId,$page,self::CONNECTIONS_PER_PAGE));
 
         return Response::html($this->view->render('pages/user-connections', [
             'title' => ($followers ? 'Seguidores de ' : 'Seguindo por ') . '@' . $profile->username . ' · Flickary',

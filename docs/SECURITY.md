@@ -97,6 +97,15 @@ Canonical e URLs compartilháveis são construídas exclusivamente a partir de `
 
 Perfis privados publicam descrição genérica sem bio protegida, favoritos ou estatísticas. Metadados de mídia não recebem estado pessoal do visitante. A URL compartilhada é a própria rota pública, sem ID interno de usuário, token, assinatura ou tracking; nenhuma credencial é enviada ao navegador e nenhuma ação de share cria persistência ou cookie.
 
+## Bloqueio e silenciamento
+
+- Qualquer block no par corta novas interações nos dois sentidos; perfil autenticado, follow/request, busca, detalhe social, like, comentário e envio respondem como não encontrados.
+- O usuário autenticado vem da sessão e o alvo sempre do username canônico da rota. Todas as mutations exigem POST e CSRF; self-block e self-mute são rejeitados.
+- O bloqueio remove follows, requests, mutes e notificações do par na mesma transação, sem apagar mensagens, comentários ou curtidas históricas. Nenhuma notificação informa o bloqueio ou silenciamento.
+- Unblock remove apenas a row e não restaura relações. Conversas preservadas continuam somente leitura até novo follow mútuo.
+- Mute afeta somente o Feed Social e não altera mensagens ou notificações.
+- Bloquear uma conta autenticada não impede acesso anônimo a um perfil público.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

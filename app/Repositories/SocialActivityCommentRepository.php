@@ -17,11 +17,12 @@ use App\Social\SocialActivityVisibility;
 use App\Social\SocialCommentBody;
 use App\Social\SocialOwnComment;
 use App\Social\SocialOwnCommentPage;
+use App\Social\ViewerAwareSocialActivityCommentReader;
 use App\Notifications\SocialNotificationStore;
 use PDO;
 use Throwable;
 
-final class SocialActivityCommentRepository implements SocialActivityCommentReader, SocialActivityCommentStore
+final class SocialActivityCommentRepository implements SocialActivityCommentReader, SocialActivityCommentStore, ViewerAwareSocialActivityCommentReader
 {
     public function __construct(
         private readonly Database $database,
@@ -41,7 +42,7 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             . 'wh.title, wh.episode_title, wh.content_date, wh.poster_path, wh.is_anime, '
             . 'wh.watched_on, wh.created_at, COALESCE(lc.like_count, 0) AS like_count, '
             . 'CASE WHEN vl.user_id IS NULL THEN 0 ELSE 1 END AS viewer_liked, '
-            . 'COALESCE(cc.comment_count, 0) AS comment_count, '
+            . '(SELECT COUNT(*) FROM social_activity_comments cc WHERE cc.history_id=wh.id AND (wh.user_id=:comment_count_owner OR NOT EXISTS (SELECT 1 FROM user_blocks cb WHERE (cb.blocker_user_id=:comment_viewer AND cb.blocked_user_id=cc.user_id) OR (cb.blocker_user_id=cc.user_id AND cb.blocked_user_id=:comment_viewer_reverse)))) AS comment_count, '
             . 'p.share_watch_activity, p.share_watch_activity_since, '
             . 'CASE WHEN wh.user_id = :access_owner_id THEN \'owner\' ELSE \'follower\' END AS access_type '
             . 'FROM watch_history wh '
@@ -50,8 +51,8 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             . 'LEFT JOIN user_follows f ON f.followed_user_id = wh.user_id AND f.follower_user_id = :follow_viewer_id '
             . 'LEFT JOIN (SELECT history_id, COUNT(*) AS like_count FROM social_activity_likes GROUP BY history_id) lc ON lc.history_id = wh.id '
             . 'LEFT JOIN social_activity_likes vl ON vl.history_id = wh.id AND vl.user_id = :like_viewer_id '
-            . 'LEFT JOIN (SELECT history_id, COUNT(*) AS comment_count FROM social_activity_comments GROUP BY history_id) cc ON cc.history_id = wh.id '
-            . 'WHERE wh.id = :history_id AND (wh.user_id = :owner_viewer_id OR (' . SocialActivityVisibility::SQL . ')) '
+            . 'WHERE wh.id = :history_id AND (wh.user_id = :owner_viewer_id OR (' . SocialActivityVisibility::SQL
+            . ' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:viewer_block AND b.blocked_user_id=wh.user_id) OR (b.blocker_user_id=wh.user_id AND b.blocked_user_id=:viewer_block_reverse)))) '
             . 'LIMIT 1',
         );
         $statement->execute([
@@ -61,6 +62,8 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             'history_id' => $historyId,
             'owner_viewer_id' => $viewerUserId,
             'viewer_user_id' => $viewerUserId,
+            'comment_count_owner'=>$viewerUserId,'comment_viewer'=>$viewerUserId,'comment_viewer_reverse'=>$viewerUserId,
+            'viewer_block'=>$viewerUserId,'viewer_block_reverse'=>$viewerUserId,
         ]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
         if (!is_array($row)) {
@@ -79,21 +82,30 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
     }
 
     public function paginateForActivity(int $historyId, int $page, int $perPage): SocialActivityCommentPage
+    { return $this->paginateActivity($historyId,$page,$perPage,null,null); }
+
+    public function paginateVisibleForActivity(int $historyId,int $page,int $perPage,int $viewerUserId,int $ownerUserId):SocialActivityCommentPage
+    { return $this->paginateActivity($historyId,$page,$perPage,$viewerUserId,$ownerUserId); }
+
+    private function paginateActivity(int $historyId,int $page,int $perPage,?int $viewerUserId,?int $ownerUserId):SocialActivityCommentPage
     {
         $this->assertPagination($historyId, $page, $perPage);
+        $countFilter=$viewerUserId===null||$viewerUserId===$ownerUserId?'':' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:viewer AND b.blocked_user_id=user_id) OR (b.blocker_user_id=user_id AND b.blocked_user_id=:viewer_reverse))';
+        $itemFilter=$viewerUserId===null||$viewerUserId===$ownerUserId?'':' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:viewer AND b.blocked_user_id=c.user_id) OR (b.blocker_user_id=c.user_id AND b.blocked_user_id=:viewer_reverse))';
         $count = $this->database->connection()->prepare(
-            'SELECT COUNT(*) FROM social_activity_comments WHERE history_id = :history_id',
+            'SELECT COUNT(*) FROM social_activity_comments WHERE history_id = :history_id'.$countFilter,
         );
-        $count->execute(['history_id' => $historyId]);
+        $params=['history_id'=>$historyId]; if($countFilter!==''){$params['viewer']=$viewerUserId;$params['viewer_reverse']=$viewerUserId;} $count->execute($params);
         $total = (int) $count->fetchColumn();
 
         $statement = $this->database->connection()->prepare(
             'SELECT c.id,c.history_id,c.user_id,u.username,p.display_name,p.avatar_url,c.body,c.created_at '
             . 'FROM social_activity_comments c INNER JOIN users u ON u.id=c.user_id '
             . 'INNER JOIN user_profiles p ON p.user_id=c.user_id '
-            . 'WHERE c.history_id=:history_id ORDER BY c.created_at DESC,c.id DESC LIMIT :limit OFFSET :offset',
+            . 'WHERE c.history_id=:history_id'.$itemFilter.' ORDER BY c.created_at DESC,c.id DESC LIMIT :limit OFFSET :offset',
         );
         $statement->bindValue(':history_id', $historyId, PDO::PARAM_INT);
+        if($itemFilter!==''){$statement->bindValue(':viewer',$viewerUserId,PDO::PARAM_INT);$statement->bindValue(':viewer_reverse',$viewerUserId,PDO::PARAM_INT);}
         $statement->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $statement->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
         $statement->execute();
@@ -169,7 +181,8 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             . 'LEFT JOIN user_follows f ON f.followed_user_id=wh.user_id AND f.follower_user_id=:follow_viewer_id '
             . 'WHERE wh.id=:history_id AND ('
             . '(wh.user_id=:owner_user_id AND p.share_watch_activity=1 AND p.share_watch_activity_since IS NOT NULL '
-            . 'AND wh.created_at>=p.share_watch_activity_since) OR (' . SocialActivityVisibility::SQL . '))',
+            . 'AND wh.created_at>=p.share_watch_activity_since) OR (' . SocialActivityVisibility::SQL . ')) '
+            . 'AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:comment_block AND b.blocked_user_id=wh.user_id) OR (b.blocker_user_id=wh.user_id AND b.blocked_user_id=:comment_block_reverse))',
         );
         try {
             $statement->execute([
@@ -179,6 +192,7 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
                 'owner_user_id' => $viewerUserId,
                 'follow_viewer_id' => $viewerUserId,
                 'viewer_user_id' => $viewerUserId,
+                'comment_block'=>$viewerUserId,'comment_block_reverse'=>$viewerUserId,
             ]);
             $result = $statement->rowCount() === 1
                 ? SocialActivityCommentCreateResult::Created

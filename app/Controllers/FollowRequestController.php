@@ -14,6 +14,7 @@ use App\Core\View;
 use App\Social\FollowRequestStore;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
+use App\Social\UserSocialControlStore;
 
 final class FollowRequestController
 {
@@ -27,6 +28,7 @@ final class FollowRequestController
         private readonly UsernamePolicy $usernamePolicy,
         private readonly PublicProfileReader $profiles,
         private readonly FollowRequestStore $requests,
+        private readonly ?UserSocialControlStore $socialControls=null,
     ) {
     }
 
@@ -68,6 +70,7 @@ final class FollowRequestController
         if ($requester === null || $requester->userId === $targetUserId) {
             return $this->notFound();
         }
+        if($this->socialControls?->isBlockedEitherDirection($requester->userId,$targetUserId)===true){return $this->notFound();}
         $changed = $accept
             ? $this->requests->accept($requester->userId, $targetUserId)
             : $this->requests->reject($requester->userId, $targetUserId);

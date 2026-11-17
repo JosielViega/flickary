@@ -37,13 +37,15 @@ final class SocialActivityLikeRepository implements SocialActivityLikeStore
                 . 'SELECT wh.id,:liker FROM watch_history wh '
                 . 'INNER JOIN user_profiles p ON p.user_id=wh.user_id '
                 . 'INNER JOIN user_follows f ON f.followed_user_id=wh.user_id '
-                . 'WHERE wh.id=:history AND ' . SocialActivityVisibility::SQL,
+                . 'WHERE wh.id=:history AND ' . SocialActivityVisibility::SQL
+                . ' AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=:liker_block AND b.blocked_user_id=wh.user_id) OR (b.blocker_user_id=wh.user_id AND b.blocked_user_id=:liker_block_reverse))',
             );
             try {
                 $statement->execute([
                     'liker' => $viewerUserId,
                     'viewer_user_id' => $viewerUserId,
                     'history' => $historyId,
+                    'liker_block'=>$viewerUserId,'liker_block_reverse'=>$viewerUserId,
                 ]);
             } catch (PDOException $exception) {
                 if ((int) ($exception->errorInfo[1] ?? 0) === 1062) {

@@ -247,6 +247,17 @@ O par de conversa é canônico (`user_low_id`, `user_high_id`) e único. A prime
 
 `Acesso à conversa != permissão de envio`: participantes continuam lendo o histórico após unfollow, mas cada novo envio revalida as duas relações aceitas dentro da transação. Re-follow reutiliza o mesmo par. `DirectMessageBody` limita texto simples Unicode a 2.000 caracteres, enquanto `MessageLayoutContextProvider` compõe o contador global com o provider de notificações sem executar queries para guests.
 
+## Controles sociais
+
+```text
+user_blocks -> UserSocialControlRepository -> fronteira de autorização do par
+user_mutes  -> SocialFeedRepository        -> preferência unilateral de feed
+```
+
+`Block = authorization boundary`: a direção é persistida para gerenciamento, mas qualquer row em qualquer direção corta perfil e novas interações para ambos. O bloqueio é transacional e limpa relações derivadas, preservando conteúdo histórico.
+
+`Mute = feed preference`: somente a projeção do Feed Social consulta `user_mutes`; `SocialActivityVisibility`, perfis, mensagens e notificações continuam inalterados. Listagens e contagens sensíveis aplicam os filtros no SQL antes da paginação.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

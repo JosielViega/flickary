@@ -18,6 +18,7 @@ use App\Social\SocialActivityCommentReader;
 use App\Social\SocialActivityCommentStore;
 use App\Social\SocialActivityDetail;
 use App\Social\SocialCommentBody;
+use App\Social\ViewerAwareSocialActivityCommentReader;
 
 final class SocialActivityController
 {
@@ -128,7 +129,7 @@ final class SocialActivityController
             'auth' => $this->auth,
             'csrf' => $this->csrf,
             'detail' => $detail,
-            'comments' => $this->comments->paginateForActivity($detail->activity->historyId, $page, self::PER_PAGE),
+            'comments'=>$this->comments instanceof ViewerAwareSocialActivityCommentReader?$this->comments->paginateVisibleForActivity($detail->activity->historyId,$page,self::PER_PAGE,(int)$this->auth->id(),$detail->activity->actorUserId):$this->comments->paginateForActivity($detail->activity->historyId,$page,self::PER_PAGE),
             'posterUrl' => $this->posterUrl($detail),
             'commentBody' => $commentBody,
             'commentError' => $commentError,

@@ -312,6 +312,14 @@ A fundação mantém:
 
 Leia a política completa em [docs/SECURITY.md](docs/SECURITY.md).
 
+## Bloquear e silenciar
+
+As rotas privadas `GET /perfil/bloqueados` e `GET /perfil/silenciados` gerenciam os controles sociais. As mutations usam POST, CSRF e o username da rota: `/u/{username}/bloquear`, `/u/{username}/silenciar`, `/u/{username}/dessilenciar` e `/perfil/bloqueados/{username}/desbloquear`.
+
+Bloquear estabelece uma fronteira bilateral para usuários autenticados: remove follows e solicitações nos dois sentidos, elimina mutes e notificações do par e impede perfil, busca e novas interações. Mensagens, comentários e curtidas históricas são preservados; a conversa existente fica somente leitura. Desbloquear remove apenas a row de bloqueio e nunca restaura relações.
+
+Como perfis públicos continuam públicos, o bloqueio autenticado não impede que uma pessoa deslogada acesse uma URL pública. Silenciar é apenas uma preferência unilateral do Feed Social: exige follow atual, não remove perfil, mensagens ou notificações e não altera a autorização de likes e comentários diretos.
+
 ## Produção e HostGator
 
 Em produção, use pelo menos:

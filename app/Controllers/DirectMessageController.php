@@ -16,6 +16,7 @@ use App\Messaging\DirectMessageStore;
 use App\Social\FollowStore;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
+use App\Social\UserSocialControlStore;
 
 final class DirectMessageController
 {
@@ -31,6 +32,7 @@ final class DirectMessageController
         private readonly FollowStore $follows,
         private readonly DirectMessageReader $messages,
         private readonly DirectMessageStore $store,
+        private readonly ?UserSocialControlStore $socialControls=null,
     ) {}
 
     public function index(Request $request): Response
@@ -60,7 +62,7 @@ final class DirectMessageController
         $resolved = $this->resolveMutation($request, $username);
         if ($resolved instanceof Response) { return $resolved; }
         [$userId, $other] = $resolved;
-        if (!$this->follows->areMutualFollowers($userId, $other->userId)) {
+        if ($this->socialControls?->isBlockedEitherDirection($userId,$other->userId)===true||!$this->follows->areMutualFollowers($userId, $other->userId)) {
             return $this->notFound('/mensagens/com/' . $username);
         }
         $submitted = $request->input('body');
@@ -128,7 +130,8 @@ final class DirectMessageController
     private function conversationPage(int $userId, PublicProfile $other, int $page, string $body = '', ?string $error = null, int $status = 200): Response
     {
         $exists = $this->messages->conversationExists($userId, $other->userId);
-        $canSend = $this->follows->areMutualFollowers($userId, $other->userId);
+        $blocked=$this->socialControls?->isBlockedEitherDirection($userId,$other->userId)===true;
+        $canSend=!$blocked&&$this->follows->areMutualFollowers($userId,$other->userId);
         if (!$exists && !$canSend) { return $this->notFound('/mensagens/com/' . $other->username); }
         return Response::html($this->view->render('pages/direct-conversation', [
             'title' => $other->displayName . ' · Mensagens · Flickary',
@@ -143,6 +146,7 @@ final class DirectMessageController
             'unreadCount' => $exists ? $this->messages->countUnreadForConversation($userId, $other->userId) : 0,
             'messageBody' => $body,
             'messageError' => $error,
+            'pairBlocked'=>$blocked,
         ]), $status);
     }
 

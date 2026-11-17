@@ -38,6 +38,7 @@ use App\Repositories\SocialActivityLikeRepository;
 use App\Repositories\SocialActivityCommentRepository;
 use App\Repositories\SocialNotificationRepository;
 use App\Repositories\DirectMessageRepository;
+use App\Repositories\UserSocialControlRepository;
 use App\Notifications\NotificationLayoutContextProvider;
 use App\Messaging\MessageLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
@@ -97,6 +98,7 @@ $animeSnapshots = new AnimeSnapshotRepository($database);
 $mediaPreferences = new UserMediaPreferenceRepository($database);
 $publicProfiles = new PublicProfileRepository($database);
 $socialNotifications = new SocialNotificationRepository($database);
+$socialControls = new UserSocialControlRepository($database);
 $directMessages = new DirectMessageRepository($database);
 $userFollows = new UserFollowRepository($database, $socialNotifications);
 $userFollowRequests = new UserFollowRequestRepository($database, $socialNotifications);
@@ -154,6 +156,7 @@ return [
     'social_activity_comments' => $socialActivityComments,
     'social_notifications' => $socialNotifications,
     'direct_messages' => $directMessages,
+    'social_controls'=>$socialControls,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

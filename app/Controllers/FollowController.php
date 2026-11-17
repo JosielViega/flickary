@@ -15,6 +15,7 @@ use App\Social\FollowRequestStore;
 use App\Social\FollowStore;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
+use App\Social\UserSocialControlStore;
 
 final class FollowController
 {
@@ -27,6 +28,7 @@ final class FollowController
         private readonly PublicProfileReader $profiles,
         private readonly FollowStore $follows,
         private readonly FollowRequestStore $followRequests,
+        private readonly ?UserSocialControlStore $socialControls=null,
     ) {
     }
 
@@ -56,6 +58,7 @@ final class FollowController
         if ($viewerUserId === $profile->userId) {
             return Response::html('Você não pode solicitar o próprio perfil.', 422);
         }
+        if($this->socialControls?->isBlockedEitherDirection($viewerUserId,$profile->userId)===true){return $this->notFound($username);}
         $this->followRequests->cancel($viewerUserId, $profile->userId);
         $this->session->flash('success', 'Solicitação cancelada.');
         return Response::redirect('/u/' . $profile->username, 303);
@@ -77,6 +80,7 @@ final class FollowController
         if ($viewerUserId === $profile->userId) {
             return Response::html('Você não pode seguir o próprio perfil.', 422);
         }
+        if($this->socialControls?->isBlockedEitherDirection($viewerUserId,$profile->userId)===true){return $this->notFound($username);}
         if ($follow) {
             if ($this->follows->isFollowing($viewerUserId, $profile->userId)) {
                 $this->session->flash('success', 'Você já segue @' . $profile->username . '.');

@@ -33,17 +33,23 @@ final class UserFollowRequestRepository implements FollowRequestStore
             $pdo->beginTransaction();
         }
         try {
+            $this->lockPair($pdo,$requesterUserId,$targetUserId);
             $statement = $pdo->prepare(
                 'INSERT IGNORE INTO user_follow_requests (requester_user_id,target_user_id) '
                 . 'SELECT :requester,:target WHERE NOT EXISTS ('
                 . 'SELECT 1 FROM user_follows '
-                . 'WHERE follower_user_id=:requester_follow AND followed_user_id=:target_follow)',
+                . 'WHERE follower_user_id=:requester_follow AND followed_user_id=:target_follow) '
+                . 'AND NOT EXISTS (SELECT 1 FROM user_blocks WHERE '
+                . '(blocker_user_id=:requester_block AND blocked_user_id=:target_block) OR '
+                . '(blocker_user_id=:target_reverse AND blocked_user_id=:requester_reverse))',
             );
             $statement->execute([
                 'requester' => $requesterUserId,
                 'target' => $targetUserId,
                 'requester_follow' => $requesterUserId,
                 'target_follow' => $targetUserId,
+                'requester_block'=>$requesterUserId,'target_block'=>$targetUserId,
+                'target_reverse'=>$targetUserId,'requester_reverse'=>$requesterUserId,
             ]);
             if ($statement->rowCount() === 1) {
                 $this->notifications?->followRequest($targetUserId, $requesterUserId);
@@ -130,6 +136,7 @@ final class UserFollowRequestRepository implements FollowRequestStore
             $pdo->beginTransaction();
         }
         try {
+            $this->lockPair($pdo,$requesterUserId,$targetUserId);
             $select = $pdo->prepare(
                 'SELECT created_at FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target FOR UPDATE',
             );
@@ -141,19 +148,20 @@ final class UserFollowRequestRepository implements FollowRequestStore
                 return false;
             }
             $insert = $pdo->prepare(
-                'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) VALUES (:requester,:target)',
+                'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) SELECT :requester,:target '
+                . 'WHERE NOT EXISTS (SELECT 1 FROM user_blocks WHERE (blocker_user_id=:requester_block AND blocked_user_id=:target_block) OR (blocker_user_id=:target_reverse AND blocked_user_id=:requester_reverse))',
             );
-            $insert->execute(['requester'=>$requesterUserId,'target'=>$targetUserId]);
+            $insert->execute(['requester'=>$requesterUserId,'target'=>$targetUserId,'requester_block'=>$requesterUserId,'target_block'=>$targetUserId,'target_reverse'=>$targetUserId,'requester_reverse'=>$requesterUserId]);
             $delete = $pdo->prepare(
                 'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
             );
             $delete->execute(['requester' => $requesterUserId, 'target' => $targetUserId]);
             $this->notifications?->removeFollowRequest($targetUserId, $requesterUserId);
-            $this->notifications?->followAccepted($requesterUserId, $targetUserId);
+            if($insert->rowCount()===1){$this->notifications?->followAccepted($requesterUserId, $targetUserId);}
             if ($ownsTransaction) {
                 $pdo->commit();
             }
-            return true;
+            return $insert->rowCount() === 1;
         } catch (Throwable $exception) {
             if ($ownsTransaction && $pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -193,14 +201,19 @@ final class UserFollowRequestRepository implements FollowRequestStore
     public function acceptAllForTarget(int $targetUserId): void
     {
         $pdo = $this->database->connection();
+        $blocked=$pdo->prepare('DELETE r FROM user_follow_requests r WHERE r.target_user_id=:target AND EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=r.requester_user_id AND b.blocked_user_id=r.target_user_id) OR (b.blocker_user_id=r.target_user_id AND b.blocked_user_id=r.requester_user_id))');
+        $blocked->execute(['target'=>$targetUserId]);
         $this->notifications?->followAcceptedForPendingTarget($targetUserId);
         $this->notifications?->removeFollowRequestsForTarget($targetUserId);
         $insert = $pdo->prepare(
             'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) '
-            . 'SELECT requester_user_id,target_user_id FROM user_follow_requests WHERE target_user_id=:target',
+            . 'SELECT r.requester_user_id,r.target_user_id FROM user_follow_requests r WHERE r.target_user_id=:target '
+            . 'AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE (b.blocker_user_id=r.requester_user_id AND b.blocked_user_id=r.target_user_id) OR (b.blocker_user_id=r.target_user_id AND b.blocked_user_id=r.requester_user_id))',
         );
         $insert->execute(['target'=>$targetUserId]);
         $delete = $pdo->prepare('DELETE FROM user_follow_requests WHERE target_user_id=:target');
         $delete->execute(['target'=>$targetUserId]);
     }
+
+    private function lockPair(PDO$pdo,int$userA,int$userB):void{$statement=$pdo->prepare('SELECT id FROM users WHERE id IN (:low,:high) ORDER BY id FOR UPDATE');$statement->execute(['low'=>min($userA,$userB),'high'=>max($userA,$userB)]);}
 }
