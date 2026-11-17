@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in com curtidas e comentários, e compartilhamento público com prévias sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in com curtidas e comentários, notificações internas, mensagens privadas 1:1 e compartilhamento público com prévias sociais.
 
 ## Stack
 
@@ -160,7 +160,15 @@ O registro é local, fica fora do Git e não contém credenciais. Consulte [dese
 
 `GET /u/{username}` apresenta identidade pública, contadores sociais e, quando permitido, agregados locais e até seis favoritos. Perfis privados exibem somente identidade, bio, data de entrada e contadores; seguir alguém não concede acesso ao conteúdo privado. O proprietário pode conferir a prévia completa e editar a visibilidade em `/perfil`.
 
-As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. Perfis privados recebem solicitações que precisam ser aceitas; pending nunca equivale a follow ativo. Ainda não existem comentários, mensagens ou notificações.
+As páginas `/u/{username}/seguidores` e `/u/{username}/seguindo` usam paginação SQL. A descoberta local de pessoas fica em `/usuarios`, pesquisando username e nome de exibição sem consultar o TMDB. Perfis privados recebem solicitações que precisam ser aceitas; pending nunca equivale a follow ativo.
+
+## Mensagens privadas
+
+`GET /mensagens` apresenta a caixa privada de conversas 1:1. Uma nova mensagem só pode ser enviada quando os dois usuários se seguem por relações aceitas em `user_follows`; follow unilateral e solicitação pendente não habilitam a conversa. A primeira mensagem cria o único par canônico e as seguintes reutilizam essa conversa.
+
+Se a relação mútua terminar, o histórico permanece legível para os participantes em modo somente leitura. Restabelecer os dois follows devolve a permissão de envio na mesma conversa. Mensagens são texto simples UTF-8 de até 2.000 caracteres, com não lidas próprias; abrir uma conversa por GET nunca marca leitura, que exige POST com CSRF.
+
+Não há anexos, rich text, auto-link, edição, remoção, grupos, polling ou realtime. Mensagens também não duplicam eventos em notificações sociais.
 
 ## Feed Social de visualizações
 
@@ -241,6 +249,8 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /perfil/comentarios` — histórico privado e paginado dos comentários do usuário autenticado;
 - `GET /notificacoes` — caixa privada e paginada de notificações sociais;
 - `POST /notificacoes/{id}/abrir` e `POST /notificacoes/ler-todas` — marca uma ou todas as notificações como lidas, com CSRF;
+- `GET /mensagens` e `GET /mensagens/com/{username}` — caixa e histórico privado de mensagens 1:1;
+- `POST /mensagens/com/{username}` e `POST /mensagens/com/{username}/ler|abrir` — envio e leitura com follow mútuo, ownership e CSRF;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;

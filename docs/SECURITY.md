@@ -132,3 +132,12 @@ O builder HostGator usa allowlist e falha se detectar configurações do servido
 - A tabela não persiste mensagem, HTML, URL ou payload. A UI monta texto conhecido por enum e escapa username e display name.
 - As consultas selecionam somente identidade pública do ator, sem e-mail, provider, token ou sessão; recursos ocultos não são revelados.
 - Publicação, caixa e badge são locais e não consultam o TMDB. Não existem push, e-mail, polling, WebSocket ou SSE.
+
+## Mensagens privadas
+
+- Caixa, conversa e mutations exigem autenticação. O sender vem exclusivamente de `Auth::id()` e o target do username canônico da rota; IDs enviados pelo navegador não selecionam usuário ou conversa.
+- Novo envio exige follows aceitos nas duas direções. A verificação e a escrita usam a mesma transação com lock das relações; pending e follow unilateral nunca autorizam.
+- A leitura exige participação no par canônico. Histórico existente permanece acessível após unfollow, mas somente em leitura.
+- Envio e marcação de leitura exigem POST e CSRF; GET nunca altera `read_at`. Nenhum redirect arbitrário é aceito.
+- Mensagens são texto simples UTF-8 limitado a 2.000 caracteres, sem HTML, Markdown ou auto-link, e toda renderização é escapada.
+- A funcionalidade é local, não consulta TMDB e não cria `social_notifications`. Não há anexos, realtime, polling, push ou e-mail.

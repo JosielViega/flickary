@@ -29,6 +29,7 @@ use App\Controllers\SocialFeedController;
 use App\Controllers\SocialActivityController;
 use App\Controllers\ProfileCommentsController;
 use App\Controllers\NotificationController;
+use App\Controllers\DirectMessageController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -159,7 +160,7 @@ $about = new AboutController(
 $publicProfile = new PublicProfileController(
     $app['view'], $app['auth'], $app['csrf'], $app['session'], $app['username_policy'],
     $app['public_profiles'], $app['user_follows'], $app['tmdb'], $app['public_url'],
-    $app['user_follow_requests'], $app['private_profile_access_policy'],
+    $app['user_follow_requests'], $app['private_profile_access_policy'], $app['direct_messages'],
 );
 $followRequestStore = $app['user_follow_requests'];
 $follow = new FollowController(
@@ -185,6 +186,10 @@ $profileComments = new ProfileCommentsController(
 $notifications = new NotificationController(
     $app['view'], $app['auth'], $app['csrf'], $app['social_notifications'], $app['social_notifications'],
 );
+$directMessages = new DirectMessageController(
+    $app['view'], $app['auth'], $app['csrf'], $app['username_policy'], $app['public_profiles'],
+    $app['user_follows'], $app['direct_messages'], $app['direct_messages'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -204,6 +209,11 @@ $router->get('/social', static fn (): Response => $socialFeed->index($app['reque
 $router->get('/notificacoes', static fn (): Response => $notifications->index($app['request']));
 $router->post('/notificacoes/ler-todas', static fn (): Response => $notifications->markAllRead($app['request']));
 $router->post('/notificacoes/{id}/abrir', static fn (string $id): Response => $notifications->open($app['request'], $id));
+$router->get('/mensagens', static fn (): Response => $directMessages->index($app['request']));
+$router->get('/mensagens/com/{username}', static fn (string $username): Response => $directMessages->show($app['request'], $username));
+$router->post('/mensagens/com/{username}', static fn (string $username): Response => $directMessages->send($app['request'], $username));
+$router->post('/mensagens/com/{username}/ler', static fn (string $username): Response => $directMessages->markRead($app['request'], $username));
+$router->post('/mensagens/com/{username}/abrir', static fn (string $username): Response => $directMessages->open($app['request'], $username));
 $router->get('/social/atividades/{id}', static fn (string $id): Response => $socialActivity->show($app['request'], $id));
 $router->post('/social/atividades/{id}/comentarios', static fn (string $id): Response => $socialActivity->createComment($app['request'], $id));
 $router->post('/social/comentarios/{id}/remover', static fn (string $id): Response => $socialActivity->deleteComment($app['request'], $id));

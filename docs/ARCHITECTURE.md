@@ -231,6 +231,22 @@ Notificação não é fonte de verdade. As mutations de follow, solicitação, a
 
 O ciclo de vida acompanha o estado real: cancelar ou recusar remove `follow_request`; aceitar troca a notificação pela `follow_accepted`; unlike remove `activity_like`; exclusão de comentário ou histórico remove as notificações relacionadas por cascade. A mudança de perfil privado para público converte solicitações e notificações em lote dentro da transação de atualização do perfil.
 
+## Mensagens privadas 1:1
+
+```text
+user_follows A → B + user_follows B → A
+                    ↓
+            permissão de envio
+                    ↓
+          direct_conversations
+                    ↓
+             direct_messages
+```
+
+O par de conversa é canônico (`user_low_id`, `user_high_id`) e único. A primeira mensagem cria a conversa e atualiza `last_message_at` na mesma transação; abrir apenas a tela não cria linha vazia. A caixa combina outro participante, última mensagem, não lidas e permissão atual numa consulta paginada, sem N+1.
+
+`Acesso à conversa != permissão de envio`: participantes continuam lendo o histórico após unfollow, mas cada novo envio revalida as duas relações aceitas dentro da transação. Re-follow reutiliza o mesmo par. `DirectMessageBody` limita texto simples Unicode a 2.000 caracteres, enquanto `MessageLayoutContextProvider` compõe o contador global com o provider de notificações sem executar queries para guests.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

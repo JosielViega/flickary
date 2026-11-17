@@ -23,6 +23,9 @@ $isAuthenticated = isset($auth) && $auth instanceof \App\Core\Auth && $auth->che
 $notificationUnreadCount = max(0, (int) ($notificationUnreadCount ?? 0));
 $notificationBadge = $notificationUnreadCount > 99 ? '99+' : (string) $notificationUnreadCount;
 $notificationUnreadLabel = $notificationUnreadCount === 1 ? '1 não lida' : $notificationUnreadCount . ' não lidas';
+$messageUnreadCount = max(0, (int) ($messageUnreadCount ?? 0));
+$messageBadge = $messageUnreadCount > 99 ? '99+' : (string) $messageUnreadCount;
+$messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnreadCount . ' não lidas';
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -74,6 +77,7 @@ $notificationUnreadLabel = $notificationUnreadCount === 1 ? '1 não lida' : $not
             <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 5.5a3.5 3.5 0 0 1 0 6.8M17 15a5.5 5.5 0 0 1 4.5 5"/>
         </symbol>
         <symbol id="icon-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+        <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
     </svg>
 
     <div class="app-shell">
@@ -152,6 +156,7 @@ $notificationUnreadLabel = $notificationUnreadCount === 1 ? '1 não lida' : $not
 
                 <div class="topbar__account">
                     <?php if ($isAuthenticated && isset($csrf) && $csrf instanceof \App\Core\Csrf): ?>
+                        <a class="notification-action message-action" href="/mensagens" aria-label="Mensagens<?= $messageUnreadCount > 0 ? ', ' . e($messageUnreadLabel) : '' ?>"><svg aria-hidden="true"><use href="#icon-mail"/></svg><span class="notification-action__label">Mensagens</span><?php if($messageUnreadCount>0): ?><strong class="notification-badge"><?= e($messageBadge) ?></strong><?php endif; ?></a>
                         <a class="notification-action" href="/notificacoes" aria-label="Notificações<?= $notificationUnreadCount > 0 ? ', ' . e($notificationUnreadLabel) : '' ?>"><svg aria-hidden="true"><use href="#icon-bell"/></svg><span class="notification-action__label">Notificações</span><?php if($notificationUnreadCount>0): ?><strong class="notification-badge"><?= e($notificationBadge) ?></strong><?php endif; ?></a>
                         <form method="post" action="/logout">
                             <?= $csrf->field() ?>

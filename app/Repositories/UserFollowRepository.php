@@ -66,6 +66,25 @@ final class UserFollowRepository implements FollowStore
         return $statement->fetchColumn() !== false;
     }
 
+    public function areMutualFollowers(int $userA, int $userB): bool
+    {
+        if ($userA < 1 || $userB < 1 || $userA === $userB) {
+            return false;
+        }
+        $statement = $this->database->connection()->prepare(
+            'SELECT COUNT(*) FROM user_follows WHERE '
+            . '(follower_user_id=:user_a AND followed_user_id=:user_b) OR '
+            . '(follower_user_id=:user_b_reverse AND followed_user_id=:user_a_reverse)',
+        );
+        $statement->execute([
+            'user_a' => $userA,
+            'user_b' => $userB,
+            'user_b_reverse' => $userB,
+            'user_a_reverse' => $userA,
+        ]);
+        return (int) $statement->fetchColumn() === 2;
+    }
+
     public function countFollowers(int $userId): int { return $this->count('followed_user_id', $userId); }
     public function countFollowing(int $userId): int { return $this->count('follower_user_id', $userId); }
 

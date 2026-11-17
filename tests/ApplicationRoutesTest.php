@@ -206,6 +206,28 @@ final class ApplicationRoutesTest extends TestCase
         self::assertStringContainsString('bottom-nav__item is-active', $authenticated->body());
     }
 
+    public function testMessageRoutesArePrivateAndRenderInboxForAuthenticatedUser(): void
+    {
+        foreach (['/mensagens', '/mensagens/com/other.user'] as $path) {
+            $_SESSION = [];
+            $request = $this->request('GET', $path);
+            $response = $this->router($request)->dispatch($request);
+            self::assertSame(303, $response->status()); self::assertSame('/login', $response->headers()['Location']);
+        }
+        foreach (['/mensagens/com/other.user', '/mensagens/com/other.user/ler', '/mensagens/com/other.user/abrir'] as $path) {
+            $_SESSION = [];
+            $request = $this->request('POST', $path);
+            $response = $this->router($request)->dispatch($request);
+            self::assertSame(303, $response->status()); self::assertSame('/login', $response->headers()['Location']);
+        }
+        $_SESSION = [];
+        $request = $this->request('GET', '/mensagens');
+        $response = $this->router($request, true)->dispatch($request);
+        self::assertSame(200, $response->status());
+        self::assertStringContainsString('Você ainda não tem conversas.', $response->body());
+        self::assertStringContainsString('href="/social" aria-current="page"', $response->body());
+    }
+
     public function testSearchAndAboutArePublicRealRoutesWithActiveNavigation(): void
     {
         $searchRequest = $this->request('GET', '/buscar');
@@ -367,6 +389,7 @@ final class ApplicationRoutesTest extends TestCase
                 public function follow(int $followerUserId,int $followedUserId):void{}
                 public function unfollow(int $followerUserId,int $followedUserId):void{}
                 public function isFollowing(int $followerUserId,int $followedUserId):bool{return false;}
+                public function areMutualFollowers(int $userA,int $userB):bool{return false;}
                 public function countFollowers(int $userId):int{return 0;}
                 public function countFollowing(int $userId):int{return 0;}
                 public function paginateFollowers(int $userId,int $page,int $perPage):\App\Social\PublicProfilePage{return new \App\Social\PublicProfilePage([],0,$page,$perPage);}
@@ -433,6 +456,16 @@ final class ApplicationRoutesTest extends TestCase
             },
             'social_activity_comments' => $socialComments,
             'social_notifications' => $socialNotifications,
+            'direct_messages' => new class implements \App\Messaging\DirectMessageReader, \App\Messaging\DirectMessageStore {
+                public function conversationExists(int$userA,int$userB):bool{return false;}
+                public function conversationForUsers(int$currentUserId,int$otherUserId):?\App\Messaging\DirectConversation{return null;}
+                public function paginateConversations(int$userId,int$page,int$perPage):\App\Messaging\DirectConversationPage{return new \App\Messaging\DirectConversationPage([],0,$page,$perPage);}
+                public function paginateMessages(int$currentUserId,int$otherUserId,int$page,int$perPage):\App\Messaging\DirectMessagePage{return new \App\Messaging\DirectMessagePage([],0,$page,$perPage);}
+                public function countUnreadForUser(int$userId):int{return 0;}
+                public function countUnreadForConversation(int$currentUserId,int$otherUserId):int{return 0;}
+                public function send(int$senderUserId,int$otherUserId,\App\Messaging\DirectMessageBody$body):bool{return false;}
+                public function markRead(int$currentUserId,int$otherUserId):bool{return false;}
+            },
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
                 public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate,bool$shareWatchActivity):void{}

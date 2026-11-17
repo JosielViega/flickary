@@ -57,6 +57,9 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
                         <?= $csrf->field() ?><button class="button button--primary" type="submit"><?= $profile->isPrivate ? 'Solicitar para seguir' : 'Seguir' ?></button>
                     </form>
                 <?php endif; ?>
+                <?php if (($canMessage ?? false) === true || ($hasConversation ?? false) === true): ?>
+                    <a class="button button--primary" href="/mensagens/com/<?= rawurlencode($profile->username) ?>"><?= ($canMessage ?? false) === true ? 'Mensagem' : 'Ver conversa' ?></a>
+                <?php endif; ?>
                 <?php if (is_array($shareData ?? null)): ?>
                     <?php require dirname(__DIR__) . '/components/share-actions.php'; ?>
                 <?php endif; ?>

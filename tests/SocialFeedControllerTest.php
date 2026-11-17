@@ -176,6 +176,7 @@ final class SocialFeedControllerTest extends TestCase
             public function follow(int $followerUserId,int $followedUserId):void{}
             public function unfollow(int $followerUserId,int $followedUserId):void{}
             public function isFollowing(int $followerUserId,int $followedUserId):bool{return false;}
+            public function areMutualFollowers(int $userA,int $userB):bool{return false;}
             public function countFollowers(int $userId):int{return 0;}
             public function countFollowing(int $userId):int{return $this->following;}
             public function paginateFollowers(int $userId,int $page,int $perPage):PublicProfilePage{return new PublicProfilePage([],0,$page,$perPage);}

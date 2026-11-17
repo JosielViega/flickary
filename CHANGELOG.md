@@ -8,6 +8,9 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Mensagens privadas 1:1 para follows mútuos, com caixa paginada, histórico e texto simples
+- contagens de não lidas por conversa e badge global de mensagens
+- histórico somente leitura após unfollow e reativação da mesma conversa após re-follow
 - Notificações internas para solicitações, novos seguidores, aceites, curtidas e comentários
 - badge global de notificações não lidas e caixa privada paginada com marcação individual ou em lote
 - Comentários de texto simples nas atividades do Feed Social, com detalhe privado, paginação, moderação e histórico pessoal
@@ -29,6 +32,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Security
 
+- Envio de mensagem exige autenticação, CSRF e follows aceitos nas duas direções, revalidados dentro da transação
+- sender deriva da sessão, target do username da rota e todo corpo é renderizado como texto escapado
 - Leitura e criação de comentários reutilizam os cutoffs do Feed Social; recursos ocultos e remoções não autorizadas respondem 404
 - Criação e remoção de comentários exigem autenticação e CSRF, com HTML sempre escapado e redirects limitados a contextos internos conhecidos
 - pending nunca autoriza conteúdo privado; somente um follow aceito libera a página pública do perfil

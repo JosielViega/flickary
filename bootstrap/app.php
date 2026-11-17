@@ -12,6 +12,7 @@ use App\Core\Request;
 use App\Core\Router;
 use App\Core\Session;
 use App\Core\View;
+use App\Core\CompositeLayoutContextProvider;
 use App\Validation\Validator;
 use App\Authentication\AccountOnboardingService;
 use App\Authentication\GoogleApiIdentityVerifier;
@@ -36,7 +37,9 @@ use App\Repositories\SocialFeedRepository;
 use App\Repositories\SocialActivityLikeRepository;
 use App\Repositories\SocialActivityCommentRepository;
 use App\Repositories\SocialNotificationRepository;
+use App\Repositories\DirectMessageRepository;
 use App\Notifications\NotificationLayoutContextProvider;
+use App\Messaging\MessageLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
@@ -94,6 +97,7 @@ $animeSnapshots = new AnimeSnapshotRepository($database);
 $mediaPreferences = new UserMediaPreferenceRepository($database);
 $publicProfiles = new PublicProfileRepository($database);
 $socialNotifications = new SocialNotificationRepository($database);
+$directMessages = new DirectMessageRepository($database);
 $userFollows = new UserFollowRepository($database, $socialNotifications);
 $userFollowRequests = new UserFollowRequestRepository($database, $socialNotifications);
 $socialFeed = new SocialFeedRepository($database);
@@ -108,7 +112,10 @@ return [
     'tmdb_config' => $tmdbConfig,
     'request' => Request::capture(),
     'router' => new Router(),
-    'view' => new View($root . '/resources/views', new NotificationLayoutContextProvider($auth, $socialNotifications)),
+    'view' => new View($root . '/resources/views', new CompositeLayoutContextProvider([
+        new NotificationLayoutContextProvider($auth, $socialNotifications),
+        new MessageLayoutContextProvider($auth, $directMessages),
+    ])),
     'session' => $session,
     'auth' => $auth,
     'google_identity_verifier' => new GoogleApiIdentityVerifier($authConfig['google']['client_id']),
@@ -146,6 +153,7 @@ return [
     'social_activity_likes' => $socialActivityLikes,
     'social_activity_comments' => $socialActivityComments,
     'social_notifications' => $socialNotifications,
+    'direct_messages' => $directMessages,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

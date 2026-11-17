@@ -23,6 +23,7 @@ use App\Social\FollowRelationshipState;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Social\PublicProfile;
 use App\Social\PublicProfileReader;
+use App\Messaging\DirectMessageReader;
 
 final class PublicProfileController
 {
@@ -40,6 +41,7 @@ final class PublicProfileController
         private readonly PublicUrl $publicUrl,
         private readonly FollowRequestStore $followRequests,
         private readonly PrivateProfileAccessPolicy $accessPolicy,
+        private readonly ?DirectMessageReader $directMessages = null,
     ) {
     }
 
@@ -76,6 +78,10 @@ final class PublicProfileController
         $canViewContent = $this->accessPolicy->canView($profile, $viewerUserId, $isFollowing);
         $favorites = $canViewContent ? $this->profiles->recentFavorites($profile->userId, 6) : [];
         $posterUrls = $this->posterUrls($favorites);
+        $canMessage = $viewerUserId !== null && !$isOwner
+            && $this->follows->areMutualFollowers($viewerUserId, $profile->userId);
+        $hasConversation = $viewerUserId !== null && !$isOwner
+            && $this->directMessages?->conversationExists($viewerUserId, $profile->userId) === true;
 
         return Response::html($this->view->render('pages/public-profile', [
             'title' => $profile->displayName . ' (@' . $profile->username . ') · Flickary',
@@ -99,6 +105,8 @@ final class PublicProfileController
                 'url' => $pageMeta->canonicalUrl,
             ],
             'hasShareActions' => true,
+            'canMessage' => $canMessage,
+            'hasConversation' => $hasConversation,
         ]));
     }
 

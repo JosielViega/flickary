@@ -42,12 +42,13 @@ final class SocialControllersTest extends TestCase
     private SocialProfileReaderFake $profiles;
     private FollowStoreFake $follows;
     private FollowRequestStoreFake $followRequests;
+    private PublicProfileMessageReaderFake $directMessages;
 
     protected function setUp(): void
     {
         $this->sessionExisted=isset($_SESSION); $this->previousSession=$_SESSION??[]; $_SESSION=[];
         $this->session=new Session(false); $this->auth=new Auth($this->session); $this->csrf=new Csrf($this->session);
-        $this->profiles=new SocialProfileReaderFake(); $this->follows=new FollowStoreFake(); $this->followRequests=new FollowRequestStoreFake();
+        $this->profiles=new SocialProfileReaderFake(); $this->follows=new FollowStoreFake(); $this->followRequests=new FollowRequestStoreFake(); $this->directMessages=new PublicProfileMessageReaderFake();
     }
 
     protected function tearDown(): void
@@ -121,6 +122,18 @@ final class SocialControllersTest extends TestCase
         self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
         self::assertStringContainsString('data-share-url="https://app.example.test/base/u/social.user"', $response->body());
         self::assertStringContainsString('<script src="/assets/js/share.js" defer></script>', $response->body());
+    }
+
+    public function testProfileMessageActionReflectsMutualAndHistoricalConversation(): void
+    {
+        $this->profiles->profile=$this->profile(false);$this->auth->login(22);
+        self::assertStringNotContainsString('href="/mensagens/com/social.user"',$this->publicController()->show('social.user')->body());
+        $this->follows->relations['22:10']=true;$this->follows->relations['10:22']=true;
+        self::assertStringContainsString('href="/mensagens/com/social.user">Mensagem</a>',$this->publicController()->show('social.user')->body());
+        $this->follows->relations=[];$this->directMessages->exists=true;
+        self::assertStringContainsString('href="/mensagens/com/social.user">Ver conversa</a>',$this->publicController()->show('social.user')->body());
+        $this->auth->logout();
+        self::assertStringNotContainsString('href="/mensagens/com/social.user"',$this->publicController()->show('social.user')->body());
     }
 
     public function testPrivateProfileMetadataIsStableAndDoesNotExposeBioOrViewerContent(): void
@@ -218,7 +231,7 @@ final class SocialControllersTest extends TestCase
 
     private function publicController(): PublicProfileController
     {
-        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog(),new PublicUrl('https://app.example.test/base/'),$this->followRequests,new PrivateProfileAccessPolicy());
+        return new PublicProfileController($this->view(),$this->auth,$this->csrf,$this->session,new UsernamePolicy(),$this->profiles,$this->follows,new OfflineTmdbCatalog(),new PublicUrl('https://app.example.test/base/'),$this->followRequests,new PrivateProfileAccessPolicy(),$this->directMessages);
     }
     private function followController(): FollowController
     {
@@ -244,6 +257,7 @@ final class FollowStoreFake implements FollowStore
     public function follow(int $followerUserId,int $followedUserId):void{$this->followCalls[]=[$followerUserId,$followedUserId];$this->relations[$followerUserId.':'.$followedUserId]=true;}
     public function unfollow(int $followerUserId,int $followedUserId):void{unset($this->relations[$followerUserId.':'.$followedUserId]);}
     public function isFollowing(int $followerUserId,int $followedUserId):bool{return $this->following||isset($this->relations[$followerUserId.':'.$followedUserId]);}
+    public function areMutualFollowers(int $userA,int $userB):bool{return $this->isFollowing($userA,$userB)&&$this->isFollowing($userB,$userA);}
     public function countFollowers(int $userId):int{return 3;} public function countFollowing(int $userId):int{return 2;}
     public function paginateFollowers(int $userId,int $page,int $perPage):PublicProfilePage{return new PublicProfilePage([],0,$page,$perPage);}
     public function paginateFollowing(int $userId,int $page,int $perPage):PublicProfilePage{return new PublicProfilePage([],0,$page,$perPage);}
@@ -260,6 +274,17 @@ final class FollowRequestStoreFake implements FollowRequestStore
     public function accept(int $requesterUserId,int $targetUserId):bool{$was=$this->pending;$this->pending=false;return $was;}
     public function reject(int $requesterUserId,int $targetUserId):bool{$was=$this->pending;$this->pending=false;return $was;}
     public function acceptAllForTarget(int $targetUserId):void{$this->pending=false;}
+}
+
+final class PublicProfileMessageReaderFake implements \App\Messaging\DirectMessageReader
+{
+    public bool$exists=false;
+    public function conversationExists(int$userA,int$userB):bool{return$this->exists;}
+    public function conversationForUsers(int$currentUserId,int$otherUserId):?\App\Messaging\DirectConversation{return null;}
+    public function paginateConversations(int$userId,int$page,int$perPage):\App\Messaging\DirectConversationPage{return new \App\Messaging\DirectConversationPage([],0,$page,$perPage);}
+    public function paginateMessages(int$currentUserId,int$otherUserId,int$page,int$perPage):\App\Messaging\DirectMessagePage{return new \App\Messaging\DirectMessagePage([],0,$page,$perPage);}
+    public function countUnreadForUser(int$userId):int{return 0;}
+    public function countUnreadForConversation(int$currentUserId,int$otherUserId):int{return 0;}
 }
 
 final class OfflineTmdbCatalog implements TmdbCatalog
