@@ -6,6 +6,13 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ## [Unreleased]
 
+### Reporting and moderation
+
+- Denúncias privadas de perfil, comentário e mensagem recebida, com snapshot textual e deduplicação enquanto pendentes.
+- Histórico privado em `/perfil/denuncias`, fila administrativa paginada e revisão como resolvida ou arquivada.
+- Administrador persistido por `users.is_admin` e provisionado somente pelo CLI `bin/admin.php`, sem promoção web.
+- Revisão não aplica sanção, não remove conteúdo e não notifica a pessoa denunciada.
+
 ### Social controls
 
 - Bloqueio bilateral de usuários, gerenciamento de bloqueados e integração com follows, perfis, busca, interações e mensagens.

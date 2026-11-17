@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Administration\AdminAccess;
 use App\Authentication\ConnectedProviderReader;
 use App\Core\Auth;
 use App\Core\Csrf;
@@ -27,6 +28,7 @@ final class ProfileController
         private readonly bool $facebookEnabled,
         private readonly ProfileUpdater $profileUpdater,
         private readonly FollowRequestStore $followRequests,
+        private readonly ?AdminAccess $admins = null,
     ) {
     }
 
@@ -44,6 +46,7 @@ final class ProfileController
             providers: $this->providers->providersForUser($userId),
             messages: $this->session->consumeFlash(),
             pendingRequestCount: $this->followRequests->countIncoming($userId),
+            isAdmin: $this->admins?->isAdmin($userId) === true,
         );
     }
 
@@ -180,6 +183,7 @@ final class ProfileController
         array $messages = [],
         array $providers = [],
         int $pendingRequestCount = 0,
+        bool $isAdmin = false,
         int $status = 200,
     ): Response {
         return Response::html($this->view->render('pages/profile', [
@@ -199,6 +203,7 @@ final class ProfileController
             'connectedProviders' => $providers,
             'facebookEnabled' => $this->facebookEnabled,
             'pendingRequestCount' => $pendingRequestCount,
+            'isAdmin' => $isAdmin,
         ]), $status);
     }
 

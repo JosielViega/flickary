@@ -31,6 +31,8 @@ use App\Controllers\ProfileCommentsController;
 use App\Controllers\NotificationController;
 use App\Controllers\DirectMessageController;
 use App\Controllers\SocialControlController;
+use App\Controllers\ReportController;
+use App\Controllers\AdminReportController;
 use App\Social\NullUserSocialControlStore;
 use App\Core\Request;
 use App\Core\Response;
@@ -94,6 +96,7 @@ $profile = new ProfileController(
     $app['facebook_identity_provider']->configured(),
     $app['profile_updater'],
     $app['user_follow_requests'],
+    $app['admins'],
 );
 $search = new SearchController(
     $app['view'],
@@ -196,6 +199,8 @@ $directMessages = new DirectMessageController(
     $socialControlStore,
 );
 $socialControls=new SocialControlController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['username_policy'],$app['public_profiles'],$socialControlStore);
+$reports=new ReportController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['username_policy'],$app['public_profiles'],$app['social_reports'],$app['social_reports']);
+$adminReports=new AdminReportController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['admins'],$app['social_reports']);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -220,12 +225,18 @@ $router->get('/mensagens/com/{username}', static fn (string $username): Response
 $router->post('/mensagens/com/{username}', static fn (string $username): Response => $directMessages->send($app['request'], $username));
 $router->post('/mensagens/com/{username}/ler', static fn (string $username): Response => $directMessages->markRead($app['request'], $username));
 $router->post('/mensagens/com/{username}/abrir', static fn (string $username): Response => $directMessages->open($app['request'], $username));
+$router->get('/mensagens/{id}/reportar', static fn (string $id): Response => $reports->messageForm($id));
+$router->post('/mensagens/{id}/reportar', static fn (string $id): Response => $reports->messageSubmit($app['request'], $id));
 $router->get('/social/atividades/{id}', static fn (string $id): Response => $socialActivity->show($app['request'], $id));
 $router->post('/social/atividades/{id}/comentarios', static fn (string $id): Response => $socialActivity->createComment($app['request'], $id));
 $router->post('/social/comentarios/{id}/remover', static fn (string $id): Response => $socialActivity->deleteComment($app['request'], $id));
+$router->get('/social/comentarios/{id}/reportar', static fn (string $id): Response => $reports->commentForm($id));
+$router->post('/social/comentarios/{id}/reportar', static fn (string $id): Response => $reports->commentSubmit($app['request'], $id));
 $router->post('/social/atividades/{id}/curtir', static fn (string $id): Response => $socialFeed->like($app['request'], $id));
 $router->post('/social/atividades/{id}/descurtir', static fn (string $id): Response => $socialFeed->unlike($app['request'], $id));
 $router->get('/u/{username}', static fn (string $username): Response => $publicProfile->show($username));
+$router->get('/u/{username}/reportar', static fn (string $username): Response => $reports->profileForm($username));
+$router->post('/u/{username}/reportar', static fn (string $username): Response => $reports->profileSubmit($app['request'], $username));
 $router->get('/u/{username}/seguidores', static fn (string $username): Response => $publicProfile->followers($app['request'], $username));
 $router->get('/u/{username}/seguindo', static fn (string $username): Response => $publicProfile->following($app['request'], $username));
 $router->post('/u/{username}/seguir', static fn (string $username): Response => $follow->follow($app['request'], $username));
@@ -237,6 +248,11 @@ $router->post('/u/{username}/dessilenciar',static fn(string$username):Response=>
 $router->get('/perfil/bloqueados',static fn():Response=>$socialControls->blocked($app['request']));
 $router->post('/perfil/bloqueados/{username}/desbloquear',static fn(string$username):Response=>$socialControls->unblock($app['request'],$username));
 $router->get('/perfil/silenciados',static fn():Response=>$socialControls->muted($app['request']));
+$router->get('/perfil/denuncias',static fn():Response=>$reports->own($app['request']));
+$router->get('/admin/denuncias',static fn():Response=>$adminReports->index($app['request']));
+$router->get('/admin/denuncias/{id}',static fn(string$id):Response=>$adminReports->show($id));
+$router->post('/admin/denuncias/{id}/resolver',static fn(string$id):Response=>$adminReports->resolve($app['request'],$id));
+$router->post('/admin/denuncias/{id}/arquivar',static fn(string$id):Response=>$adminReports->dismiss($app['request'],$id));
 $router->get('/perfil/solicitacoes', static fn (): Response => $followRequests->index($app['request']));
 $router->get('/perfil/comentarios', static fn (): Response => $profileComments->index($app['request']));
 $router->post('/perfil/solicitacoes/{username}/aceitar', static fn (string $username): Response => $followRequests->accept($app['request'], $username));

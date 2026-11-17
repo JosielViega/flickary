@@ -51,6 +51,16 @@ O e-mail do Facebook é sempre tratado como ausente/não verificado, mesmo que o
 
 Configure `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE=true`, HTTPS e permissões mínimas. O usuário recebe erro genérico com referência; detalhes ficam em `storage/logs`. Proteja também logs e backups no servidor.
 
+## Denúncias e moderação administrativa
+
+Todas as páginas de denúncia exigem autenticação e todos os POSTs exigem CSRF. O reporter deriva exclusivamente de `Auth::id()`; tipo, target, usuário denunciado e snapshots são resolvidos server-side pela rota e pelos repositórios. Motivos e status usam allowlists centrais. Detalhes, conteúdo preservado e nota do moderador são plain text, limitados e escapados na renderização.
+
+Uma mensagem só pode ser denunciada por participante da conversa e apenas quando foi recebida. Um comentário exige a mesma visibilidade social normal, com a exceção deliberada do owner da atividade para seu histórico de moderação. Conversas bloqueadas preservam acesso às mensagens históricas recebidas, e Block não impede a rota direta de denúncia de perfil.
+
+`users.is_admin` é consultado no banco por `AdminAccess`; não há autorização sensível baseada apenas na sessão. Visitantes são enviados ao login e usuários comuns recebem 404 em `/admin/*`. A promoção não possui endpoint, formulário ou checkbox web: somente o CLI local `bin/admin.php` pode conceder ou revogar o flag.
+
+Snapshots nunca contêm HTML renderizado. A pessoa denunciada não recebe notification, badge ou qualquer acesso ao registro. O reporter não vê nota interna ou identidade do reviewer. A fila usa o snapshot em vez de bypass de privacidade ou impersonação. Resolver ou arquivar não bloqueia, bane, suspende, remove conteúdo nem executa sanção automática.
+
 ## TMDB
 
 O `TMDB_READ_ACCESS_TOKEN` é um segredo exclusivamente server-side. O cliente usa Bearer sobre HTTPS com validação TLS, host base fixo e redirects desabilitados. Token e header `Authorization` não podem ser enviados ao navegador, persistidos no banco, incluídos em exceptions ou registrados em logs.

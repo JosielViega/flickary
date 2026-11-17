@@ -466,6 +466,18 @@ final class ApplicationRoutesTest extends TestCase
                 public function send(int$senderUserId,int$otherUserId,\App\Messaging\DirectMessageBody$body):bool{return false;}
                 public function markRead(int$currentUserId,int$otherUserId):bool{return false;}
             },
+            'admins' => new class implements \App\Administration\AdminAccess {
+                public function isAdmin(int $userId): bool { return false; }
+            },
+            'social_reports' => new class implements \App\Moderation\ReportStore, \App\Moderation\ReportReader, \App\Moderation\AdminReportReader {
+                public function reportableComment(int $viewerUserId,int $commentId):?\App\Moderation\ReportTarget{return null;}
+                public function reportableMessage(int $viewerUserId,int $messageId):?\App\Moderation\ReportTarget{return null;}
+                public function create(\App\Moderation\ReportSubmission $submission):\App\Moderation\ReportCreateResult{return \App\Moderation\ReportCreateResult::Created;}
+                public function paginateOwn(int $reporterUserId,int $page,int $perPage):\App\Moderation\SocialReportPage{return new \App\Moderation\SocialReportPage([],0,$page,$perPage);}
+                public function paginateAdmin(?\App\Moderation\ReportStatus $status,int $page,int $perPage):\App\Moderation\SocialReportPage{return new \App\Moderation\SocialReportPage([],0,$page,$perPage);}
+                public function findAdmin(int $reportId):?\App\Moderation\SocialReport{return null;}
+                public function review(int $reportId,int $reviewerUserId,\App\Moderation\ReportStatus $status,?string $moderatorNote):bool{return false;}
+            },
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
                 public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate,bool$shareWatchActivity):void{}

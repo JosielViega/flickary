@@ -66,6 +66,29 @@ HTML
 
 Dependências são montadas explicitamente em `bootstrap/app.php` ou `routes/web.php`. Se o projeto crescer muito, um container pode ser avaliado, mas não é necessário na fundação atual.
 
+## Denúncias e autoridade administrativa
+
+```text
+profile / comment / direct message
+              ↓
+       ReportSubmission
+              ↓
+        social_reports
+              ↓
+   Admin moderation queue
+```
+
+`app/Moderation` centraliza tipos de alvo, motivos, status, validação textual e contratos de leitura/escrita. `SocialReportRepository` resolve comentários e mensagens com as regras sociais normais, grava o reporter da sessão e snapshots plain text, deduplica denúncias pendentes e pagina histórico/fila em SQL. O painel administrativo lê o snapshot; não impersona usuários nem ignora privacidade ou Block para abrir o recurso original.
+
+`AdminAccess::isAdmin()` consulta `users.is_admin` no banco em cada decisão sensível. O flag não é uma role genérica e não é confiado à sessão. O provisionamento ocorre apenas em shell por `bin/admin.php`.
+
+```text
+report != sanction
+review != automatic enforcement
+```
+
+Resolver ou arquivar registra classificação, reviewer, instante e nota interna. Não há banimento, suspensão, remoção de conteúdo, warning ou outra execução automática.
+
 ## Integrações externas e catálogo
 
 ```text

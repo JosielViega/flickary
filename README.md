@@ -4,7 +4,7 @@ Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries 
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.
 
-O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in com curtidas e comentários, notificações internas, mensagens privadas 1:1 e compartilhamento público com prévias sociais.
+O projeto está em desenvolvimento inicial. A aplicação atual possui contas, login com Google e Facebook, perfil próprio, busca e detalhes públicos no TMDB, descoberta pública de Anime, Minha Lista privada, temporadas navegáveis, progresso de episódios, histórico real de visualização, Agenda pessoal, Favoritos, avaliações, Estatísticas pessoais, perfis públicos, seguidores privados com aprovação, Feed Social opt-in com curtidas e comentários, notificações internas, mensagens privadas 1:1, bloqueio/silenciamento, denúncias privadas com fila administrativa e compartilhamento público com prévias sociais.
 
 ## Stack
 
@@ -65,11 +65,22 @@ composer anime:backfill-snapshots
 composer deploy:hostgator
 composer port:status
 composer port:release
+php bin/admin.php grant <username>
+php bin/admin.php revoke <username>
+php bin/admin.php list
 ```
 
 `composer check` valida o manifesto Composer, executa o lint dos arquivos PHP do projeto e roda os testes automatizados.
 
 `composer migrate` executa migrations SQL ainda não registradas. O schema contém a fundação de contas, a lista pessoal, o progresso de episódios e o histórico descritos abaixo.
+
+## Denúncias e moderação
+
+Usuários autenticados podem denunciar perfis, comentários visíveis e mensagens privadas recebidas. Os registros são privados, ficam disponíveis em `/perfil/denuncias` e preservam um snapshot textual do alvo para que mudanças ou exclusões posteriores não apaguem o contexto. Uma denúncia pendente por usuário e alvo é deduplicada; após a revisão, um novo registro pode ser enviado se necessário.
+
+Administradores acessam `/admin/denuncias`, filtram a fila e classificam cada registro como resolvido ou arquivado. “Resolvida” significa apenas que a revisão terminou: nenhuma decisão bane usuários, remove conteúdo, bloqueia pessoas ou aplica outra sanção automaticamente. A pessoa denunciada não recebe notificação e notas de moderação nunca aparecem ao reporter.
+
+O acesso administrativo é persistido no banco e provisionado exclusivamente pelo CLI `bin/admin.php`; não existe promoção pela aplicação web. Os comandos `grant`, `revoke` e `list` trabalham apenas com username e não exibem e-mail, provider ou credenciais.
 
 ## Fundação de contas
 

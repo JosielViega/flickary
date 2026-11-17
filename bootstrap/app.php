@@ -39,6 +39,8 @@ use App\Repositories\SocialActivityCommentRepository;
 use App\Repositories\SocialNotificationRepository;
 use App\Repositories\DirectMessageRepository;
 use App\Repositories\UserSocialControlRepository;
+use App\Repositories\AdminUserRepository;
+use App\Repositories\SocialReportRepository;
 use App\Notifications\NotificationLayoutContextProvider;
 use App\Messaging\MessageLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
@@ -100,6 +102,8 @@ $publicProfiles = new PublicProfileRepository($database);
 $socialNotifications = new SocialNotificationRepository($database);
 $socialControls = new UserSocialControlRepository($database);
 $directMessages = new DirectMessageRepository($database);
+$admins = new AdminUserRepository($database);
+$socialReports = new SocialReportRepository($database);
 $userFollows = new UserFollowRepository($database, $socialNotifications);
 $userFollowRequests = new UserFollowRequestRepository($database, $socialNotifications);
 $socialFeed = new SocialFeedRepository($database);
@@ -157,6 +161,8 @@ return [
     'social_notifications' => $socialNotifications,
     'direct_messages' => $directMessages,
     'social_controls'=>$socialControls,
+    'admins' => $admins,
+    'social_reports' => $socialReports,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

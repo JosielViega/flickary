@@ -70,6 +70,7 @@ $minutes = $statistics === null ? 0 : $statistics->knownMinutes % 60;
                         <form method="post" action="/u/<?= rawurlencode($profile->username) ?>/bloquear">
                             <?= $csrf->field() ?><button class="button button--danger" type="submit">Bloquear</button>
                         </form>
+                        <a class="public-profile__report" href="/u/<?= rawurlencode($profile->username) ?>/reportar">Reportar</a>
                     </div>
                 <?php endif; ?>
                 <?php if (is_array($shareData ?? null)): ?>

@@ -101,6 +101,7 @@ $initial = static function (string $value): string {
                                     <?= $csrf->field() ?><input type="hidden" name="context" value="activity"><button type="submit">Remover</button>
                                 </form>
                             <?php endif; ?>
+                            <?php if ($viewerId !== $comment->authorUserId): ?><a class="social-comment__report" href="/social/comentarios/<?= e((string) $comment->id) ?>/reportar">Reportar</a><?php endif; ?>
                         </header>
                         <p class="social-comment__body"><?= e($comment->body) ?></p>
                     </article></li>
