@@ -6,7 +6,10 @@ namespace App\Core;
 
 final class View
 {
-    public function __construct(private readonly string $basePath)
+    public function __construct(
+        private readonly string $basePath,
+        private readonly ?LayoutContextProvider $layoutContext = null,
+    )
     {
     }
 
@@ -15,6 +18,7 @@ final class View
         $viewFile = $this->resolve($view);
         $layoutFile = $this->resolve($layout);
 
+        $data = [...($this->layoutContext?->context() ?? []), ...$data];
         $content = $this->capture($viewFile, $data);
 
         return $this->capture($layoutFile, [...$data, 'content' => $content]);

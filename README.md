@@ -239,6 +239,8 @@ Leia [arquitetura](docs/ARCHITECTURE.md) e o [plano de estudo e revisão](docs/P
 - `GET /social/atividades/{id}` e `POST /social/atividades/{id}/comentarios` — detalhe privado e criação de comentário em atividade autorizada;
 - `POST /social/comentarios/{id}/remover` — remoção pelo autor do comentário ou moderação pelo autor da atividade;
 - `GET /perfil/comentarios` — histórico privado e paginado dos comentários do usuário autenticado;
+- `GET /notificacoes` — caixa privada e paginada de notificações sociais;
+- `POST /notificacoes/{id}/abrir` e `POST /notificacoes/ler-todas` — marca uma ou todas as notificações como lidas, com CSRF;
 - `POST /perfil/conexoes/facebook` — inicia a conexão segura do Facebook à conta autenticada;
 - `GET /buscar` — pesquisa pública de filmes e séries no TMDB, com filtros e paginação específica;
 - `GET /anime` — descoberta pública de filmes e séries classificados como Anime dentro do catálogo TMDB;
@@ -270,6 +272,12 @@ O endpoint `/health` não consulta banco nem expõe ambiente, servidor, caminhos
 Perfis públicos recebem follows imediatamente. Perfis privados recebem uma solicitação pendente, que não conta como follower e não autoriza conteúdo; somente a aceitação cria `user_follows` e libera os agregados já exibidos por `/u/{username}`. A página `/perfil/solicitacoes` permite aceitar ou recusar, e o requester pode cancelar antes da decisão.
 
 Mudar de público para privado preserva followers já aceitos. Mudar de privado para público converte, na mesma transação da atualização do perfil, todas as solicitações pendentes em follows. A migration `000010` trata o legado de forma distinta: follows antigos direcionados a perfis privados viram solicitações, evitando concessão silenciosa de acesso.
+
+## Notificações sociais
+
+`/notificacoes` reúne solicitações para seguir, novos seguidores públicos, solicitações aceitas, curtidas e comentários. O badge do layout mostra somente a contagem não lida (até `99+`) no próximo request HTML normal. Abrir ou marcar todas como lidas usa POST, CSRF e destino definido no servidor.
+
+A migration cria notificações apenas para solicitações ainda pendentes. Follows aceitos, curtidas e comentários antigos não recebem backfill. Cancelar ou recusar uma solicitação remove sua notificação; descurtir remove a notificação da curtida; excluir comentário ou histórico limpa notificações relacionadas por cascade. A caixa não usa TMDB e não possui push, e-mail, polling, WebSocket ou SSE.
 
 ## Identidade visual
 

@@ -28,6 +28,7 @@ use App\Controllers\UserSearchController;
 use App\Controllers\SocialFeedController;
 use App\Controllers\SocialActivityController;
 use App\Controllers\ProfileCommentsController;
+use App\Controllers\NotificationController;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -181,6 +182,9 @@ $socialActivity = new SocialActivityController(
 $profileComments = new ProfileCommentsController(
     $app['view'], $app['auth'], $app['csrf'], $app['social_activity_comments'],
 );
+$notifications = new NotificationController(
+    $app['view'], $app['auth'], $app['csrf'], $app['social_notifications'], $app['social_notifications'],
+);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
@@ -197,6 +201,9 @@ $router->post('/perfil/conexoes/facebook', static fn (): Response => $facebookCo
 $router->get('/buscar', static fn (): Response => $search->index($app['request']));
 $router->get('/usuarios', static fn (): Response => $userSearch->index($app['request']));
 $router->get('/social', static fn (): Response => $socialFeed->index($app['request']));
+$router->get('/notificacoes', static fn (): Response => $notifications->index($app['request']));
+$router->post('/notificacoes/ler-todas', static fn (): Response => $notifications->markAllRead($app['request']));
+$router->post('/notificacoes/{id}/abrir', static fn (string $id): Response => $notifications->open($app['request'], $id));
 $router->get('/social/atividades/{id}', static fn (string $id): Response => $socialActivity->show($app['request'], $id));
 $router->post('/social/atividades/{id}/comentarios', static fn (string $id): Response => $socialActivity->createComment($app['request'], $id));
 $router->post('/social/comentarios/{id}/remover', static fn (string $id): Response => $socialActivity->deleteComment($app['request'], $id));

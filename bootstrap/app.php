@@ -35,6 +35,8 @@ use App\Repositories\UserFollowRequestRepository;
 use App\Repositories\SocialFeedRepository;
 use App\Repositories\SocialActivityLikeRepository;
 use App\Repositories\SocialActivityCommentRepository;
+use App\Repositories\SocialNotificationRepository;
+use App\Notifications\NotificationLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
@@ -91,11 +93,12 @@ $personalStatistics = new PersonalStatisticsRepository($database);
 $animeSnapshots = new AnimeSnapshotRepository($database);
 $mediaPreferences = new UserMediaPreferenceRepository($database);
 $publicProfiles = new PublicProfileRepository($database);
-$userFollows = new UserFollowRepository($database);
-$userFollowRequests = new UserFollowRequestRepository($database);
+$socialNotifications = new SocialNotificationRepository($database);
+$userFollows = new UserFollowRepository($database, $socialNotifications);
+$userFollowRequests = new UserFollowRequestRepository($database, $socialNotifications);
 $socialFeed = new SocialFeedRepository($database);
-$socialActivityLikes = new SocialActivityLikeRepository($database);
-$socialActivityComments = new SocialActivityCommentRepository($database);
+$socialActivityLikes = new SocialActivityLikeRepository($database, $socialNotifications);
+$socialActivityComments = new SocialActivityCommentRepository($database, $socialNotifications);
 $facebookConfig = $authConfig['facebook'];
 
 return [
@@ -105,7 +108,7 @@ return [
     'tmdb_config' => $tmdbConfig,
     'request' => Request::capture(),
     'router' => new Router(),
-    'view' => new View($root . '/resources/views'),
+    'view' => new View($root . '/resources/views', new NotificationLayoutContextProvider($auth, $socialNotifications)),
     'session' => $session,
     'auth' => $auth,
     'google_identity_verifier' => new GoogleApiIdentityVerifier($authConfig['google']['client_id']),
@@ -142,6 +145,7 @@ return [
     'social_feed' => $socialFeed,
     'social_activity_likes' => $socialActivityLikes,
     'social_activity_comments' => $socialActivityComments,
+    'social_notifications' => $socialNotifications,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

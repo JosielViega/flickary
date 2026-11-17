@@ -182,6 +182,30 @@ final class ApplicationRoutesTest extends TestCase
         }
     }
 
+    public function testNotificationRoutesArePrivateAndRenderForAuthenticatedUser(): void
+    {
+        $visitorRequest = $this->request('GET', '/notificacoes');
+        $visitor = $this->router($visitorRequest)->dispatch($visitorRequest);
+        self::assertSame(303, $visitor->status());
+        self::assertSame('/login', $visitor->headers()['Location']);
+
+        foreach (['/notificacoes/10/abrir', '/notificacoes/ler-todas'] as $path) {
+            $_SESSION = [];
+            $mutation = $this->request('POST', $path);
+            $visitorMutation = $this->router($mutation)->dispatch($mutation);
+            self::assertSame(303, $visitorMutation->status());
+            self::assertSame('/login', $visitorMutation->headers()['Location']);
+        }
+
+        $_SESSION = [];
+        $authenticatedRequest = $this->request('GET', '/notificacoes');
+        $authenticated = $this->router($authenticatedRequest, true)->dispatch($authenticatedRequest);
+        self::assertSame(200, $authenticated->status());
+        self::assertStringContainsString('Você ainda não tem notificações.', $authenticated->body());
+        self::assertStringContainsString('href="/social" aria-current="page"', $authenticated->body());
+        self::assertStringContainsString('bottom-nav__item is-active', $authenticated->body());
+    }
+
     public function testSearchAndAboutArePublicRealRoutesWithActiveNavigation(): void
     {
         $searchRequest = $this->request('GET', '/buscar');
@@ -257,6 +281,14 @@ final class ApplicationRoutesTest extends TestCase
             public function paginateForAuthor(int$userId,int$page,int$perPage):\App\Social\SocialOwnCommentPage{return new \App\Social\SocialOwnCommentPage([],0,$page,$perPage);}
             public function createAuthorized(int$userId,int$historyId,\App\Social\SocialCommentBody$body):\App\Social\SocialActivityCommentCreateResult{return \App\Social\SocialActivityCommentCreateResult::Hidden;}
             public function deleteAuthorized(int$userId,int$commentId):?int{return null;}
+        };
+        $socialNotifications = new class implements \App\Notifications\SocialNotificationReader, \App\Notifications\SocialNotificationStore {
+            public function paginateForUser(int$userId,int$page,int$perPage):\App\Notifications\SocialNotificationPage{return new \App\Notifications\SocialNotificationPage([],0,$page,$perPage);}
+            public function countUnread(int$userId):int{return 0;}
+            public function findForRecipient(int$recipientUserId,int$notificationId):?\App\Notifications\SocialNotification{return null;}
+            public function markRead(int$recipientUserId,int$notificationId):bool{return false;}
+            public function markAllRead(int$recipientUserId):void{}
+            public function followRequest(int$recipientUserId,int$actorUserId):void{}public function removeFollowRequest(int$recipientUserId,int$actorUserId):void{}public function followAccepted(int$recipientUserId,int$actorUserId):void{}public function followAcceptedForPendingTarget(int$targetUserId):void{}public function removeFollowRequestsForTarget(int$targetUserId):void{}public function newFollower(int$recipientUserId,int$actorUserId):void{}public function activityLike(int$historyId,int$actorUserId):void{}public function removeActivityLike(int$historyId,int$actorUserId):void{}public function activityComment(int$historyId,int$commentId,int$actorUserId):void{}
         };
         $identities = new class implements ExternalIdentityFinder, ExternalIdentityLinker, ConnectedProviderReader {
             public function findUserId(string $provider, string $providerUserId): ?int { return null; }
@@ -400,6 +432,7 @@ final class ApplicationRoutesTest extends TestCase
                 public function unlike(int$viewerUserId,int$historyId):void{}
             },
             'social_activity_comments' => $socialComments,
+            'social_notifications' => $socialNotifications,
             'private_profile_access_policy' => new \App\Social\PrivateProfileAccessPolicy(),
             'profile_updater' => new class implements \App\Profiles\ProfileUpdater {
                 public function update(int$userId,string$displayName,?string$bio,bool$wasPrivate,bool$isPrivate,bool$shareWatchActivity):void{}

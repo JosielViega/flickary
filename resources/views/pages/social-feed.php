@@ -30,6 +30,7 @@ $avatar = static function (?string $value): ?string {
         <nav class="social-feed__actions" aria-label="Ações do Social">
             <a class="button button--primary" href="/usuarios">Encontrar pessoas</a>
             <a class="button button--secondary" href="/perfil/solicitacoes">Solicitações</a>
+            <a class="button button--secondary" href="/notificacoes">Notificações</a>
         </nav>
     </header>
 

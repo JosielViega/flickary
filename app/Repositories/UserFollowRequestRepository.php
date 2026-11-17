@@ -9,12 +9,16 @@ use App\Social\FollowRequest;
 use App\Social\FollowRequestPage;
 use App\Social\FollowRequestStore;
 use App\Social\PublicProfile;
+use App\Notifications\SocialNotificationStore;
 use PDO;
 use Throwable;
 
 final class UserFollowRequestRepository implements FollowRequestStore
 {
-    public function __construct(private readonly Database $database)
+    public function __construct(
+        private readonly Database $database,
+        private readonly ?SocialNotificationStore $notifications = null,
+    )
     {
     }
 
@@ -23,23 +27,60 @@ final class UserFollowRequestRepository implements FollowRequestStore
         if ($requesterUserId === $targetUserId) {
             return;
         }
-        $statement = $this->database->connection()->prepare(
-            'INSERT IGNORE INTO user_follow_requests (requester_user_id,target_user_id) '
-            . 'SELECT :requester,:target WHERE NOT EXISTS ('
-            . 'SELECT 1 FROM user_follows WHERE follower_user_id=:requester_follow AND followed_user_id=:target_follow)',
-        );
-        $statement->execute([
-            'requester'=>$requesterUserId, 'target'=>$targetUserId,
-            'requester_follow'=>$requesterUserId, 'target_follow'=>$targetUserId,
-        ]);
+        $pdo = $this->database->connection();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $statement = $pdo->prepare(
+                'INSERT IGNORE INTO user_follow_requests (requester_user_id,target_user_id) '
+                . 'SELECT :requester,:target WHERE NOT EXISTS ('
+                . 'SELECT 1 FROM user_follows '
+                . 'WHERE follower_user_id=:requester_follow AND followed_user_id=:target_follow)',
+            );
+            $statement->execute([
+                'requester' => $requesterUserId,
+                'target' => $targetUserId,
+                'requester_follow' => $requesterUserId,
+                'target_follow' => $targetUserId,
+            ]);
+            if ($statement->rowCount() === 1) {
+                $this->notifications?->followRequest($targetUserId, $requesterUserId);
+            }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function cancel(int $requesterUserId, int $targetUserId): void
     {
-        $statement = $this->database->connection()->prepare(
-            'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
-        );
-        $statement->execute(['requester'=>$requesterUserId,'target'=>$targetUserId]);
+        $pdo = $this->database->connection();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $statement = $pdo->prepare(
+                'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
+            );
+            $statement->execute(['requester' => $requesterUserId, 'target' => $targetUserId]);
+            $this->notifications?->removeFollowRequest($targetUserId, $requesterUserId);
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function isPending(int $requesterUserId, int $targetUserId): bool
@@ -103,7 +144,12 @@ final class UserFollowRequestRepository implements FollowRequestStore
                 'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) VALUES (:requester,:target)',
             );
             $insert->execute(['requester'=>$requesterUserId,'target'=>$targetUserId]);
-            $this->cancel($requesterUserId, $targetUserId);
+            $delete = $pdo->prepare(
+                'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
+            );
+            $delete->execute(['requester' => $requesterUserId, 'target' => $targetUserId]);
+            $this->notifications?->removeFollowRequest($targetUserId, $requesterUserId);
+            $this->notifications?->followAccepted($requesterUserId, $targetUserId);
             if ($ownsTransaction) {
                 $pdo->commit();
             }
@@ -118,16 +164,37 @@ final class UserFollowRequestRepository implements FollowRequestStore
 
     public function reject(int $requesterUserId, int $targetUserId): bool
     {
-        $statement = $this->database->connection()->prepare(
-            'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
-        );
-        $statement->execute(['requester'=>$requesterUserId,'target'=>$targetUserId]);
-        return $statement->rowCount() > 0;
+        $pdo = $this->database->connection();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $statement = $pdo->prepare(
+                'DELETE FROM user_follow_requests WHERE requester_user_id=:requester AND target_user_id=:target',
+            );
+            $statement->execute(['requester' => $requesterUserId, 'target' => $targetUserId]);
+            $changed = $statement->rowCount() > 0;
+            if ($changed) {
+                $this->notifications?->removeFollowRequest($targetUserId, $requesterUserId);
+            }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+            return $changed;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function acceptAllForTarget(int $targetUserId): void
     {
         $pdo = $this->database->connection();
+        $this->notifications?->followAcceptedForPendingTarget($targetUserId);
+        $this->notifications?->removeFollowRequestsForTarget($targetUserId);
         $insert = $pdo->prepare(
             'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) '
             . 'SELECT requester_user_id,target_user_id FROM user_follow_requests WHERE target_user_id=:target',

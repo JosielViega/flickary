@@ -124,3 +124,11 @@ O builder HostGator usa allowlist e falha se detectar configurações do servido
 - `/perfil/comentarios` exige autenticação. O detalhe usa apenas snapshots locais e, assim como o feed, não executa chamadas de detalhes ao TMDB.
 - Metadata de perfil privado é genérica até para owner e follower aprovado.
 - Agenda, histórico detalhado e lista completa não são expostos pela autorização social.
+
+## Notificações sociais
+
+- `/notificacoes` é privada e toda leitura ou mutation filtra pelo `recipient_user_id` autenticado; IDs alheios respondem 404.
+- Abrir e marcar todas como lidas exigem POST e CSRF. O destino é derivado no servidor de tipo e IDs persistidos, nunca de POST, query, Referer ou Host.
+- A tabela não persiste mensagem, HTML, URL ou payload. A UI monta texto conhecido por enum e escapa username e display name.
+- As consultas selecionam somente identidade pública do ator, sem e-mail, provider, token ou sessão; recursos ocultos não são revelados.
+- Publicação, caixa e badge são locais e não consultam o TMDB. Não existem push, e-mail, polling, WebSocket ou SSE.

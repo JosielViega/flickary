@@ -8,26 +8,44 @@ use App\Core\Database;
 use App\Social\FollowStore;
 use App\Social\PublicProfile;
 use App\Social\PublicProfilePage;
+use App\Notifications\SocialNotificationStore;
 use PDO;
-use PDOException;
+use Throwable;
 
 final class UserFollowRepository implements FollowStore
 {
-    public function __construct(private readonly Database $database)
+    public function __construct(
+        private readonly Database $database,
+        private readonly ?SocialNotificationStore $notifications = null,
+    )
     {
     }
 
     public function follow(int $followerUserId, int $followedUserId): void
     {
-        $statement = $this->database->connection()->prepare(
-            'INSERT INTO user_follows (follower_user_id,followed_user_id) VALUES (:follower,:followed)',
-        );
+        $pdo = $this->database->connection();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+
         try {
-            $statement->execute(['follower'=>$followerUserId,'followed'=>$followedUserId]);
-        } catch (PDOException $exception) {
-            if ((int) ($exception->errorInfo[1] ?? 0) !== 1062) {
-                throw $exception;
+            $statement = $pdo->prepare(
+                'INSERT IGNORE INTO user_follows (follower_user_id,followed_user_id) '
+                . 'VALUES (:follower,:followed)',
+            );
+            $statement->execute(['follower' => $followerUserId, 'followed' => $followedUserId]);
+            if ($statement->rowCount() === 1) {
+                $this->notifications?->newFollower($followedUserId, $followerUserId);
             }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
         }
     }
 

@@ -6,3 +6,5 @@ Run them once, in filename order, with `composer migrate`. The runner records co
 MySQL DDL can commit implicitly. Make each migration small and test backups before production changes.
 
 `2026_11_16_000013_create_social_activity_comments.sql` cria os comentários do Feed Social ligados a `watch_history` e `users`, ambos com `ON DELETE CASCADE`, além dos índices de paginação por atividade e autor.
+
+`2026_11_16_000014_create_social_notifications.sql` cria a caixa de notificações sociais com FKs em cascade para recipient, actor, histórico e comentário. A migration faz backfill somente de solicitações de follow ainda pendentes; follows, curtidas e comentários antigos não são retroativos.

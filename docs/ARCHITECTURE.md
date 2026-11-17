@@ -219,6 +219,18 @@ A paginação e o `COUNT` usam os mesmos filtros no MariaDB e a ordenação é `
 
 `social_activity_comments` também referencia `watch_history.id` e guarda somente autor, texto simples e instante de criação. Comment não é activity e não cria outro evento no feed. A página `/social/atividades/{id}` reutiliza `SocialActivityVisibility` para followers e concede ao proprietário acesso ao arquivo da própria atividade. Criação autorizada ocorre por `INSERT ... SELECT`, combinando a verificação de visibilidade e a escrita; o proprietário só publica enquanto o evento está dentro do opt-in atual. A listagem junta identidade local do autor em uma consulta paginada, e o feed agrega somente a contagem, sem carregar corpos ou multiplicar atividades. FKs com cascade removem comentários quando o evento ou o autor é apagado.
 
+## Notificações sociais
+
+```text
+mutation social
+      ↓
+linha fonte de verdade + social_notifications
+```
+
+Notificação não é fonte de verdade. As mutations de follow, solicitação, aceite, curtida e comentário gravam o evento e sua notificação na mesma transação; duplicatas ou ações ocultas não publicam nada. A caixa junta a identidade pública do ator em uma consulta paginada e o contexto global do layout executa apenas um `COUNT` de não lidas para usuário autenticado.
+
+O ciclo de vida acompanha o estado real: cancelar ou recusar remove `follow_request`; aceitar troca a notificação pela `follow_accepted`; unlike remove `activity_like`; exclusão de comentário ou histórico remove as notificações relacionadas por cascade. A mudança de perfil privado para público converte solicitações e notificações em lote dentro da transação de atualização do perfil.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

@@ -17,13 +17,16 @@ use App\Social\SocialActivityVisibility;
 use App\Social\SocialCommentBody;
 use App\Social\SocialOwnComment;
 use App\Social\SocialOwnCommentPage;
+use App\Notifications\SocialNotificationStore;
 use PDO;
+use Throwable;
 
 final class SocialActivityCommentRepository implements SocialActivityCommentReader, SocialActivityCommentStore
 {
-    public function __construct(private readonly Database $database)
-    {
-    }
+    public function __construct(
+        private readonly Database $database,
+        private readonly ?SocialNotificationStore $notifications = null,
+    ) {}
 
     public function detailForViewer(int $viewerUserId, int $historyId): ?SocialActivityDetail
     {
@@ -154,7 +157,12 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             throw new \InvalidArgumentException('Invalid social activity comment identity.');
         }
 
-        $statement = $this->database->connection()->prepare(
+        $pdo = $this->database->connection();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        $statement = $pdo->prepare(
             'INSERT INTO social_activity_comments(history_id,user_id,body) '
             . 'SELECT wh.id,:comment_user_id,:body FROM watch_history wh '
             . 'INNER JOIN user_profiles p ON p.user_id=wh.user_id '
@@ -163,18 +171,35 @@ final class SocialActivityCommentRepository implements SocialActivityCommentRead
             . '(wh.user_id=:owner_user_id AND p.share_watch_activity=1 AND p.share_watch_activity_since IS NOT NULL '
             . 'AND wh.created_at>=p.share_watch_activity_since) OR (' . SocialActivityVisibility::SQL . '))',
         );
-        $statement->execute([
-            'comment_user_id' => $viewerUserId,
-            'body' => $body->value,
-            'history_id' => $historyId,
-            'owner_user_id' => $viewerUserId,
-            'follow_viewer_id' => $viewerUserId,
-            'viewer_user_id' => $viewerUserId,
-        ]);
-
-        return $statement->rowCount() === 1
-            ? SocialActivityCommentCreateResult::Created
-            : SocialActivityCommentCreateResult::Hidden;
+        try {
+            $statement->execute([
+                'comment_user_id' => $viewerUserId,
+                'body' => $body->value,
+                'history_id' => $historyId,
+                'owner_user_id' => $viewerUserId,
+                'follow_viewer_id' => $viewerUserId,
+                'viewer_user_id' => $viewerUserId,
+            ]);
+            $result = $statement->rowCount() === 1
+                ? SocialActivityCommentCreateResult::Created
+                : SocialActivityCommentCreateResult::Hidden;
+            if ($result === SocialActivityCommentCreateResult::Created) {
+                $this->notifications?->activityComment(
+                    $historyId,
+                    (int) $pdo->lastInsertId(),
+                    $viewerUserId,
+                );
+            }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+            return $result;
+        } catch (Throwable $exception) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     public function deleteAuthorized(int $viewerUserId, int $commentId): ?int

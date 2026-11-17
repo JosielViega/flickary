@@ -8,6 +8,8 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Added
 
+- Notificações internas para solicitações, novos seguidores, aceites, curtidas e comentários
+- badge global de notificações não lidas e caixa privada paginada com marcação individual ou em lote
 - Comentários de texto simples nas atividades do Feed Social, com detalhe privado, paginação, moderação e histórico pessoal
 - Curtidas em atividades do Feed Social, com contagem, estado pessoal e autorização pela mesma visibilidade do feed
 - Feed Social cronológico de visualizações reais, derivado de `watch_history` e ativado na navegação autenticada
