@@ -52,6 +52,7 @@ use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
 use App\Integrations\Tmdb\FileTmdbPayloadCache;
 use App\Discovery\ContentDiscoveryService;
+use App\Navigation\PartialNavigationRequest;
 use Dotenv\Dotenv;
 
 $root = dirname(__DIR__);
@@ -132,18 +133,21 @@ $tmdb = new TmdbClient(
     cache: $tmdbCache,
 );
 $contentDiscovery = new ContentDiscoveryService($tmdb, $tmdb);
+$request = Request::capture();
+$partialNavigation = new PartialNavigationRequest($request);
 
 return [
     'config' => $appConfig,
     'public_url' => new PublicUrl($appConfig['url']),
     'auth_config' => $authConfig,
     'tmdb_config' => $tmdbConfig,
-    'request' => Request::capture(),
+    'request' => $request,
     'router' => new Router(),
     'view' => new View($root . '/resources/views', new CompositeLayoutContextProvider([
         new NotificationLayoutContextProvider($auth, $socialNotifications),
         new MessageLayoutContextProvider($auth, $directMessages),
-    ])),
+    ]), $partialNavigation),
+    'partial_navigation' => $partialNavigation,
     'session' => $session,
     'auth' => $auth,
     'google_identity_verifier' => new GoogleApiIdentityVerifier($authConfig['google']['client_id']),

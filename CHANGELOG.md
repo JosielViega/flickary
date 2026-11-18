@@ -6,6 +6,13 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ## [Unreleased]
 
+### Navigation and performance
+
+- Navegação interna progressiva com App Shell persistente, History API e fallback para HTML completo.
+- Cache curto de fragments somente em memória, indicador de carregamento e proteção contra requests concorrentes.
+- Cache TMDB fresh/stale para detalhes e temporadas, mantendo busca textual sem cache.
+- Instrumentação `Server-Timing` e cache imutável versionado para assets estáticos.
+
 ### Content discovery
 
 - Busca pública agora alterna entre pesquisa textual e Descoberta, com filtros para Todos, Filmes, Séries e Anime.

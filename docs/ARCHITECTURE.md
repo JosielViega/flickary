@@ -38,6 +38,33 @@ Layout
 HTML
 ```
 
+## Navegação progressiva
+
+O caminho normal continua server-rendered e funciona sem JavaScript:
+
+```text
+Browser → GET → Controller → View → Full Layout
+```
+
+No aprimoramento progressivo, o browser envia um header sem autoridade adicional:
+
+```text
+Browser → GET + X-Flickary-Navigation: partial
+        → Controller → View → Partial Layout
+        → JavaScript substitui main → pushState
+```
+
+O layout parcial não reconstrói sidebar, topbar e bottom nav nem consulta seus providers globais. Ele entrega o conteúdo, título, rota, query, flag de cache e PageMeta. Auth layout, OAuth, redirects e POSTs sempre usam navegação completa.
+
+Existem dois caches distintos:
+
+```text
+Browser fragment cache = Map em memória, 30s, máximo 20
+TMDB cache             = filesystem, dados públicos upstream, fresh/stale
+```
+
+O primeiro morre no reload e nunca usa armazenamento persistente. O segundo permanece fora do Document Root e cobre coleções públicas, detalhes e temporadas.
+
 ## Responsabilidades
 
 - `public/index.php`: front controller mínimo; inicializa e despacha.

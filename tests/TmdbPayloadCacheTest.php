@@ -26,6 +26,14 @@ final class TmdbPayloadCacheTest extends TestCase
         rmdir($this->directory);
     }
 
+    public function testDetailAndSeasonProfilesUseTheExpectedWindows(): void
+    {
+        self::assertSame(21600, TmdbCacheProfile::Details->freshSeconds());
+        self::assertSame(172800, TmdbCacheProfile::Details->staleSeconds());
+        self::assertSame(10800, TmdbCacheProfile::Season->freshSeconds());
+        self::assertSame(86400, TmdbCacheProfile::Season->staleSeconds());
+    }
+
     public function testFreshEntryAvoidsSecondUpstreamAndCanonicalizesQuery(): void
     {
         $cache = $this->cache(); $calls = 0;

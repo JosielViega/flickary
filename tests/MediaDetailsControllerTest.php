@@ -37,9 +37,9 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('href="/login"', $response->body());
         self::assertStringContainsString('Entre para adicionar à sua lista', $response->body());
         self::assertStringNotContainsString('IMDb', $response->body());
-        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/filmes/603">', $response->body());
-        self::assertStringContainsString('<meta property="og:title" content="Matrix · Flickary">', $response->body());
-        self::assertStringContainsString('<meta property="og:image" content="https://image.tmdb.org/t/p/w1280/backdrop.jpg">', $response->body());
+        self::assertStringContainsString('<link data-flickary-page-head rel="canonical" href="https://app.example.test/base/filmes/603">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:title" content="Matrix · Flickary">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:image" content="https://image.tmdb.org/t/p/w1280/backdrop.jpg">', $response->body());
         self::assertStringContainsString('data-share-url="https://app.example.test/base/filmes/603"', $response->body());
     }
 
@@ -55,7 +55,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('<dt>Episódios</dt><dd>62</dd>', $response->body());
         self::assertStringNotContainsString('Temporada 1', $response->body());
         self::assertStringNotContainsString('/temporadas/', $response->body());
-        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/series/1396">', $response->body());
+        self::assertStringContainsString('<link data-flickary-page-head rel="canonical" href="https://app.example.test/base/series/1396">', $response->body());
     }
 
     public function testAnimeMovieAndSeriesShowClassificationWithoutAdditionalRequests(): void
@@ -133,7 +133,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertSame([['movie', 603]], $catalog->calls);
         self::assertStringContainsString('media-detail__poster', $response->body());
         self::assertStringNotContainsString('<img src=', $response->body());
-        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
         self::assertStringContainsString('Matrix', $response->body());
     }
 
@@ -147,7 +147,7 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertStringContainsString('Matrix', $response->body());
         self::assertStringContainsString('Uma escolha muda tudo.', $response->body());
         self::assertStringNotContainsString('<img src=', $response->body());
-        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
     }
 
     public function testEscapesEveryExternalTextField(): void

@@ -56,6 +56,23 @@ final class Request
         return $method;
     }
 
+    public function header(string $name): ?string
+    {
+        if ($name === '' || preg_match("/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/D", $name) !== 1) {
+            return null;
+        }
+
+        $normalized = strtoupper(str_replace('-', '_', $name));
+        foreach (['HTTP_' . $normalized, $normalized] as $key) {
+            $value = $this->server[$key] ?? null;
+            if (is_string($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
     public function path(): string
     {
         $uri = (string) ($this->server['REQUEST_URI'] ?? '/');

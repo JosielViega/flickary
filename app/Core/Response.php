@@ -34,6 +34,24 @@ final class Response
         return new self('', $status, ['Location' => $location]);
     }
 
+    public function withHeader(string $name, string $value): self
+    {
+        if ($name === '' || preg_match("/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/D", $name) !== 1
+            || preg_match('/[\r\n]/', $value) === 1) {
+            throw new \InvalidArgumentException('Invalid response header.');
+        }
+
+        $headers = [];
+        foreach ($this->headers as $existingName => $existingValue) {
+            if (strcasecmp((string) $existingName, $name) !== 0) {
+                $headers[$existingName] = $existingValue;
+            }
+        }
+        $headers[$name] = $value;
+
+        return new self($this->body, $this->status, $headers);
+    }
+
     public function send(): never
     {
         http_response_code($this->status);

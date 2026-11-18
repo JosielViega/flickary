@@ -29,7 +29,7 @@ $discoveryUrl = static fn (string $filter): string => '/buscar?' . http_build_qu
             <p>Pesquise filmes e séries no catálogo TMDB, sem criar uma conta.</p>
         </div>
 
-        <form class="search-form" method="get" action="/buscar" role="search">
+        <form class="search-form" method="get" action="/buscar" role="search" data-partial-get>
             <label for="catalog-search">Filme ou série</label>
             <div class="search-form__field">
                 <svg aria-hidden="true"><use href="#icon-search"/></svg>

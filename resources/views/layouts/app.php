@@ -35,23 +35,24 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
     <meta name="theme-color" content="#0B1220">
     <title><?= e($title ?? 'Flickary') ?></title>
     <?php if (($pageMeta ?? null) instanceof \App\Core\PageMeta): ?>
-        <meta name="description" content="<?= e($pageMeta->description) ?>">
-        <link rel="canonical" href="<?= e($pageMeta->canonicalUrl) ?>">
-        <meta property="og:title" content="<?= e($pageMeta->title) ?>">
-        <meta property="og:type" content="<?= e($pageMeta->type) ?>">
-        <meta property="og:url" content="<?= e($pageMeta->canonicalUrl) ?>">
-        <meta property="og:description" content="<?= e($pageMeta->description) ?>">
-        <meta property="og:site_name" content="Flickary">
-        <meta property="og:locale" content="pt_BR">
-        <meta property="og:image" content="<?= e($pageMeta->imageUrl) ?>">
-        <meta property="og:image:alt" content="<?= e($pageMeta->imageAlt) ?>">
+        <meta data-flickary-page-head name="description" content="<?= e($pageMeta->description) ?>">
+        <link data-flickary-page-head rel="canonical" href="<?= e($pageMeta->canonicalUrl) ?>">
+        <meta data-flickary-page-head property="og:title" content="<?= e($pageMeta->title) ?>">
+        <meta data-flickary-page-head property="og:type" content="<?= e($pageMeta->type) ?>">
+        <meta data-flickary-page-head property="og:url" content="<?= e($pageMeta->canonicalUrl) ?>">
+        <meta data-flickary-page-head property="og:description" content="<?= e($pageMeta->description) ?>">
+        <meta data-flickary-page-head property="og:site_name" content="Flickary">
+        <meta data-flickary-page-head property="og:locale" content="pt_BR">
+        <meta data-flickary-page-head property="og:image" content="<?= e($pageMeta->imageUrl) ?>">
+        <meta data-flickary-page-head property="og:image:alt" content="<?= e($pageMeta->imageAlt) ?>">
     <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/app.css?v=30.1">
+    <link rel="stylesheet" href="/assets/css/app.css?v=31.0">
 </head>
 <body>
+    <div class="navigation-progress" aria-hidden="true"><span></span></div>
     <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo</a>
 
     <svg class="icon-sprite" aria-hidden="true" focusable="false">
@@ -88,21 +89,21 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
             </a>
 
             <nav class="sidebar__nav">
-                <a class="nav-item<?= $homeIsActive ? ' is-active' : '' ?>" href="/"<?= $homeIsActive ? ' aria-current="page"' : '' ?>>
+                <a class="nav-item<?= $homeIsActive ? ' is-active' : '' ?>" href="/"<?= $homeIsActive ? ' aria-current="page"' : '' ?> data-nav-route="home">
                     <svg aria-hidden="true"><use href="#icon-home"/></svg>
                     <span>Início</span>
                 </a>
                 <?php if ($isAuthenticated): ?>
-                    <a class="nav-item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?>><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
+                    <a class="nav-item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?> data-nav-route="agenda"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
                 <?php else: ?>
                     <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar sua agenda"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></span>
                 <?php endif; ?>
-                <a class="nav-item<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
+                <a class="nav-item<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?> data-nav-route="search">
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <span>Buscar</span>
                 </a>
                 <?php if ($isAuthenticated): ?>
-                    <a class="nav-item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?> data-nav-route="library">
                         <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
                     </a>
                 <?php else: ?>
@@ -111,12 +112,12 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                     </span>
                 <?php endif; ?>
                 <?php if ($isAuthenticated): ?>
-                    <a class="nav-item<?= $statisticsIsActive ? ' is-active' : '' ?>" href="/estatisticas"<?= $statisticsIsActive ? ' aria-current="page"' : '' ?>><svg aria-hidden="true"><use href="#icon-chart"/></svg><span>Estatísticas</span></a>
+                    <a class="nav-item<?= $statisticsIsActive ? ' is-active' : '' ?>" href="/estatisticas"<?= $statisticsIsActive ? ' aria-current="page"' : '' ?> data-nav-route="statistics"><svg aria-hidden="true"><use href="#icon-chart"/></svg><span>Estatísticas</span></a>
                 <?php else: ?>
                     <span class="nav-item is-disabled" aria-disabled="true" title="Entre para acessar suas estatísticas"><svg aria-hidden="true"><use href="#icon-chart"/></svg><span>Estatísticas</span></span>
                 <?php endif; ?>
                 <?php if ($isAuthenticated): ?>
-                    <a class="nav-item<?= $profileIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileIsActive ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-item<?= $profileIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileIsActive ? ' aria-current="page"' : '' ?> data-nav-route="profile">
                         <svg aria-hidden="true"><use href="#icon-user"/></svg>
                         <span>Perfil</span>
                     </a>
@@ -127,7 +128,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                     </span>
                 <?php endif; ?>
                 <?php if ($isAuthenticated): ?>
-                    <a class="nav-item<?= $socialIsActive ? ' is-active' : '' ?>" href="/social"<?= $socialIsActive ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-item<?= $socialIsActive ? ' is-active' : '' ?>" href="/social"<?= $socialIsActive ? ' aria-current="page"' : '' ?> data-nav-route="social">
                         <svg aria-hidden="true"><use href="#icon-users"/></svg><span>Social</span>
                     </a>
                 <?php else: ?>
@@ -137,7 +138,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                 <?php endif; ?>
             </nav>
 
-            <a class="sidebar__about<?= $aboutIsActive ? ' is-active' : '' ?>" href="/sobre"<?= $aboutIsActive ? ' aria-current="page"' : '' ?>>Sobre</a>
+            <a class="sidebar__about<?= $aboutIsActive ? ' is-active' : '' ?>" href="/sobre"<?= $aboutIsActive ? ' aria-current="page"' : '' ?> data-nav-route="about">Sobre</a>
             <p class="sidebar__signature">Passado · Presente · Futuro</p>
         </aside>
 
@@ -147,7 +148,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                     <span class="brand__name">Flickary</span>
                 </a>
 
-                <form class="topbar__search" method="get" action="/buscar" role="search">
+                <form class="topbar__search" method="get" action="/buscar" role="search" data-partial-get>
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                     <label class="visually-hidden" for="topbar-search">Buscar filmes e séries</label>
                     <input id="topbar-search" name="q" type="search" value="<?= e($searchQuery) ?>" placeholder="Buscar filmes e séries..." minlength="2" maxlength="120" autocomplete="off">
@@ -170,29 +171,29 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                 <p class="topbar__signature">Mais que assistir. <strong>Viver histórias.</strong></p>
             </header>
 
-            <main class="app-content" id="conteudo-principal">
+            <main class="app-content" id="conteudo-principal" tabindex="-1">
                 <?= $content ?>
             </main>
         </div>
 
         <nav class="bottom-nav" aria-label="Navegação principal">
-            <a class="bottom-nav__item<?= $homeIsActive ? ' is-active' : '' ?>" href="/"<?= $homeIsActive ? ' aria-current="page"' : '' ?>>
+            <a class="bottom-nav__item<?= $homeIsActive ? ' is-active' : '' ?>" href="/"<?= $homeIsActive ? ' aria-current="page"' : '' ?> data-nav-route="home">
                 <svg aria-hidden="true"><use href="#icon-home"/></svg>
                 <span>Início</span>
             </a>
             <?php if ($isAuthenticated): ?>
-                <a class="bottom-nav__item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?>><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
+                <a class="bottom-nav__item<?= $agendaIsActive ? ' is-active' : '' ?>" href="/agenda"<?= $agendaIsActive ? ' aria-current="page"' : '' ?> data-nav-route="agenda"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></a>
             <?php else: ?>
                 <span class="bottom-nav__item is-disabled" aria-disabled="true"><svg aria-hidden="true"><use href="#icon-calendar"/></svg><span>Agenda</span></span>
             <?php endif; ?>
-            <a class="bottom-nav__item bottom-nav__item--search<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?>>
+            <a class="bottom-nav__item bottom-nav__item--search<?= $searchIsActive ? ' is-active' : '' ?>" href="/buscar"<?= $searchIsActive ? ' aria-current="page"' : '' ?> data-nav-route="search">
                 <span class="bottom-nav__search-icon">
                     <svg aria-hidden="true"><use href="#icon-search"/></svg>
                 </span>
                 <span>Buscar</span>
             </a>
             <?php if ($isAuthenticated): ?>
-                <a class="bottom-nav__item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?>>
+                <a class="bottom-nav__item<?= $libraryIsActive ? ' is-active' : '' ?>" href="/minha-lista"<?= $libraryIsActive ? ' aria-current="page"' : '' ?> data-nav-route="library">
                     <svg aria-hidden="true"><use href="#icon-bookmark"/></svg><span>Minha Lista</span>
                 </a>
             <?php else: ?>
@@ -201,7 +202,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
                 </span>
             <?php endif; ?>
             <?php if ($isAuthenticated): ?>
-                <a class="bottom-nav__item<?= $profileBottomIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileBottomIsActive ? ' aria-current="page"' : '' ?>>
+                <a class="bottom-nav__item<?= $profileBottomIsActive ? ' is-active' : '' ?>" href="/perfil"<?= $profileBottomIsActive ? ' aria-current="page"' : '' ?> data-nav-route="profile statistics social">
                     <svg aria-hidden="true"><use href="#icon-user"/></svg>
                     <span>Perfil</span>
                 </a>
@@ -213,8 +214,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
             <?php endif; ?>
         </nav>
     </div>
-    <?php if (($hasShareActions ?? false) === true): ?>
-        <script src="/assets/js/share.js" defer></script>
-    <?php endif; ?>
+    <script src="/assets/js/share.js?v=31.0" defer></script>
+    <script src="/assets/js/app-navigation.js?v=31.0" defer></script>
 </body>
 </html>

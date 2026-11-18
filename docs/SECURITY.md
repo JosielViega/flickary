@@ -47,6 +47,12 @@ O código é trocado no backend com timeout curto, validação TLS habilitada, r
 
 O e-mail do Facebook é sempre tratado como ausente/não verificado, mesmo que o provedor o envie. Somente o `id` retornado pelo endpoint versionado identifica a conta. As constraints únicas `(provider, provider_user_id)` e `(user_id, provider)` são a garantia final contra corridas e duplicidade de conexão.
 
+## Navegação parcial
+
+O header `X-Flickary-Navigation: partial` escolhe apenas a representação HTML e não concede autenticação ou autorização. Requests usam credenciais same-origin; regras de sessão, suspensão, administração, privacidade e Block continuam server-side. Redirects para login ou suspensão resultam em página completa.
+
+Somente GETs elegíveis são aprimorados. POSTs continuam tradicionais e protegidos por CSRF. Fragments ficam em um `Map` efêmero, nunca em `localStorage`, `sessionStorage`, IndexedDB, CacheStorage ou `history.state`, e desaparecem no reload. Respostas com flash messages não entram nesse cache.
+
 ## Produção
 
 Configure `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE=true`, HTTPS e permissões mínimas. O usuário recebe erro genérico com referência; detalhes ficam em `storage/logs`. Proteja também logs e backups no servidor.
@@ -67,7 +73,7 @@ O `TMDB_READ_ACCESS_TOKEN` é um segredo exclusivamente server-side. O cliente u
 
 As operações públicas do cliente representam endpoints TMDB conhecidos; entrada HTTP não escolhe host nem URL completa. Respostas possuem limite de tamanho e falham de forma controlada. Erros podem registrar futuramente somente path, status HTTP e categoria, nunca headers ou respostas integrais.
 
-O cache TMDB contém exclusivamente payloads públicos de configuração e coleções da Descoberta. A chave é `sha256(path + query canonicalizada)`, o filename contém apenas o hash e a escrita usa arquivo temporário, lock e rename. Token, Authorization, OAuth, sessão e dados pessoais não participam da chave nem do conteúdo. O diretório `storage/cache/tmdb/` fica fora do Document Root, Git e mirror de deploy; arquivo corrompido ou diretório indisponível resulta em cache miss/fail-open.
+O cache TMDB contém exclusivamente payloads públicos de configuração, coleções da Descoberta, detalhes e temporadas. A chave é `sha256(path + query canonicalizada)`, o filename contém apenas o hash e a escrita usa arquivo temporário, lock e rename. Token, Authorization, OAuth, sessão e dados pessoais não participam da chave nem do conteúdo. O diretório `storage/cache/tmdb/` fica fora do Document Root, Git e mirror de deploy; arquivo corrompido ou diretório indisponível resulta em cache miss/fail-open.
 
 Resultados com `adult=true` são excluídos defensivamente. Stale é permitido somente para transporte, 429 ou erro 5xx; falhas 401/403 e integração não configurada continuam explícitas. O circuit breaker é request-scoped e não persiste bloqueio global.
 

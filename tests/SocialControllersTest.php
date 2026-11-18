@@ -116,12 +116,12 @@ final class SocialControllersTest extends TestCase
         $this->profiles->profile = $this->profile(false, 'Social User', "Cinema\n  & séries");
         $response = $this->publicController()->show('social.user');
 
-        self::assertStringContainsString('<link rel="canonical" href="https://app.example.test/base/u/social.user">', $response->body());
-        self::assertStringContainsString('<meta property="og:title" content="Social User (@social.user) · Flickary">', $response->body());
-        self::assertStringContainsString('<meta property="og:description" content="Cinema &amp; séries">', $response->body());
-        self::assertStringContainsString('<meta property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
+        self::assertStringContainsString('<link data-flickary-page-head rel="canonical" href="https://app.example.test/base/u/social.user">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:title" content="Social User (@social.user) · Flickary">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:description" content="Cinema &amp; séries">', $response->body());
+        self::assertStringContainsString('<meta data-flickary-page-head property="og:image" content="https://app.example.test/base/assets/images/flickary-share.png">', $response->body());
         self::assertStringContainsString('data-share-url="https://app.example.test/base/u/social.user"', $response->body());
-        self::assertStringContainsString('<script src="/assets/js/share.js" defer></script>', $response->body());
+        self::assertStringContainsString('<script src="/assets/js/share.js?v=31.0" defer></script>', $response->body());
     }
 
     public function testProfileMessageActionReflectsMutualAndHistoricalConversation(): void

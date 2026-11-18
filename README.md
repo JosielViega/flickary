@@ -74,6 +74,14 @@ php bin/admin.php list
 
 `composer migrate` executa migrations SQL ainda não registradas. O schema contém a fundação de contas, a lista pessoal, o progresso de episódios e o histórico descritos abaixo.
 
+## Navegação progressiva
+
+Links internos elegíveis e formulários GET marcados usam JavaScript puro para solicitar `X-Flickary-Navigation: partial` e substituir somente o conteúdo principal. Sidebar, topbar e navegação inferior permanecem montadas; título, metadata, rota ativa, busca, histórico, foco e scroll são sincronizados pela History API.
+
+Sem JavaScript, em redirects, respostas inesperadas ou falhas de rede, os mesmos links continuam servindo HTML completo. POSTs permanecem formulários tradicionais com CSRF e nunca são interceptados. Fragmentos elegíveis usam apenas um cache curto em memória (30 segundos, máximo de 20 entradas), descartado no reload e sem `localStorage`, service worker ou persistência de dados privados.
+
+Toda resposta do front controller inclui `Server-Timing` para a duração da aplicação. O cache filesystem do TMDB, separado do cache de fragments, também cobre detalhes (6h fresh/48h stale) e temporadas (3h fresh/24h stale); pesquisa textual continua sem cache filesystem.
+
 ## Denúncias e moderação
 
 Usuários autenticados podem denunciar perfis, comentários visíveis e mensagens privadas recebidas. Os registros são privados, ficam disponíveis em `/perfil/denuncias` e preservam um snapshot textual do alvo para que mudanças ou exclusões posteriores não apaguem o contexto. Uma denúncia pendente por usuário e alvo é deduplicada; após a revisão, um novo registro pode ser enviado se necessário.

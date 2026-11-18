@@ -410,6 +410,8 @@ final class TmdbClient implements TmdbCatalog, TmdbDiscoveryCatalog
             in_array($path, ['/movie/now_playing', '/movie/upcoming'], true) => TmdbCacheProfile::Schedule,
             in_array($path, ['/movie/popular', '/movie/top_rated', '/tv/popular', '/tv/top_rated'], true) => TmdbCacheProfile::Ranking,
             in_array($path, ['/discover/movie', '/discover/tv'], true) => TmdbCacheProfile::Discover,
+            preg_match('#^/(?:movie|tv)/[1-9]\d{0,9}$#D', $path) === 1 => TmdbCacheProfile::Details,
+            preg_match('#^/tv/[1-9]\d{0,9}/season/(?:0|[1-9]\d{0,9})$#D', $path) === 1 => TmdbCacheProfile::Season,
             default => null,
         };
     }

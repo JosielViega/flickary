@@ -11,6 +11,8 @@ enum TmdbCacheProfile: string
     case Schedule = 'schedule';
     case Ranking = 'ranking';
     case Discover = 'discover';
+    case Details = 'details';
+    case Season = 'season';
 
     public function freshSeconds(): int
     {
@@ -19,6 +21,8 @@ enum TmdbCacheProfile: string
             self::Trending => 600,
             self::Schedule, self::Ranking => 1800,
             self::Discover => 3600,
+            self::Details => 21600,
+            self::Season => 10800,
         };
     }
 
@@ -29,6 +33,8 @@ enum TmdbCacheProfile: string
             self::Trending => 7200,
             self::Schedule, self::Ranking => 21600,
             self::Discover => 43200,
+            self::Details => 172800,
+            self::Season => 86400,
         };
     }
 }

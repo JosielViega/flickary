@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Core;
 
+use App\Navigation\PartialNavigationRequest;
+
 final class View
 {
     public function __construct(
         private readonly string $basePath,
         private readonly ?LayoutContextProvider $layoutContext = null,
+        private readonly ?PartialNavigationRequest $partialNavigation = null,
     )
     {
     }
@@ -16,9 +19,12 @@ final class View
     public function render(string $view, array $data = [], string $layout = 'layouts/app'): string
     {
         $viewFile = $this->resolve($view);
-        $layoutFile = $this->resolve($layout);
+        $partial = $layout === 'layouts/app' && $this->partialNavigation?->isPartial() === true;
+        $layoutFile = $this->resolve($partial ? 'layouts/partial' : $layout);
 
-        $data = [...($this->layoutContext?->context() ?? []), ...$data];
+        if (!$partial) {
+            $data = [...($this->layoutContext?->context() ?? []), ...$data];
+        }
         $content = $this->capture($viewFile, $data);
 
         return $this->capture($layoutFile, [...$data, 'content' => $content]);
