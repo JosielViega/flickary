@@ -331,6 +331,14 @@ Bloquear estabelece uma fronteira bilateral para usuários autenticados: remove 
 
 Como perfis públicos continuam públicos, o bloqueio autenticado não impede que uma pessoa deslogada acesse uma URL pública. Silenciar é apenas uma preferência unilateral do Feed Social: exige follow atual, não remove perfil, mensagens ou notificações e não altera a autorização de likes e comentários diretos.
 
+## Suspensões e ações administrativas
+
+Administradores podem aplicar suspensões temporárias de 24 horas, 7 dias ou 30 dias a partir de uma denúncia pendente. Uma suspensão existente é estendida a partir do término atual, nunca encurtada. A sessão já aberta é invalidada no request seguinte e Google/Facebook não criam nova sessão enquanto `suspended_until` estiver no futuro; a expiração é automática, sem cron. Uma reativação antecipada exige nota administrativa e gera nova entrada de auditoria.
+
+Suspender bloqueia o uso autenticado da conta, mas não apaga perfil, histórico, lista, follows, mensagens ou conteúdo social. A pessoa ainda pode navegar como visitante. Nesta etapa, a única remoção administrativa de conteúdo é a do comentário especificamente denunciado; não existem remoção de DM/perfil, ban permanente ou exclusão de conta.
+
+Cada suspensão, reativação e remoção de comentário é registrada em `moderation_actions`, com snapshots, administrador, denúncia e vigência quando aplicável. A trilha fica em `/admin/acoes`; o estado de uma conta fica em `/admin/usuarios/{username}`. Reporter e usuário suspenso não veem duração, nota, administrador ou motivo interno da sanção.
+
 ## Produção e HostGator
 
 Em produção, use pelo menos:

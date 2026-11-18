@@ -11,6 +11,7 @@ use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Moderation\AccountSuspensionGuard;
 
 final class GoogleAuthController
 {
@@ -21,6 +22,7 @@ final class GoogleAuthController
         private readonly ExternalIdentityFinder $externalIdentities,
         private readonly PendingExternalOnboarding $pendingOnboarding,
         private readonly string $clientId,
+        private readonly AccountSuspensionGuard $suspensions,
     ) {
     }
 
@@ -51,6 +53,9 @@ final class GoogleAuthController
         $userId = $this->externalIdentities->findUserId($identity->provider, $identity->providerUserId);
         if ($userId !== null) {
             $this->pendingOnboarding->clear();
+            if (($blocked = $this->suspensions->denyLoginIfSuspended($userId)) instanceof Response) {
+                return $blocked;
+            }
             $this->auth->login($userId);
 
             return Response::redirect('/', 303);

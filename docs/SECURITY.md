@@ -116,6 +116,18 @@ Perfis privados publicam descrição genérica sem bio protegida, favoritos ou e
 - Mute afeta somente o Feed Social e não altera mensagens ou notificações.
 - Bloquear uma conta autenticada não impede acesso anônimo a um perfil público.
 
+## Suspensão e ações administrativas
+
+- `users.suspended_until` é a fonte DB-backed; somente timestamp futuro representa suspensão ativa. Não existe flag de ban permanente.
+- `AccountSuspensionGuard` invalida uma sessão existente no request seguinte. Guests não geram query e, depois da invalidação, navegação pública continua possível.
+- Google e Facebook consultam `AccountAccessReader` antes de `Auth::login()`. Identidade nova continua no onboarding normal.
+- Sanções exigem `AdminAccess` atual, POST e CSRF. O alvo vem do report/username da rota, nunca de IDs enviados pelo formulário.
+- Durações são allowlisted no servidor (`24h`, `7d`, `30d`). Admin não pode suspender a si próprio nem outro admin pela web.
+- Suspensão+review, reativação e remoção de comentário usam transações e locks. Falha integralmente faz rollback.
+- `moderation_actions` mantém snapshots textuais e FKs `SET NULL`; não armazena e-mail, provider ID, OAuth ou HTML.
+- Nota administrativa de 10 a 1000 caracteres é obrigatória para suspensão, reativação e remoção. Ela nunca aparece ao reporter ou suspenso.
+- Suspensão não remove dados sociais e não cria notification, DM, block ou limpeza de follow. Remoção administrativa existe somente para o comentário reportado.
+
 ## Uploads futuros
 
 A fundação apenas prepara `public/uploads` e bloqueia extensões PHP via Apache. Antes de aceitar arquivos, imponha tamanho máximo, use `finfo` no conteúdo, mapeie MIME a extensões permitidas, gere nomes com `random_bytes`, impeça sobrescrita e prefira armazenamento fora do Document Root quando downloads puderem passar por autorização.

@@ -14,6 +14,8 @@ use App\Authentication\PendingExternalOnboarding;
 use App\Controllers\FacebookAuthController;
 use App\Controllers\FacebookConnectionController;
 use App\Core\Auth;
+use App\Moderation\AccountAccessReader;
+use App\Moderation\AccountSuspensionGuard;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -74,6 +76,14 @@ final class FacebookControllersTest extends TestCase
         self::assertSame('/perfil', $controller->callback(new Request(queryParams: ['state' => $token, 'code' => 'code']))->headers()['Location']);
     }
 
+    public function testSuspendedFacebookIdentityDoesNotCreateSession():void
+    {
+        $state=new FacebookOAuthState($this->session,static fn():int=>1000);$pending=new PendingExternalOnboarding($this->session);
+        $controller=$this->authController($this->facebook(),$state,$pending,$this->identities(71),'2026-12-01 10:00:00');$token=$state->issue('login');
+        $response=$controller->callback(new Request(queryParams:['state'=>$token,'code'=>'code']));
+        self::assertSame('/conta/suspensa',$response->headers()['Location']);self::assertFalse($this->auth->check());
+    }
+
     public function testLinkStartRequiresAuthCsrfConfigurationAndUsesBoundState(): void
     {
         $state = new FacebookOAuthState($this->session, static fn (): int => 1000);
@@ -90,9 +100,9 @@ final class FacebookControllersTest extends TestCase
         self::assertSame(['intent' => 'link', 'user_id' => 33], $state->consume($query['state']));
     }
 
-    private function authController(FacebookIdentityProvider $facebook, FacebookOAuthState $state, PendingExternalOnboarding $pending, object $identities): FacebookAuthController
+    private function authController(FacebookIdentityProvider $facebook, FacebookOAuthState $state, PendingExternalOnboarding $pending, object $identities,?string$suspendedUntil=null): FacebookAuthController
     {
-        return new FacebookAuthController($this->auth, $this->session, $facebook, $state, $identities, $identities, $pending);
+        return new FacebookAuthController($this->auth, $this->session, $facebook, $state, $identities, $identities, $pending,new AccountSuspensionGuard($this->auth,$this->session,new class($suspendedUntil) implements AccountAccessReader{public function __construct(private ?string$until){}public function activeSuspensionUntil(int$userId):?string{return$this->until;}}));
     }
 
     private function facebook(): FacebookIdentityProvider

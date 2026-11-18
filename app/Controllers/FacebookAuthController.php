@@ -13,6 +13,7 @@ use App\Core\Auth;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Moderation\AccountSuspensionGuard;
 
 final class FacebookAuthController
 {
@@ -24,6 +25,7 @@ final class FacebookAuthController
         private readonly ExternalIdentityFinder $externalIdentities,
         private readonly ExternalIdentityLinker $identityLinker,
         private readonly PendingExternalOnboarding $pendingOnboarding,
+        private readonly AccountSuspensionGuard $suspensions,
     ) {
     }
 
@@ -86,6 +88,9 @@ final class FacebookAuthController
         $userId = $this->externalIdentities->findUserId('facebook', $identity->providerUserId);
         if ($userId !== null) {
             $this->pendingOnboarding->clear();
+            if (($blocked = $this->suspensions->denyLoginIfSuspended($userId)) instanceof Response) {
+                return $blocked;
+            }
             $this->auth->login($userId);
             return Response::redirect('/', 303);
         }

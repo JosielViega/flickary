@@ -8,6 +8,10 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ### Reporting and moderation
 
+- Suspensões administrativas temporárias de 24h, 7d ou 30d, com invalidação da sessão e bloqueio de login OAuth.
+- Reativação antecipada auditada e expiração automática de suspensões.
+- Remoção administrativa transacional somente de comentários denunciados.
+- Trilha paginada de ações de moderação com snapshots preservados.
 - Denúncias privadas de perfil, comentário e mensagem recebida, com snapshot textual e deduplicação enquanto pendentes.
 - Histórico privado em `/perfil/denuncias`, fila administrativa paginada e revisão como resolvida ou arquivada.
 - Administrador persistido por `users.is_admin` e provisionado somente pelo CLI `bin/admin.php`, sem promoção web.

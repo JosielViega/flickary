@@ -281,6 +281,28 @@ user_mutes  -> SocialFeedRepository        -> preferência unilateral de feed
 
 `Mute = feed preference`: somente a projeção do Feed Social consulta `user_mutes`; `SocialActivityVisibility`, perfis, mensagens e notificações continuam inalterados. Listagens e contagens sensíveis aplicam os filtros no SQL antes da paginação.
 
+## Ações administrativas e acesso da conta
+
+```text
+Report
+  ↓
+Admin decision
+  ├─ resolve/dismiss
+  ├─ suspend account
+  └─ remove reported comment
+
+ModerationAction = trilha de auditoria
+```
+
+`Report` preserva a denúncia e sua revisão; `ModerationAction` registra separadamente a ação efetiva. `ModerationActionService` possui as transações que bloqueiam report/usuário/comentário, aplicam a mudança, escrevem a auditoria e resolvem o report de forma atômica. Leituras globais e por target usam paginação SQL e um único `LEFT JOIN` para o administrador, sem N+1.
+
+```text
+Session user → AccountSuspensionGuard → Router
+External identity → AccountAccessReader → Auth::login
+```
+
+Guests não consultam acesso de conta. Para usuário autenticado, o guard faz uma consulta indexada e encerra a identidade se `suspended_until > CURRENT_TIMESTAMP`. O contexto mínimo controlado pelo servidor alimenta `/conta/suspensa`. Google e Facebook consultam o mesmo `AccountAccessReader` antes de criar a sessão. Timestamp passado significa conta ativa e não provoca escrita.
+
 ## Ferramentas da fundação
 
 Os scripts em `bin/` não fazem parte do fluxo HTTP nem das regras de negócio. `composer setup` prepara uma cópia local conservadoramente. `composer deploy:hostgator` gera, a partir de uma allowlist versionada, um espelho descartável de produção. O espelho nunca se torna uma segunda fonte de código.

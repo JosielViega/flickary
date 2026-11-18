@@ -119,6 +119,11 @@ final class ApplicationRoutesTest extends TestCase
         self::assertSame('/login', $google->headers()['Location']);
     }
 
+    public function testSuspendedAccountPageIsPublicAndNeutralWithoutServerContext():void
+    {
+        $request=$this->request('GET','/conta/suspensa');$response=$this->router($request)->dispatch($request);self::assertSame(200,$response->status());self::assertStringContainsString('Não há uma suspensão ativa',$response->body());self::assertStringNotContainsString('moderator',$response->body());
+    }
+
     public function testAuthenticatedShellOffersOnlyPostLogoutWithCsrf(): void
     {
         $request = $this->request('GET', '/');
@@ -322,6 +327,19 @@ final class ApplicationRoutesTest extends TestCase
             public function authorizationUrl(string $state): string { return 'https://www.facebook.com/'; }
             public function identityFromCode(string $code): ?ExternalIdentity { return null; }
         };
+        $accountAccess = new class implements \App\Moderation\AccountAccessReader { public function activeSuspensionUntil(int$userId):?string{return null;} };
+        $moderationActions = new class implements \App\Moderation\ModerationActionReader {
+            public function paginateAll(int$page,int$perPage):\App\Moderation\ModerationActionPage{return new \App\Moderation\ModerationActionPage([],0,$page,$perPage);}
+            public function paginateForUser(int$userId,int$page,int$perPage):\App\Moderation\ModerationActionPage{return new \App\Moderation\ModerationActionPage([],0,$page,$perPage);}
+            public function findUserByUsername(string$username):?\App\Moderation\ModeratedUser{return null;}
+            public function findUserById(int$userId):?\App\Moderation\ModeratedUser{return null;}
+            public function liveCommentMatchesReport(\App\Moderation\SocialReport$report):bool{return false;}
+        };
+        $moderationService = new class implements \App\Moderation\ModerationActionStore {
+            public function suspendFromReport(int$reportId,int$adminUserId,\App\Moderation\SuspensionDuration$duration,\App\Moderation\ModerationNote$note):\App\Moderation\ModerationActionResult{return \App\Moderation\ModerationActionResult::NotFound;}
+            public function unsuspend(string$username,int$adminUserId,\App\Moderation\ModerationNote$note):\App\Moderation\ModerationActionResult{return \App\Moderation\ModerationActionResult::NotFound;}
+            public function removeReportedComment(int$reportId,int$adminUserId,\App\Moderation\ModerationNote$note):\App\Moderation\ModerationActionResult{return \App\Moderation\ModerationActionResult::NotFound;}
+        };
         $app = [
             'view' => new View(dirname(__DIR__) . '/resources/views'),
             'config' => ['name' => 'Flickary'],
@@ -348,6 +366,9 @@ final class ApplicationRoutesTest extends TestCase
             'pending_external_onboarding' => $pending,
             'facebook_oauth_state' => new FacebookOAuthState($session),
             'facebook_identity_provider' => $facebook,
+            'account_suspension_guard' => new \App\Moderation\AccountSuspensionGuard($auth,$session,$accountAccess),
+            'moderation_actions' => $moderationActions,
+            'moderation_service' => $moderationService,
             'username_policy' => new UsernamePolicy(),
             'account_creator' => new class implements AccountCreator {
                 public function createFromExternalIdentity(ExternalIdentity $identity, string $username): AccountCreationResult

@@ -41,6 +41,10 @@ use App\Repositories\DirectMessageRepository;
 use App\Repositories\UserSocialControlRepository;
 use App\Repositories\AdminUserRepository;
 use App\Repositories\SocialReportRepository;
+use App\Repositories\AccountAccessRepository;
+use App\Repositories\ModerationActionRepository;
+use App\Moderation\AccountSuspensionGuard;
+use App\Moderation\ModerationActionService;
 use App\Notifications\NotificationLayoutContextProvider;
 use App\Messaging\MessageLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
@@ -104,6 +108,10 @@ $socialControls = new UserSocialControlRepository($database);
 $directMessages = new DirectMessageRepository($database);
 $admins = new AdminUserRepository($database);
 $socialReports = new SocialReportRepository($database);
+$accountAccess = new AccountAccessRepository($database);
+$moderationActions = new ModerationActionRepository($database);
+$moderationService = new ModerationActionService($database);
+$accountSuspensionGuard = new AccountSuspensionGuard($auth, $session, $accountAccess);
 $userFollows = new UserFollowRepository($database, $socialNotifications);
 $userFollowRequests = new UserFollowRequestRepository($database, $socialNotifications);
 $socialFeed = new SocialFeedRepository($database);
@@ -163,6 +171,10 @@ return [
     'social_controls'=>$socialControls,
     'admins' => $admins,
     'social_reports' => $socialReports,
+    'account_access' => $accountAccess,
+    'moderation_actions' => $moderationActions,
+    'moderation_service' => $moderationService,
+    'account_suspension_guard' => $accountSuspensionGuard,
     'private_profile_access_policy' => new PrivateProfileAccessPolicy(),
     'profile_updater' => new ProfileUpdateService($database, $profiles, $userFollowRequests, $profiles),
     'account_creator' => new AccountOnboardingService(

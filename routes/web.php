@@ -33,6 +33,8 @@ use App\Controllers\DirectMessageController;
 use App\Controllers\SocialControlController;
 use App\Controllers\ReportController;
 use App\Controllers\AdminReportController;
+use App\Controllers\AdminModerationController;
+use App\Controllers\SuspendedAccountController;
 use App\Social\NullUserSocialControlStore;
 use App\Core\Request;
 use App\Core\Response;
@@ -58,6 +60,7 @@ $googleAuth = new GoogleAuthController(
     $app['external_identities'],
     $app['pending_external_onboarding'],
     $app['auth_config']['google']['client_id'],
+    $app['account_suspension_guard'],
 );
 $facebookAuth = new FacebookAuthController(
     $app['auth'],
@@ -67,6 +70,7 @@ $facebookAuth = new FacebookAuthController(
     $app['external_identities'],
     $app['external_identities'],
     $app['pending_external_onboarding'],
+    $app['account_suspension_guard'],
 );
 $facebookConnection = new FacebookConnectionController(
     $app['auth'],
@@ -200,11 +204,14 @@ $directMessages = new DirectMessageController(
 );
 $socialControls=new SocialControlController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['username_policy'],$app['public_profiles'],$socialControlStore);
 $reports=new ReportController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['username_policy'],$app['public_profiles'],$app['social_reports'],$app['social_reports']);
-$adminReports=new AdminReportController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['admins'],$app['social_reports']);
+$adminReports=new AdminReportController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['admins'],$app['social_reports'],$app['moderation_actions'],$app['moderation_service']);
+$adminModeration=new AdminModerationController($app['view'],$app['auth'],$app['csrf'],$app['session'],$app['admins'],$app['username_policy'],$app['moderation_actions'],$app['moderation_service']);
+$suspendedAccount=new SuspendedAccountController($app['view'],$app['session']);
 $router = $app['router'];
 
 $router->get('/', [$home, 'index']);
 $router->get('/login', [$login, 'show']);
+$router->get('/conta/suspensa', [$suspendedAccount, 'show']);
 $router->post('/auth/google', static fn (): Response => $googleAuth->handle($app['request']));
 $router->get('/auth/facebook', [$facebookAuth, 'start']);
 $router->get('/auth/facebook/callback', static fn (): Response => $facebookAuth->callback($app['request']));
@@ -253,6 +260,11 @@ $router->get('/admin/denuncias',static fn():Response=>$adminReports->index($app[
 $router->get('/admin/denuncias/{id}',static fn(string$id):Response=>$adminReports->show($id));
 $router->post('/admin/denuncias/{id}/resolver',static fn(string$id):Response=>$adminReports->resolve($app['request'],$id));
 $router->post('/admin/denuncias/{id}/arquivar',static fn(string$id):Response=>$adminReports->dismiss($app['request'],$id));
+$router->post('/admin/denuncias/{id}/suspender',static fn(string$id):Response=>$adminReports->suspend($app['request'],$id));
+$router->post('/admin/denuncias/{id}/remover-comentario',static fn(string$id):Response=>$adminReports->removeComment($app['request'],$id));
+$router->get('/admin/acoes',static fn():Response=>$adminModeration->actions($app['request']));
+$router->get('/admin/usuarios/{username}',static fn(string$username):Response=>$adminModeration->user($app['request'],$username));
+$router->post('/admin/usuarios/{username}/reativar',static fn(string$username):Response=>$adminModeration->reactivate($app['request'],$username));
 $router->get('/perfil/solicitacoes', static fn (): Response => $followRequests->index($app['request']));
 $router->get('/perfil/comentarios', static fn (): Response => $profileComments->index($app['request']));
 $router->post('/perfil/solicitacoes/{username}/aceitar', static fn (string $username): Response => $followRequests->accept($app['request'], $username));

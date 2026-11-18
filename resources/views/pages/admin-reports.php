@@ -5,7 +5,7 @@ $filters = ['pending' => 'Pendentes', 'resolved' => 'Resolvidas', 'dismissed' =>
 ?>
 <section class="admin-reports" aria-labelledby="admin-reports-title">
     <?php foreach (($messages['success'] ?? []) as $message): ?><p class="form-alert form-alert--success" role="status"><?= e((string) $message) ?></p><?php endforeach; ?>
-    <header class="admin-reports__hero"><div><p class="eyebrow">Moderação Flickary</p><h1 id="admin-reports-title">Fila de denúncias</h1><p>Revisão baseada no snapshot preservado. Nenhuma decisão aplica sanção automática.</p></div><a class="button button--secondary" href="/perfil">Voltar ao perfil</a></header>
+    <header class="admin-reports__hero"><div><p class="eyebrow">Moderação Flickary</p><h1 id="admin-reports-title">Fila de denúncias</h1><p>Revisão baseada no snapshot preservado. Sanções são decisões explícitas, separadas e auditadas.</p></div><div class="admin-hero-actions"><a class="button button--secondary" href="/admin/acoes">Ver auditoria</a><a class="button button--secondary" href="/perfil">Voltar ao perfil</a></div></header>
     <nav class="admin-filters" aria-label="Filtrar denúncias"><?php foreach ($filters as $key => $label): ?><a href="/admin/denuncias?status=<?= e($key) ?>"<?= $filter === $key ? ' aria-current="page" class="is-active"' : '' ?>><?= e($label) ?></a><?php endforeach; ?></nav>
     <?php if ($reports->items === []): ?><section class="reports-empty"><h2>Nenhuma denúncia neste filtro.</h2><p>A fila está em dia.</p></section>
     <?php else: ?><div class="admin-report-list" role="list"><?php foreach ($reports->items as $report): ?><a class="admin-report-row" role="listitem" href="/admin/denuncias/<?= $report->id ?>">

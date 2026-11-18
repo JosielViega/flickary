@@ -16,6 +16,8 @@ use App\Controllers\LoginController;
 use App\Controllers\LogoutController;
 use App\Controllers\OnboardingController;
 use App\Core\Auth;
+use App\Moderation\AccountAccessReader;
+use App\Moderation\AccountSuspensionGuard;
 use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Session;
@@ -139,6 +141,14 @@ final class AuthenticationControllersTest extends TestCase
         self::assertSame('/', $response->headers()['Location']);
         self::assertSame(17, $this->auth->id());
         self::assertNull($pending->current());
+    }
+
+    public function testSuspendedGoogleIdentityDoesNotCreateSession(): void
+    {
+        $called=false;$identity=new ExternalIdentity('google','subject',null,false,'Person',null);
+        $response=$this->googleController($this->verifier($identity,$called),$this->finder(17),null,'2026-12-01 10:00:00')->handle($this->googleRequest());
+        self::assertSame('/conta/suspensa',$response->headers()['Location']);self::assertFalse($this->auth->check());
+        self::assertSame('2026-12-01 10:00:00',$this->session->get(AccountSuspensionGuard::CONTEXT_KEY));
     }
 
     public function testFirstGoogleAccessCreatesPendingOnboardingWithoutLoggingIn(): void
@@ -268,6 +278,7 @@ final class AuthenticationControllersTest extends TestCase
         GoogleIdentityVerifier $verifier,
         ExternalIdentityFinder $finder,
         ?PendingExternalOnboarding $pending = null,
+        ?string $suspendedUntil = null,
     ): GoogleAuthController {
         return new GoogleAuthController(
             $this->auth,
@@ -276,6 +287,7 @@ final class AuthenticationControllersTest extends TestCase
             $finder,
             $pending ?? new PendingExternalOnboarding($this->session),
             'client-id',
+            new AccountSuspensionGuard($this->auth,$this->session,new class($suspendedUntil) implements AccountAccessReader{public function __construct(private ?string$until){}public function activeSuspensionUntil(int$userId):?string{return$this->until;}}),
         );
     }
 
