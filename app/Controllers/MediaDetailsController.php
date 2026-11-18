@@ -24,6 +24,7 @@ use App\Media\UserSeriesProgressStore;
 use App\History\WatchHistoryRequestKey;
 use App\Schedule\ScheduleStore;
 use App\Preferences\UserMediaPreferenceStore;
+use App\Discovery\MediaCompanionShelfService;
 
 final class MediaDetailsController
 {
@@ -41,6 +42,7 @@ final class MediaDetailsController
         private readonly ?UserMediaPreferenceStore $preferences = null,
         ?TmdbAnimeClassifier $animeClassifier = null,
         private readonly ?PublicUrl $publicUrl = null,
+        private readonly ?MediaCompanionShelfService $companions = null,
     ) {
         $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
@@ -74,7 +76,9 @@ final class MediaDetailsController
             return $this->error(404, 'Título não encontrado', 'Essa história ainda não está aqui.');
         }
 
-        [$posterUrl, $backdropUrl] = $this->imageUrls($details);
+        $isAnime = $this->animeClassifier->details($details);
+        $companionItems = $this->companions?->forDetails($details, $isAnime) ?? [];
+        [$posterUrl, $backdropUrl, $seasonPosterUrls, $companionPosterUrls] = $this->imageData($details, $companionItems);
         $canonicalUrl = $this->publicUrl?->forPath(
             ($type === 'movie' ? '/filmes/' : '/series/') . $details->sourceId,
         );
@@ -118,7 +122,10 @@ final class MediaDetailsController
             'today' => date('Y-m-d'),
             'scheduleItem' => $scheduleItem,
             'userPreference' => $userPreference,
-            'isAnime' => $this->animeClassifier->details($details),
+            'isAnime' => $isAnime,
+            'seasonPosterUrls' => $seasonPosterUrls,
+            'companionItems' => $companionItems,
+            'companionPosterUrls' => $companionPosterUrls,
             'pageMeta' => $pageMeta,
             'shareData' => $pageMeta === null ? null : [
                 'title' => $pageMeta->title,
@@ -129,27 +136,52 @@ final class MediaDetailsController
         ]);
     }
 
-    /** @return array{?string,?string} */
-    private function imageUrls(TmdbMediaDetails $details): array
+    /**
+     * @param list<\App\Integrations\Tmdb\TmdbMedia> $companions
+     * @return array{?string,?string,array<int,string>,array<string,string>}
+     */
+    private function imageData(TmdbMediaDetails $details, array $companions): array
     {
-        if ($details->posterPath === null && $details->backdropPath === null) {
-            return [null, null];
+        $hasSeasonPoster = array_filter($details->seasons, static fn ($season): bool => $season->posterPath !== null) !== [];
+        $hasCompanionPoster = array_filter($companions, static fn ($media): bool => $media->posterPath !== null) !== [];
+        if ($details->posterPath === null && $details->backdropPath === null && !$hasSeasonPoster && !$hasCompanionPoster) {
+            return [null, null, [], []];
         }
 
         try {
             $configuration = $this->tmdb->configuration();
         } catch (TmdbException) {
-            return [null, null];
+            return [null, null, [], []];
         }
 
         $selector = new TmdbImageSizeSelector();
         $builder = new TmdbImageUrlBuilder($configuration);
         $posterSize = $selector->poster($configuration->posterSizes);
+        $compactPosterSize = $selector->compactPoster($configuration->posterSizes);
         $backdropSize = $selector->backdrop($configuration->backdropSizes);
+
+        $seasonPosterUrls = [];
+        $companionPosterUrls = [];
+        if ($compactPosterSize !== null) {
+            foreach ($details->seasons as $season) {
+                $url = $builder->posterUrl($season->posterPath, $compactPosterSize);
+                if ($url !== null) {
+                    $seasonPosterUrls[$season->seasonNumber] = $url;
+                }
+            }
+            foreach ($companions as $media) {
+                $url = $builder->posterUrl($media->posterPath, $compactPosterSize);
+                if ($url !== null) {
+                    $companionPosterUrls[$media->mediaType . ':' . $media->sourceId] = $url;
+                }
+            }
+        }
 
         return [
             $posterSize === null ? null : $builder->posterUrl($details->posterPath, $posterSize),
             $backdropSize === null ? null : $builder->backdropUrl($details->backdropPath, $backdropSize),
+            $seasonPosterUrls,
+            $companionPosterUrls,
         ];
     }
 
@@ -184,6 +216,9 @@ final class MediaDetailsController
             'pageMeta' => null,
             'shareData' => null,
             'hasShareActions' => false,
+            'seasonPosterUrls' => [],
+            'companionItems' => [],
+            'companionPosterUrls' => [],
         ], $status);
     }
 

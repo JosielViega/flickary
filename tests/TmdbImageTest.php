@@ -7,6 +7,7 @@ namespace Tests;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageConfiguration;
 use App\Integrations\Tmdb\TmdbImageUrlBuilder;
+use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use PHPUnit\Framework\TestCase;
 
 final class TmdbImageTest extends TestCase
@@ -17,13 +18,30 @@ final class TmdbImageTest extends TestCase
             'secure_base_url' => 'https://image.tmdb.org/t/p/',
             'poster_sizes' => ['w342', 'w500', 'original'],
             'backdrop_sizes' => ['w780', 'w1280', 'original'],
+            'still_sizes' => ['w300', 'w500', 'original'],
         ]]);
         $builder = new TmdbImageUrlBuilder($configuration);
 
         self::assertSame(['w342', 'w500', 'original'], $configuration->posterSizes);
         self::assertSame(['w780', 'w1280', 'original'], $configuration->backdropSizes);
+        self::assertSame(['w300', 'w500', 'original'], $configuration->stillSizes);
         self::assertSame('https://image.tmdb.org/t/p/w500/abc.jpg', $builder->posterUrl('/abc.jpg', 'w500'));
         self::assertSame('https://image.tmdb.org/t/p/w1280/xyz.jpg', $builder->backdropUrl('/xyz.jpg', 'w1280'));
+        self::assertSame('https://image.tmdb.org/t/p/w300/still.jpg', $builder->stillUrl('/still.jpg', 'w300'));
+        self::assertSame('w300', (new TmdbImageSizeSelector())->still($configuration->stillSizes));
+    }
+
+    public function testLegacyConfigurationWithoutStillSizesRemainsValid(): void
+    {
+        $configuration = TmdbImageConfiguration::fromPayload(['images' => [
+            'secure_base_url' => 'https://image.tmdb.org/t/p/',
+            'poster_sizes' => ['w500'],
+            'backdrop_sizes' => ['w1280'],
+        ]]);
+
+        self::assertSame([], $configuration->stillSizes);
+        self::assertNull((new TmdbImageSizeSelector())->still($configuration->stillSizes));
+        self::assertNull((new TmdbImageUrlBuilder($configuration))->stillUrl('/still.jpg', 'w300'));
     }
 
     public function testReturnsNullForMissingInvalidPathOrUnknownSize(): void

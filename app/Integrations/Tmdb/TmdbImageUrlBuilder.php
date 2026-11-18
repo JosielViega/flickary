@@ -20,6 +20,11 @@ final readonly class TmdbImageUrlBuilder
         return $this->build($filePath, $size, $this->configuration->backdropSizes);
     }
 
+    public function stillUrl(?string $filePath, string $size): ?string
+    {
+        return $this->build($filePath, $size, $this->configuration->stillSizes);
+    }
+
     /** @param list<string> $allowedSizes */
     private function build(?string $filePath, string $size, array $allowedSizes): ?string
     {

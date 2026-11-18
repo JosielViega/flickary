@@ -49,7 +49,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/app.css?v=31.0">
+    <link rel="stylesheet" href="/assets/css/app.css?v=32.0">
 </head>
 <body>
     <div class="navigation-progress" aria-hidden="true"><span></span></div>
@@ -214,7 +214,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
             <?php endif; ?>
         </nav>
     </div>
-    <script src="/assets/js/share.js?v=31.0" defer></script>
-    <script src="/assets/js/app-navigation.js?v=31.0" defer></script>
+    <script src="/assets/js/share.js?v=32.0" defer></script>
+    <script src="/assets/js/app-navigation.js?v=32.0" defer></script>
 </body>
 </html>

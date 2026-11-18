@@ -121,6 +121,7 @@ $mediaDetails = new MediaDetailsController(
     $app['user_schedule'],
     $app['media_preferences'],
     publicUrl: $app['public_url'],
+    companions: $app['media_companions'],
 );
 $userMedia = new UserMediaController(
     $app['view'],

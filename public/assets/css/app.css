@@ -3194,20 +3194,7 @@ code {
 .button--ghost { background: var(--color-surface-soft); }
 .button:focus-visible, .library-card a:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
 
-.media-list-control,
-.preference-control {
-    display: grid;
-    gap: var(--space-4);
-    padding: clamp(1.25rem, 4vw, 2.25rem);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-large);
-    background: linear-gradient(145deg, rgb(30 58 138 / 30%), rgb(16 26 42 / 96%));
-}
-
-.media-list-control h2, .preference-control h2 { margin-bottom: var(--space-2); }
-.media-list-control p, .preference-control p { margin-bottom: 0; color: var(--color-text-secondary); }
-.media-list-control__form, .preference-control__form { display: grid; gap: var(--space-2); }
-.media-list-control select, .preference-control select, .library-filters select {
+.library-filters select {
     min-height: 2.8rem;
     width: 100%;
     padding: 0 var(--space-3);
@@ -3218,8 +3205,6 @@ code {
 }
 .preference-control__favorite { display: flex; align-items: center; gap: .65rem; min-height: 2.75rem; font-weight: 700; }
 .preference-control__favorite input { width: 1.2rem; height: 1.2rem; accent-color: var(--color-primary); }
-.preference-control__summary { display: block; margin-top: var(--space-3); color: var(--color-primary-hover); font-size: 1.1rem; }
-.preference-control select:focus-visible, .preference-control input:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
 
 .library-page { display: grid; gap: var(--space-6); max-width: var(--content-max); margin: 0 auto; }
 .library-hero {
@@ -3246,15 +3231,12 @@ code {
 
 @media (hover: hover) { .library-card:hover { transform: translateY(-.2rem); border-color: var(--color-border-strong); } }
 @media (min-width: 42rem) {
-    .media-list-control, .preference-control { grid-template-columns: minmax(0, 1fr) minmax(18rem, .7fr); align-items: end; }
     .library-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; }
     .library-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (min-width: 62rem) { .library-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 90rem) { .library-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .library-card { transition: none; } }
-.season-list,.season-hero,.season-cta{padding:var(--space-5);border:1px solid var(--color-border);border-radius:var(--radius-large);background:var(--color-surface-soft)}.season-list__grid{display:grid;gap:var(--space-3)}.season-list__grid a{display:flex;justify-content:space-between;padding:var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-small)}.season-page{display:grid;min-width:0;gap:var(--space-5)}.season-hero{display:grid;min-width:0;gap:var(--space-5);background:linear-gradient(145deg,rgb(30 58 138 / 35%),var(--color-surface-soft))}.season-hero>*{min-width:0}.season-hero__poster{position:relative;width:min(12rem,55vw);aspect-ratio:2/3;display:grid;place-items:center;overflow:hidden;border-radius:var(--radius-medium);background:var(--color-primary-deep);font-size:4rem}.season-hero__poster img{position:absolute;width:100%;height:100%;object-fit:cover}.season-actions{display:flex;flex-wrap:wrap;gap:var(--space-3)}.episode-list{display:grid;min-width:0;gap:var(--space-3)}.episode-card{display:grid;min-width:0;gap:var(--space-3);padding:var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-large);background:var(--color-surface-soft)}.episode-card>*{min-width:0}.episode-card.is-next{border-color:var(--color-primary)}.episode-card__number{color:var(--color-primary-hover);font-weight:800}.episode-card>div:last-child{display:grid;gap:var(--space-2);justify-items:start}.season-hero p,.episode-card h2,.episode-card p{overflow-wrap:anywhere}.episode-card p{color:var(--color-text-secondary)}.episode-card small{color:var(--color-text-muted)}@media(min-width:42rem){.season-hero{grid-template-columns:auto 1fr;align-items:end}.episode-card{grid-template-columns:4rem 1fr minmax(10rem,auto);align-items:start}.episode-card>div:last-child{justify-items:end;text-align:right}.season-list__grid{grid-template-columns:repeat(3,1fr)}}
-
 .personal-subnav {
     display: flex;
     width: fit-content;
@@ -3272,28 +3254,14 @@ code {
 .personal-subnav a.is-active { background: var(--color-surface-soft); color: var(--color-primary-hover); box-shadow: inset 0 0 0 1px var(--color-border-strong); }
 .personal-subnav a:focus-visible,
 .history-card a:focus-visible,
-.history-register input:focus-visible,
 .episode-history-form input:focus-visible,
 .history-card input:focus-visible,
 .history-filters select:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
 
-.history-register {
-    display: grid;
-    gap: var(--space-4);
-    padding: clamp(1.25rem, 4vw, 2.25rem);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-large);
-    background: linear-gradient(145deg, rgb(14 165 255 / 10%), var(--color-surface-soft));
-}
-.history-register h2 { margin-bottom: var(--space-2); }
-.history-register p { margin: 0; color: var(--color-text-secondary); }
-.history-register form,
 .episode-history-form { display: grid; gap: var(--space-2); }
-.history-register label,
 .episode-history-form label,
 .history-card__actions label,
 .history-filters label { color: var(--color-text-secondary); font-size: .76rem; font-weight: 700; }
-.history-register input[type="date"],
 .episode-history-form input[type="date"],
 .history-card__actions input[type="date"] {
     min-height: 2.75rem;
@@ -3336,7 +3304,6 @@ code {
 .button--danger { border-color: rgb(239 68 68 / 48%); background: rgb(239 68 68 / 10%); color: #fecaca; }
 
 @media (min-width: 42rem) {
-    .history-register { grid-template-columns: minmax(0, 1fr) minmax(18rem, .7fr); align-items: end; }
     .history-filters { grid-template-columns: minmax(12rem, 20rem) auto; align-items: end; }
     .history-filters label { grid-column: 1; }
     .history-filters select { grid-column: 1; }
@@ -3401,6 +3368,313 @@ code {
 .follow-requests{display:grid;gap:var(--space-5);max-width:58rem;margin:0 auto}.follow-requests__header{display:flex;align-items:end;justify-content:space-between;gap:var(--space-4)}.follow-requests__header h1{margin:.25rem 0 0;font-size:clamp(2rem,5vw,3.5rem)}.follow-requests__empty{padding:clamp(1.5rem,4vw,3rem);border:1px solid var(--color-border);border-radius:var(--radius-large);background:var(--color-surface-soft);text-align:center}.follow-requests__empty p{color:var(--color-text-secondary)}.follow-requests__list{display:grid;gap:var(--space-3)}.follow-request-card{display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:var(--space-4);border:1px solid var(--color-border);border-radius:var(--radius-large);background:var(--color-surface-soft)}.follow-request-card__identity{display:flex;align-items:center;min-width:0;gap:var(--space-3)}.follow-request-card__identity>span:last-child{display:grid;min-width:0;gap:.15rem}.follow-request-card__identity small,.follow-request-card__identity time{color:var(--color-text-muted)}.follow-request-card__identity time{font-size:.75rem}.follow-request-card__avatar{position:relative;display:grid;flex:0 0 3.5rem;width:3.5rem;aspect-ratio:1;place-items:center;border:2px solid var(--color-primary);border-radius:50%;background:var(--color-primary-deep);overflow:hidden}.follow-request-card__avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.follow-request-card__actions{display:flex;flex:0 0 auto;gap:var(--space-2)}.follow-request-card__actions form{margin:0}
 @media(max-width:41.99rem){.follow-requests__header{align-items:stretch;flex-direction:column}.follow-request-card{align-items:stretch;flex-direction:column}.follow-request-card__actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.follow-request-card__actions .button{width:100%;min-height:2.75rem}}
 .media-detail__identity>.share-actions{max-width:34rem}
+
+/* Stage 32 — cinematic media experience */
+.media-detail,
+.season-page {
+    display: grid;
+    min-width: 0;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.media-detail__hero {
+    position: relative;
+    min-height: clamp(31rem, 66vw, 43rem);
+    overflow: hidden;
+    border: 1px solid rgb(96 165 250 / 28%);
+    border-radius: 1.5rem;
+    background: #07101e;
+    isolation: isolate;
+}
+
+.media-detail__backdrop,
+.media-detail__backdrop::after {
+    position: absolute;
+    inset: 0;
+}
+
+.media-detail__backdrop::after {
+    content: "";
+    background: linear-gradient(90deg, rgb(3 8 19 / 97%) 0%, rgb(3 8 19 / 78%) 44%, rgb(3 8 19 / 24%) 78%), linear-gradient(0deg, #07101e 0%, transparent 55%);
+}
+
+.media-detail__backdrop img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .88;
+}
+
+.media-detail__hero-content {
+    position: absolute;
+    inset: auto clamp(1.25rem, 4vw, 3.5rem) clamp(1.5rem, 5vw, 3.5rem);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: clamp(9rem, 18vw, 13rem) minmax(0, 42rem);
+    align-items: end;
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.media-detail__poster,
+.season-hero__poster {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border: 1px solid rgb(148 163 184 / 28%);
+    border-radius: 1rem;
+    background: linear-gradient(145deg, #12386d, #07101e);
+    box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 45%);
+    color: rgb(255 255 255 / 55%);
+    font-size: 4rem;
+    font-weight: 800;
+}
+
+.media-detail__poster img,
+.season-hero__poster img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-detail__identity h1 {
+    max-width: 18ch;
+    margin: .35rem 0 .6rem;
+    font-size: clamp(2.35rem, 6vw, 5rem);
+    line-height: .95;
+    letter-spacing: -.055em;
+    text-wrap: balance;
+}
+
+.media-detail__metadata,
+.season-hero__meta,
+.episode-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .8rem;
+    color: var(--color-text-secondary);
+    font-size: .88rem;
+    font-weight: 700;
+}
+
+.media-detail__metadata span + span::before,
+.season-hero__meta span + span::before,
+.episode-card__meta span + span::before {
+    content: "•";
+    margin-right: .8rem;
+    color: var(--color-primary);
+}
+
+.media-detail__genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin: 1rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.media-detail__genres li {
+    padding: .35rem .7rem;
+    border: 1px solid rgb(148 163 184 / 25%);
+    border-radius: 99rem;
+    background: rgb(3 8 19 / 52%);
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.media-detail__tagline {
+    display: -webkit-box;
+    max-width: 45rem;
+    margin: .8rem 0 .35rem;
+    overflow: hidden;
+    color: #dbeafe;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    font-style: italic;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.media-detail__original,
+.media-detail__vote-note {
+    margin: .25rem 0 0;
+    color: var(--color-text-muted);
+    font-size: .76rem;
+}
+
+.media-action-rail {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+    gap: .65rem;
+}
+
+.media-action-rail > a,
+.media-action > summary {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    min-height: 4.5rem;
+    padding: .75rem;
+    border: 1px solid var(--color-border);
+    border-radius: .85rem;
+    background: linear-gradient(145deg, rgb(18 32 54 / 95%), rgb(9 18 32 / 95%));
+    color: var(--color-text);
+    cursor: pointer;
+    list-style: none;
+}
+
+.media-action > summary::-webkit-details-marker { display: none; }
+.media-action-rail > a > span,
+.media-action > summary > span { grid-row: 1 / 3; color: var(--color-primary-hover); font-size: 1.35rem; }
+.media-action-rail strong,
+.media-action summary strong { font-size: .82rem; }
+.media-action-rail small,
+.media-action summary small { color: var(--color-text-muted); font-size: .68rem; }
+.media-action[open] > summary { border-color: var(--color-primary); background: rgb(17 48 91 / 90%); }
+.media-action__panel {
+    display: grid;
+    gap: .75rem;
+    margin-top: .55rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: .85rem;
+    background: var(--color-surface-soft);
+    box-shadow: 0 1.2rem 2.8rem rgb(0 0 0 / 30%);
+}
+.media-action__panel form { display: grid; gap: .65rem; }
+.media-action__panel label { color: var(--color-text-secondary); font-size: .75rem; font-weight: 700; }
+.media-action__panel select,
+.media-action__panel input[type="date"] { width: 100%; min-height: 2.75rem; padding: .55rem .7rem; border: 1px solid var(--color-border); border-radius: .55rem; background: var(--color-surface); color: var(--color-text); }
+.media-action--share .media-action__panel { min-width: min(22rem, 80vw); }
+.media-action__panel .share-actions { margin: 0; }
+
+.media-detail__overview {
+    max-width: 52rem;
+    padding: clamp(1.25rem, 3vw, 2rem) 0;
+}
+.media-detail__overview h2,
+.season-list h2,
+.media-companions h2 { margin: .25rem 0 .75rem; font-size: clamp(1.65rem, 3vw, 2.4rem); }
+.media-overview summary { color: var(--color-primary-hover); cursor: pointer; font-weight: 800; }
+.media-overview p { color: var(--color-text-secondary); font-size: clamp(1rem, 2vw, 1.16rem); line-height: 1.75; }
+
+.season-list,
+.media-companions { min-width: 0; }
+.season-list > header,
+.media-companions > header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.season-list > header p:last-child { color: var(--color-text-muted); font-size: .8rem; }
+.season-list__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: 1rem;
+}
+.season-card { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: .85rem; min-height: 7.5rem; padding: .7rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface-soft); color: var(--color-text); }
+.season-card__poster { position: relative; display: grid; place-items: center; overflow: hidden; aspect-ratio: 2 / 3; border-radius: .65rem; background: var(--color-primary-deep); font-size: 1.5rem; font-weight: 800; }
+.season-card__poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.season-card__body { display: flex; min-width: 0; flex-direction: column; justify-content: center; gap: .4rem; }
+.season-card__body strong { overflow-wrap: anywhere; }
+.season-card__body small { color: var(--color-text-muted); }
+.season-card__progress,
+.season-progress > span { overflow: hidden; height: .3rem; border-radius: 99rem; background: rgb(148 163 184 / 18%); }
+.season-card__progress i,
+.season-progress i { display: block; width: var(--progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color-primary), #22d3ee); }
+
+.media-companions__track { display: grid; grid-auto-columns: minmax(10rem, 13rem); grid-auto-flow: column; gap: .9rem; overflow-x: auto; padding: .2rem .15rem 1rem; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.media-companions__track .discovery-card { width: auto; scroll-snap-align: start; }
+
+.season-hero {
+    display: grid;
+    grid-template-columns: clamp(9rem, 19vw, 14rem) minmax(0, 1fr);
+    align-items: end;
+    gap: clamp(1.25rem, 4vw, 3rem);
+    padding: clamp(1.25rem, 4vw, 3rem);
+    border: 1px solid rgb(96 165 250 / 28%);
+    border-radius: 1.5rem;
+    background: radial-gradient(circle at 75% 0%, rgb(14 165 233 / 22%), transparent 42%), linear-gradient(145deg, #111f3b, #07101e);
+}
+.season-hero__body h1 { margin: .3rem 0 .8rem; font-size: clamp(2.2rem, 6vw, 4.75rem); line-height: 1; letter-spacing: -.05em; }
+.season-hero__overview { display: -webkit-box; max-width: 48rem; overflow: hidden; color: var(--color-text-secondary); line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.season-progress { display: grid; grid-template-columns: minmax(8rem, 18rem) auto; align-items: center; gap: .8rem; margin-top: 1.15rem; font-size: .78rem; }
+
+.season-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; padding: .75rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface-soft); }
+.season-toolbar p { margin-right: auto; color: var(--color-text-secondary); }
+.season-toolbar__login { color: var(--color-primary-hover); font-weight: 800; }
+.season-cta { padding: 1.5rem; border: 1px dashed var(--color-border); border-radius: 1rem; color: var(--color-text-secondary); text-align: center; }
+
+.episode-list { display: grid; gap: 1rem; min-width: 0; padding: 0; list-style: none; }
+.episode-card { position: relative; display: grid; grid-template-columns: minmax(13rem, 22rem) minmax(0, 1fr) auto; align-items: center; gap: clamp(1rem, 3vw, 1.75rem); overflow: visible; padding: .8rem; border: 1px solid var(--color-border); border-radius: 1.1rem; background: var(--color-surface-soft); }
+.episode-card.is-next { border-color: var(--color-primary); box-shadow: inset .2rem 0 var(--color-primary); }
+.episode-card.is-watched { background: linear-gradient(90deg, rgb(13 53 55 / 55%), var(--color-surface-soft) 38%); }
+.episode-card__still { position: relative; display: grid; place-items: center; overflow: hidden; width: 100%; aspect-ratio: 16 / 9; border-radius: .75rem; background: linear-gradient(145deg, #12386d, #07101e); color: rgb(255 255 255 / 48%); font-size: 1.4rem; font-weight: 800; }
+.episode-card__still img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.episode-card__still strong { position: absolute; right: .55rem; bottom: .55rem; padding: .28rem .5rem; border-radius: 99rem; background: rgb(3 8 19 / 86%); color: #fff; font-size: .67rem; }
+.episode-card__body { min-width: 0; }
+.episode-card__body h2 { margin: .15rem 0 .5rem; font-size: clamp(1.15rem, 2vw, 1.55rem); }
+.episode-card__eyebrow { margin: 0; color: var(--color-primary-hover); font-size: .68rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.episode-card__overview { display: -webkit-box; overflow: hidden; color: var(--color-text-secondary); line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.episode-actions { position: relative; }
+.episode-actions > summary { min-width: 6rem; padding: .7rem .85rem; border: 1px solid var(--color-border); border-radius: .7rem; color: var(--color-text); cursor: pointer; font-size: .78rem; font-weight: 800; list-style: none; }
+.episode-actions > summary::-webkit-details-marker { display: none; }
+.episode-actions__panel { position: absolute; z-index: 4; top: calc(100% + .45rem); right: 0; display: grid; width: min(20rem, 75vw); gap: .65rem; padding: .8rem; border: 1px solid var(--color-border); border-radius: .8rem; background: #0d192a; box-shadow: 0 1rem 3rem rgb(0 0 0 / 45%); }
+.episode-actions__panel form { display: grid; gap: .45rem; }
+.episode-actions__panel label { color: var(--color-text-secondary); font-size: .7rem; font-weight: 800; }
+.episode-actions__panel input { min-height: 2.65rem; padding: .5rem; border: 1px solid var(--color-border); border-radius: .5rem; background: var(--color-surface); color: var(--color-text); }
+
+.media-action-rail a:focus-visible,
+.media-action summary:focus-visible,
+.season-card:focus-visible,
+.episode-actions summary:focus-visible { outline: .18rem solid var(--color-focus); outline-offset: .2rem; }
+
+@media (hover: hover) {
+    .media-action-rail > a:hover,
+    .media-action > summary:hover,
+    .season-card:hover { border-color: rgb(56 189 248 / 58%); transform: translateY(-2px); }
+}
+
+@media (max-width: 47.99rem) {
+    .media-detail__hero { min-height: 37rem; border-radius: 1.15rem; }
+    .media-detail__backdrop::after { background: linear-gradient(0deg, #07101e 8%, rgb(3 8 19 / 70%) 58%, rgb(3 8 19 / 12%)); }
+    .media-detail__hero-content { inset: auto 1.2rem 1.35rem; grid-template-columns: 7.25rem minmax(0, 1fr); gap: 1rem; }
+    .media-detail__identity h1 { font-size: clamp(2rem, 10vw, 3.3rem); }
+    .media-detail__genres li:nth-child(n + 4) { display: none; }
+    .media-detail__tagline { -webkit-line-clamp: 2; }
+    .media-action-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .media-action--share .media-action__panel { min-width: 0; }
+    .season-list__grid { grid-template-columns: 1fr; }
+    .season-hero { grid-template-columns: 7rem minmax(0, 1fr); padding: 1.1rem; border-radius: 1.15rem; }
+    .season-hero__body h1 { font-size: clamp(1.8rem, 9vw, 3rem); }
+    .season-hero__overview { grid-column: 1 / -1; }
+    .season-progress { grid-template-columns: 1fr; }
+    .episode-card { grid-template-columns: 7rem minmax(0, 1fr); gap: .85rem; padding: .7rem; }
+    .episode-card__overview { -webkit-line-clamp: 2; }
+    .episode-actions { grid-column: 1 / -1; }
+    .episode-actions > summary { text-align: center; }
+    .episode-actions__panel { position: static; width: auto; margin-top: .5rem; box-shadow: none; }
+}
+
+@media (max-width: 26rem) {
+    .media-detail__hero { min-height: 42rem; }
+    .media-detail__hero-content { grid-template-columns: 6.5rem minmax(0, 1fr); }
+    .media-detail__poster { align-self: start; }
+    .media-detail__identity { grid-column: 1 / -1; }
+    .season-hero { grid-template-columns: 6.2rem minmax(0, 1fr); }
+    .season-hero__overview { display: none; }
+    .episode-card { grid-template-columns: 1fr; }
+    .episode-card__still { max-height: 12rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .media-action-rail > a,
+    .media-action > summary,
+    .season-card { transition: none; }
+}
 @media(max-width:41.99rem){.share-actions__buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.share-actions__buttons .button:only-child{grid-column:1/-1}.share-actions__manual{align-items:stretch;flex-direction:column}.share-actions__manual a{min-height:auto}.public-profile__action{width:100%}.public-profile__action .share-actions__buttons .button{width:100%}}
 
 /* Social activity feed */

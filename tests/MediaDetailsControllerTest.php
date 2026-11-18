@@ -7,6 +7,9 @@ namespace Tests;
 use App\Controllers\MediaDetailsController;
 use App\Core\View;
 use App\Core\PublicUrl;
+use App\Core\Auth;
+use App\Core\Csrf;
+use App\Core\Session;
 use App\Integrations\Tmdb\TmdbCatalog;
 use App\Integrations\Tmdb\TmdbException;
 use App\Integrations\Tmdb\TmdbImageConfiguration;
@@ -24,18 +27,18 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertSame([['movie', 603], ['configuration']], $catalog->calls);
         self::assertStringContainsString('<title>Matrix — Flickary</title>', $response->body());
         self::assertStringContainsString('Título original: The Matrix', $response->body());
-        self::assertStringContainsString('31/03/1999', $response->body());
+        self::assertStringContainsString('<span>1999</span>', $response->body());
         self::assertStringContainsString('Ação', $response->body());
-        self::assertStringContainsString('136 min', $response->body());
+        self::assertStringContainsString('<span>2h16min</span>', $response->body());
         self::assertStringContainsString('TMDB 8,2', $response->body());
-        self::assertStringContainsString('26.789 votos', $response->body());
+        self::assertStringContainsString('26.789 avaliações no TMDB', $response->body());
         self::assertStringContainsString('https://image.tmdb.org/t/p/w500/poster.jpg', $response->body());
         self::assertStringContainsString('https://image.tmdb.org/t/p/w1280/backdrop.jpg', $response->body());
         self::assertStringContainsString('alt="Pôster de Matrix"', $response->body());
         self::assertStringContainsString('href="/sobre#tmdb"', $response->body());
         self::assertStringContainsString('href="/buscar"', $response->body());
         self::assertStringContainsString('href="/login"', $response->body());
-        self::assertStringContainsString('Entre para adicionar à sua lista', $response->body());
+        self::assertStringContainsString('<strong>Minha Lista</strong><small>Entrar</small>', $response->body());
         self::assertStringNotContainsString('IMDb', $response->body());
         self::assertStringContainsString('<link data-flickary-page-head rel="canonical" href="https://app.example.test/base/filmes/603">', $response->body());
         self::assertStringContainsString('<meta data-flickary-page-head property="og:title" content="Matrix · Flickary">', $response->body());
@@ -51,11 +54,35 @@ final class MediaDetailsControllerTest extends TestCase
         self::assertSame(200, $response->status());
         self::assertSame([['series', 1396], ['configuration']], $catalog->calls);
         self::assertStringContainsString('Breaking Bad — Flickary', $response->body());
-        self::assertStringContainsString('<dt>Temporadas</dt><dd>5</dd>', $response->body());
-        self::assertStringContainsString('<dt>Episódios</dt><dd>62</dd>', $response->body());
+        self::assertStringContainsString('<span>5 temporadas</span>', $response->body());
         self::assertStringNotContainsString('Temporada 1', $response->body());
         self::assertStringNotContainsString('/temporadas/', $response->body());
         self::assertStringContainsString('<link data-flickary-page-head rel="canonical" href="https://app.example.test/base/series/1396">', $response->body());
+    }
+
+    public function testAuthenticatedDetailsUseCompactProgressiveActionForms(): void
+    {
+        $session = new Session(false);
+        $auth = new Auth($session);
+        $auth->login(7);
+        $catalog = $this->catalog(movie: $this->details('movie'));
+        $controller = new MediaDetailsController(
+            new View(dirname(__DIR__) . '/resources/views'),
+            $catalog,
+            $auth,
+            new Csrf($session),
+            session: $session,
+            publicUrl: new PublicUrl('https://app.example.test/base/'),
+        );
+
+        $body = $controller->movie('603')->body();
+
+        self::assertStringContainsString('<details class="media-action">', $body);
+        self::assertStringContainsString('action="/filmes/603/lista"', $body);
+        self::assertStringContainsString('action="/filmes/603/preferencias"', $body);
+        self::assertStringContainsString('action="/filmes/603/agenda"', $body);
+        self::assertStringContainsString('action="/filmes/603/historico"', $body);
+        self::assertStringContainsString('name="_token"', $body);
     }
 
     public function testAnimeMovieAndSeriesShowClassificationWithoutAdditionalRequests(): void

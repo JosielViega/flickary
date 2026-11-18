@@ -9,17 +9,20 @@ final readonly class TmdbImageConfiguration
     /**
      * @param list<string> $posterSizes
      * @param list<string> $backdropSizes
+     * @param list<string> $stillSizes
      */
     public function __construct(
         public string $secureBaseUrl,
         public array $posterSizes,
         public array $backdropSizes,
+        public array $stillSizes = [],
     ) {
         if (!self::validHttpsBase($secureBaseUrl) || $posterSizes === [] || $backdropSizes === []) {
             throw new TmdbException('unexpected_payload');
         }
         self::sizes($posterSizes);
         self::sizes($backdropSizes);
+        self::sizes($stillSizes);
     }
 
     public static function fromPayload(array $payload): self
@@ -32,11 +35,12 @@ final readonly class TmdbImageConfiguration
         $base = $images['secure_base_url'] ?? null;
         $posterSizes = self::sizes($images['poster_sizes'] ?? null);
         $backdropSizes = self::sizes($images['backdrop_sizes'] ?? null);
+        $stillSizes = self::optionalSizes($images['still_sizes'] ?? null);
         if (!is_string($base)) {
             throw new TmdbException('unexpected_payload');
         }
 
-        return new self($base, $posterSizes, $backdropSizes);
+        return new self($base, $posterSizes, $backdropSizes, $stillSizes);
     }
 
     private static function validHttpsBase(string $url): bool
@@ -63,5 +67,11 @@ final readonly class TmdbImageConfiguration
         }
 
         return array_values(array_unique($sizes));
+    }
+
+    /** @return list<string> */
+    private static function optionalSizes(mixed $values): array
+    {
+        return $values === null ? [] : self::sizes($values);
     }
 }

@@ -1,5 +1,7 @@
 # Flickary
 
+Na experiência de mídia, detalhes públicos usam imagens do TMDB sem persistência local, enquanto ações pessoais continuam protegidas por sessão e CSRF. Temporadas e episódios oferecem progresso visual, e falhas nas recomendações ou imagens não impedem a leitura do título principal.
+
 Flickary é uma plataforma web pessoal e social para acompanhar filmes, séries e animes.
 
 Seu conceito central é **Passado · Presente · Futuro**: registrar o que já fez parte da jornada do usuário, acompanhar o que está em andamento e organizar o que ainda será descoberto.

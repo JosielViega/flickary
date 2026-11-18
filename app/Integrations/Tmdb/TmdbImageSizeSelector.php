@@ -24,6 +24,12 @@ final class TmdbImageSizeSelector
         return $this->firstAvailable($available, ['w1280', 'w780', 'w300', 'original']);
     }
 
+    /** @param list<string> $available */
+    public function still(array $available): ?string
+    {
+        return $this->firstAvailable($available, ['w300', 'w500', 'original']);
+    }
+
     /** @param list<string> $available @param list<string> $preferred */
     private function firstAvailable(array $available, array $preferred): ?string
     {

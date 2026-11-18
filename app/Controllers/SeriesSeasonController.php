@@ -73,16 +73,32 @@ final class SeriesSeasonController
             : $this->schedule->episodeSchedulesForSeason($userId, 'tmdb', $seriesId, $seasonNumber);
 
         $posterUrl = null;
+        $episodeStillUrls = [];
+        $hasStill = array_filter(
+            $details->episodes,
+            static fn ($episode): bool => $episode->stillPath !== null,
+        ) !== [];
 
-        if ($details->posterPath !== null) {
+        if ($details->posterPath !== null || $hasStill) {
             try {
                 $configuration = $this->tmdb->configuration();
-                $size = (new TmdbImageSizeSelector())->poster($configuration->posterSizes);
-                $posterUrl = $size === null
+                $selector = new TmdbImageSizeSelector();
+                $builder = new TmdbImageUrlBuilder($configuration);
+                $posterSize = $selector->poster($configuration->posterSizes);
+                $stillSize = $selector->still($configuration->stillSizes);
+                $posterUrl = $posterSize === null
                     ? null
-                    : (new TmdbImageUrlBuilder($configuration))->posterUrl($details->posterPath, $size);
+                    : $builder->posterUrl($details->posterPath, $posterSize);
+                if ($stillSize !== null) {
+                    foreach ($details->episodes as $episode) {
+                        $url = $builder->stillUrl($episode->stillPath, $stillSize);
+                        if ($url !== null) {
+                            $episodeStillUrls[$episode->episodeNumber] = $url;
+                        }
+                    }
+                }
             } catch (TmdbException) {
-                // Season content remains available with the visual fallback.
+                // Season content remains available with visual fallbacks.
             }
         }
 
@@ -119,6 +135,7 @@ final class SeriesSeasonController
             'today' => $today,
             'episodeHistoryKeys' => $episodeHistoryKeys,
             'episodeSchedules' => $episodeSchedules,
+            'episodeStillUrls' => $episodeStillUrls,
         ]));
     }
 

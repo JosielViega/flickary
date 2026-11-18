@@ -52,6 +52,7 @@ use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
 use App\Integrations\Tmdb\FileTmdbPayloadCache;
 use App\Discovery\ContentDiscoveryService;
+use App\Discovery\MediaCompanionShelfService;
 use App\Navigation\PartialNavigationRequest;
 use Dotenv\Dotenv;
 
@@ -133,6 +134,7 @@ $tmdb = new TmdbClient(
     cache: $tmdbCache,
 );
 $contentDiscovery = new ContentDiscoveryService($tmdb, $tmdb);
+$mediaCompanions = new MediaCompanionShelfService($tmdb, $tmdb);
 $request = Request::capture();
 $partialNavigation = new PartialNavigationRequest($request);
 
@@ -162,6 +164,7 @@ return [
     'tmdb' => $tmdb,
     'tmdb_payload_cache' => $tmdbCache,
     'content_discovery' => $contentDiscovery,
+    'media_companions' => $mediaCompanions,
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,

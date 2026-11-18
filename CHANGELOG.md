@@ -1,5 +1,11 @@
 # Changelog
 
+## Etapa 32 — Polimento visual da experiência de mídia
+
+- Detalhes de filmes e séries ganharam hero cinematográfico, ações progressivas, temporadas visuais e uma prateleira contextual resiliente.
+- Temporadas agora exibem progresso compacto e episódios com stills do TMDB, estados assistido/próximo e ações sob demanda.
+- A configuração de imagens TMDB passou a aceitar `still_sizes` sem quebrar payloads legados.
+
 Todas as mudanças relevantes deste projeto serão documentadas aqui.
 
 As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técnica herdada do `modeloPHP`, anterior à identidade própria do Flickary.
