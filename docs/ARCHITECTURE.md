@@ -135,6 +135,28 @@ somente MySQL
 
 O Flickary não mantém um espelho completo do TMDB. Quando uma mídia entra na Minha Lista, persiste somente o snapshot mínimo necessário para integridade, apresentação básica durante indisponibilidade temporária e referência estável por `source + media_type + source_id`.
 
+### Descoberta e cache público TMDB
+
+```text
+/buscar
+   ↓
+SearchController
+   ├─ q → Search
+   └─ sem q → ContentDiscoveryService
+                    ↓
+             TmdbDiscoveryCatalog
+                    ↓
+                TmdbClient
+                    ↓
+          FileTmdbPayloadCache
+                    ↓
+                  TMDB
+```
+
+`ContentDiscoveryService` compõe prateleiras tipadas com `TmdbMedia`, interleave determinístico, deduplicação local, limite de 12 itens e falha isolada. `TmdbDiscoveryCatalog` separa as coleções editoriais do contrato histórico usado por busca e detalhes. O ano vem do timezone ativo da aplicação; Anime reutiliza `TmdbAnimeClassifier`.
+
+O cache armazena somente JSON público validado. Uma entrada fresh retorna imediatamente; após fresh expirar, sucesso upstream renova a entrada; erro transitório usa stale ainda válido. O primeiro erro transitório abre um circuito somente para aquela instância/request: fresh e stale continuam disponíveis, mas misses seguintes falham rápido. Busca textual, detalhes, sessão e dados de usuário não passam por esse cache.
+
 ## Minha Lista
 
 ```text

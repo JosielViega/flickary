@@ -6,8 +6,11 @@ namespace App\Integrations\Tmdb;
 
 use Closure;
 
-final class TmdbClient implements TmdbCatalog
+final class TmdbClient implements TmdbCatalog, TmdbDiscoveryCatalog
 {
+    private const BEST_MOVIE_VOTES = 100;
+    private const BEST_SERIES_VOTES = 50;
+    private const BEST_ANIME_VOTES = 25;
     private readonly Closure $http;
 
     public function __construct(
@@ -19,6 +22,7 @@ final class TmdbClient implements TmdbCatalog
         private readonly int $timeout = 10,
         private readonly int $maxResponseBytes = 2097152,
         ?Closure $http = null,
+        private readonly ?TmdbPayloadCache $cache = null,
     ) {
         if ($apiBaseUrl !== 'https://api.themoviedb.org/3') {
             throw new \InvalidArgumentException('TMDB API base URL is not allowed.');
@@ -91,6 +95,71 @@ final class TmdbClient implements TmdbCatalog
         return $this->discover('/discover/tv', $page, 'series');
     }
 
+    public function trendingAll(): array
+    {
+        return $this->normalizeMixedMediaPage($this->request('/trending/all/day'));
+    }
+
+    public function trendingMovies(): array
+    {
+        return $this->collection('/trending/movie/day', 'movie');
+    }
+
+    public function trendingSeries(): array
+    {
+        return $this->collection('/trending/tv/day', 'series');
+    }
+
+    public function nowPlayingMovies(): array
+    {
+        return $this->collection('/movie/now_playing', 'movie', ['language'=>$this->language,'region'=>$this->region,'page'=>1]);
+    }
+
+    public function upcomingMovies(): array
+    {
+        return $this->collection('/movie/upcoming', 'movie', ['language'=>$this->language,'region'=>$this->region,'page'=>1]);
+    }
+
+    public function popularMovies(): array
+    {
+        return $this->collection('/movie/popular', 'movie', ['language'=>$this->language,'region'=>$this->region,'page'=>1]);
+    }
+
+    public function popularSeries(): array
+    {
+        return $this->collection('/tv/popular', 'series', ['language'=>$this->language,'page'=>1]);
+    }
+
+    public function topRatedMovies(): array
+    {
+        return $this->collection('/movie/top_rated', 'movie', ['language'=>$this->language,'region'=>$this->region,'page'=>1]);
+    }
+
+    public function topRatedSeries(): array
+    {
+        return $this->collection('/tv/top_rated', 'series', ['language'=>$this->language,'page'=>1]);
+    }
+
+    public function bestMoviesOfYear(int $year): array
+    {
+        return $this->yearDiscover('movie', $year, self::BEST_MOVIE_VOTES, false);
+    }
+
+    public function bestSeriesOfYear(int $year): array
+    {
+        return $this->yearDiscover('series', $year, self::BEST_SERIES_VOTES, false);
+    }
+
+    public function bestAnimeMoviesOfYear(int $year): array
+    {
+        return $this->yearDiscover('movie', $year, self::BEST_ANIME_VOTES, true);
+    }
+
+    public function bestAnimeSeriesOfYear(int $year): array
+    {
+        return $this->yearDiscover('series', $year, self::BEST_ANIME_VOTES, true);
+    }
+
     private function request(string $path, array $query = []): array
     {
         if (!$this->configured()) {
@@ -100,6 +169,16 @@ final class TmdbClient implements TmdbCatalog
             throw new \InvalidArgumentException('Unsupported TMDB path.');
         }
 
+        $profile = $this->cacheProfile($path);
+        if ($profile !== null && $this->cache !== null) {
+            return $this->cache->remember($path, $query, $profile, fn (): array => $this->requestUpstream($path, $query));
+        }
+        return $this->requestUpstream($path, $query);
+    }
+
+    /** @param array<string,scalar> $query @return array<string,mixed> */
+    private function requestUpstream(string $path, array $query): array
+    {
         $url = $this->apiBaseUrl . $path;
         if ($query !== []) {
             $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
@@ -150,7 +229,12 @@ final class TmdbClient implements TmdbCatalog
 
     private function isSupportedPath(string $path): bool
     {
-        if (in_array($path, ['/configuration', '/search/movie', '/search/tv', '/discover/movie', '/discover/tv'], true)) {
+        if (in_array($path, [
+            '/configuration', '/search/movie', '/search/tv', '/discover/movie', '/discover/tv',
+            '/trending/all/day', '/trending/movie/day', '/trending/tv/day',
+            '/movie/now_playing', '/movie/upcoming', '/movie/popular', '/movie/top_rated',
+            '/tv/popular', '/tv/top_rated',
+        ], true)) {
             return true;
         }
         if (preg_match('#^/(?:movie|tv)/([1-9]\d{0,9})$#D', $path, $matches) === 1) {
@@ -219,11 +303,47 @@ final class TmdbClient implements TmdbCatalog
             'with_genres' => (string) TmdbAnimeClassifier::ANIMATION_GENRE_ID,
             'with_original_language' => 'ja',
             'sort_by' => 'popularity.desc',
-        ]), $type);
+        ]), $type, true);
+    }
+
+    /** @param array<string,scalar> $query @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    private function collection(string $path, string $type, array $query = []): array
+    {
+        return $this->normalizeMediaPage($this->request($path, $query), $type, true);
     }
 
     /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
-    private function normalizeMediaPage(array $payload, string $type): array
+    private function yearDiscover(string $type, int $year, int $minimumVotes, bool $anime): array
+    {
+        if ($year < 1900 || $year > 3000) {
+            throw new \InvalidArgumentException('Discovery year is invalid.');
+        }
+        $movie = $type === 'movie';
+        $query = [
+            'language' => $this->language,
+            'include_adult' => 'false',
+            $movie ? 'primary_release_year' : 'first_air_date_year' => $year,
+            'sort_by' => 'vote_average.desc',
+            'vote_count.gte' => $minimumVotes,
+            'page' => 1,
+        ];
+        if ($movie) {
+            $query['region'] = $this->region;
+            $query['include_video'] = 'false';
+        }
+        if ($anime) {
+            $query['with_genres'] = (string) TmdbAnimeClassifier::ANIMATION_GENRE_ID;
+            $query['with_original_language'] = 'ja';
+        }
+        return $this->normalizeMediaPage(
+            $this->request($movie ? '/discover/movie' : '/discover/tv', $query),
+            $type,
+            true,
+        );
+    }
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    private function normalizeMediaPage(array $payload, string $type, bool $excludeAdult = false): array
     {
         if (!is_int($payload['page'] ?? null) || $payload['page'] < 1
             || !is_int($payload['total_pages'] ?? null) || $payload['total_pages'] < 0
@@ -239,7 +359,7 @@ final class TmdbClient implements TmdbCatalog
                 continue;
             }
             $media = $type === 'movie' ? $normalizer->movie($item) : $normalizer->series($item);
-            if ($media !== null) {
+            if ($media !== null && (!$excludeAdult || $media->adult !== true)) {
                 $results[] = $media;
             }
         }
@@ -250,6 +370,48 @@ final class TmdbClient implements TmdbCatalog
             'total_results' => $payload['total_results'],
             'results' => $results,
         ];
+    }
+
+    /** @return array{page:int,total_pages:int,total_results:int,results:list<TmdbMedia>} */
+    private function normalizeMixedMediaPage(array $payload): array
+    {
+        $page = $this->normalizeMediaPageEnvelope($payload);
+        $normalizer = new TmdbMediaNormalizer();
+        $results = [];
+        foreach ($payload['results'] as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $media = $normalizer->mixed($item);
+            if ($media !== null && $media->adult !== true) {
+                $results[] = $media;
+            }
+        }
+        return [...$page, 'results'=>$results];
+    }
+
+    /** @return array{page:int,total_pages:int,total_results:int} */
+    private function normalizeMediaPageEnvelope(array $payload): array
+    {
+        if (!is_int($payload['page'] ?? null) || $payload['page'] < 1
+            || !is_int($payload['total_pages'] ?? null) || $payload['total_pages'] < 0
+            || !is_int($payload['total_results'] ?? null) || $payload['total_results'] < 0
+            || !is_array($payload['results'] ?? null)) {
+            throw new TmdbException('unexpected_payload', 200);
+        }
+        return ['page'=>$payload['page'],'total_pages'=>$payload['total_pages'],'total_results'=>$payload['total_results']];
+    }
+
+    private function cacheProfile(string $path): ?TmdbCacheProfile
+    {
+        return match (true) {
+            $path === '/configuration' => TmdbCacheProfile::Configuration,
+            str_starts_with($path, '/trending/') => TmdbCacheProfile::Trending,
+            in_array($path, ['/movie/now_playing', '/movie/upcoming'], true) => TmdbCacheProfile::Schedule,
+            in_array($path, ['/movie/popular', '/movie/top_rated', '/tv/popular', '/tv/top_rated'], true) => TmdbCacheProfile::Ranking,
+            in_array($path, ['/discover/movie', '/discover/tv'], true) => TmdbCacheProfile::Discover,
+            default => null,
+        };
     }
 
     private function details(int $id, string $type): TmdbMediaDetails

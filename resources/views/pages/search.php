@@ -8,6 +8,8 @@ declare(strict_types=1);
 /** @var null|string $validationError */
 /** @var list<array> $sections */
 /** @var null|array $pagination */
+/** @var string $discoveryFilter */
+/** @var null|\App\Discovery\DiscoveryPage $discoveryPage */
 
 $filterUrl = static fn (string $filter): string => '/buscar?' . http_build_query(
     ['q' => $query, 'tipo' => $filter],
@@ -15,8 +17,11 @@ $filterUrl = static fn (string $filter): string => '/buscar?' . http_build_query
     '&',
     PHP_QUERY_RFC3986,
 );
+$discoveryUrl = static fn (string $filter): string => '/buscar?' . http_build_query(
+    ['descobrir' => $filter], '', '&', PHP_QUERY_RFC3986,
+);
 ?>
-<section class="search-page" aria-labelledby="search-title">
+<section class="search-page<?= !$searched ? ' search-page--discovery' : '' ?>" aria-labelledby="search-title">
     <header class="search-hero">
         <div>
             <p class="eyebrow">Descobrir histórias</p>
@@ -28,19 +33,28 @@ $filterUrl = static fn (string $filter): string => '/buscar?' . http_build_query
             <label for="catalog-search">Filme ou série</label>
             <div class="search-form__field">
                 <svg aria-hidden="true"><use href="#icon-search"/></svg>
-                <input id="catalog-search" name="q" type="search" value="<?= e($query) ?>" placeholder="Ex.: Matrix, Breaking Bad..." minlength="2" maxlength="120" autocomplete="off" autofocus>
-                <?php if ($type !== 'todos'): ?><input type="hidden" name="tipo" value="<?= e($type) ?>"><?php endif; ?>
+                <input id="catalog-search" name="q" type="search" value="<?= e($query) ?>" placeholder="Ex.: Matrix, Breaking Bad..." minlength="2" maxlength="120" autocomplete="off">
+                <?php if ($query !== '' && $type !== 'todos'): ?><input type="hidden" name="tipo" value="<?= e($type) ?>"><?php endif; ?>
                 <button type="submit">Pesquisar</button>
             </div>
         </form>
 
-        <nav class="search-filters" aria-label="Tipos de conteúdo">
-            <?php foreach (['todos' => 'Todos', 'filmes' => 'Filmes', 'series' => 'Séries'] as $value => $label): ?>
-                <a href="<?= e($filterUrl($value)) ?>" class="search-filter<?= $type === $value ? ' is-active' : '' ?>"<?= $type === $value ? ' aria-current="page"' : '' ?>>
-                    <?= e($label) ?>
-                </a>
-            <?php endforeach; ?>
-        </nav>
+        <?php if ($query === ''): ?>
+            <div class="discovery-tabs">
+                <span>Explorar</span>
+                <nav class="search-filters" aria-label="Filtros de descoberta">
+                    <?php foreach (['todos'=>'Todos','filmes'=>'Filmes','series'=>'Séries','anime'=>'Anime'] as $value => $label): ?>
+                        <a href="<?= e($discoveryUrl($value)) ?>" class="search-filter<?= $discoveryFilter === $value ? ' is-active' : '' ?>"<?= $discoveryFilter === $value ? ' aria-current="page"' : '' ?>><?= e($label) ?></a>
+                    <?php endforeach; ?>
+                </nav>
+            </div>
+        <?php else: ?>
+            <nav class="search-filters" aria-label="Tipos de conteúdo">
+                <?php foreach (['todos' => 'Todos', 'filmes' => 'Filmes', 'series' => 'Séries'] as $value => $label): ?>
+                    <a href="<?= e($filterUrl($value)) ?>" class="search-filter<?= $type === $value ? ' is-active' : '' ?>"<?= $type === $value ? ' aria-current="page"' : '' ?>><?= e($label) ?></a>
+                <?php endforeach; ?>
+            </nav>
+        <?php endif; ?>
         <div class="search-discovery-links">
             <a class="search-anime-cta" href="/anime">Explorar Anime →</a>
             <a class="search-anime-cta" href="/usuarios">Encontrar pessoas →</a>
@@ -53,10 +67,36 @@ $filterUrl = static fn (string $filter): string => '/buscar?' . http_build_query
             <p><?= e($validationError) ?></p>
         </div>
     <?php elseif (!$searched): ?>
-        <div class="search-state search-state--initial">
-            <span aria-hidden="true">⌕</span>
-            <h2>Seu próximo título começa aqui.</h2>
-            <p>Digite ao menos dois caracteres para explorar filmes e séries.</p>
+        <div class="discovery-page">
+            <header class="discovery-page__intro">
+                <p class="eyebrow">Descoberta de conteúdo</p>
+                <h2>Histórias para começar agora.</h2>
+                <p>Seleções editoriais e algorítmicas do catálogo público TMDB — sem personalização nesta versão.</p>
+            </header>
+            <?php if ($discoveryPage === null || !$discoveryPage->available()): ?>
+                <div class="search-state search-state--error" role="status">
+                    <strong>Não foi possível carregar as sugestões agora.</strong>
+                    <p>Você ainda pode pesquisar um título.</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($discoveryPage->shelves as $shelf): ?>
+                    <?php if ($shelf->items === []) { continue; } ?>
+                    <section class="discovery-shelf" aria-labelledby="discovery-<?= e($shelf->key) ?>">
+                        <header class="discovery-shelf__header">
+                            <div>
+                                <h2 id="discovery-<?= e($shelf->key) ?>"><?= e($shelf->title) ?></h2>
+                                <?php if ($shelf->subtitle !== null): ?><p><?= e($shelf->subtitle) ?></p><?php endif; ?>
+                            </div>
+                            <?php if ($shelf->ctaUrl !== null): ?><a href="<?= e($shelf->ctaUrl) ?>"><?= e($shelf->ctaLabel ?? 'Explorar') ?> →</a><?php endif; ?>
+                        </header>
+                        <div class="discovery-row" tabindex="0" aria-label="<?= e($shelf->title) ?>, rolagem horizontal">
+                            <?php foreach ($shelf->items as $media): ?>
+                                <?php $posterUrl = $discoveryPage->posterUrl($media->mediaType, $media->sourceId); require dirname(__DIR__) . '/components/discovery-card.php'; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <p class="search-summary">Resultados para <strong>“<?= e($query) ?>”</strong></p>

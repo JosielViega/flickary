@@ -16,6 +16,15 @@ final class TmdbMediaNormalizer
         return $this->normalize($payload, 'series', 'name', 'original_name', 'first_air_date');
     }
 
+    public function mixed(array $payload): ?TmdbMedia
+    {
+        return match ($payload['media_type'] ?? null) {
+            'movie' => $this->movie($payload),
+            'tv' => $this->series($payload),
+            default => null,
+        };
+    }
+
     private function normalize(array $payload, string $mediaType, string $titleKey, string $originalTitleKey, string $dateKey): ?TmdbMedia
     {
         $id = $payload['id'] ?? null;

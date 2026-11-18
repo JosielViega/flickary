@@ -15,6 +15,7 @@ use App\Integrations\Tmdb\TmdbImageUrlBuilder;
 use App\Integrations\Tmdb\TmdbImageSizeSelector;
 use App\Integrations\Tmdb\TmdbMedia;
 use App\Integrations\Tmdb\TmdbAnimeClassifier;
+use App\Discovery\ContentDiscoveryService;
 
 final class SearchController
 {
@@ -29,6 +30,7 @@ final class SearchController
         private readonly ?Auth $auth = null,
         private readonly ?Csrf $csrf = null,
         ?TmdbAnimeClassifier $animeClassifier = null,
+        private readonly ?ContentDiscoveryService $discovery = null,
     ) {
         $this->animeClassifier = $animeClassifier ?? new TmdbAnimeClassifier();
     }
@@ -39,9 +41,13 @@ final class SearchController
         $query = is_string($rawQuery) ? trim($rawQuery) : '';
         $type = $this->type($request->query('tipo', 'todos'));
         $page = $type === 'todos' ? 1 : $this->page($request->query('page', 1));
-        $data = $this->baseViewData($query, $type);
+        $discoveryFilter = $this->discoveryFilter($request->query('descobrir', 'todos'));
+        $data = $this->baseViewData($query, $type, $discoveryFilter);
 
         if ($query === '') {
+            if ($this->discovery !== null) {
+                $data['discoveryPage'] = $this->discovery->page($discoveryFilter);
+            }
             return $this->render($data);
         }
 
@@ -73,7 +79,7 @@ final class SearchController
         return $this->render($data);
     }
 
-    private function baseViewData(string $query, string $type): array
+    private function baseViewData(string $query, string $type, string $discoveryFilter): array
     {
         return [
             'title' => 'Buscar — Flickary',
@@ -87,6 +93,8 @@ final class SearchController
             'validationError' => null,
             'sections' => [],
             'pagination' => null,
+            'discoveryFilter' => $discoveryFilter,
+            'discoveryPage' => null,
         ];
     }
 
@@ -115,6 +123,11 @@ final class SearchController
     private function type(mixed $value): string
     {
         return is_string($value) && in_array($value, self::TYPES, true) ? $value : 'todos';
+    }
+
+    private function discoveryFilter(mixed $value): string
+    {
+        return is_string($value) && in_array($value, ContentDiscoveryService::FILTERS, true) ? $value : 'todos';
     }
 
     private function page(mixed $value): int

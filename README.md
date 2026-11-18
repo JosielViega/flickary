@@ -123,6 +123,14 @@ TMDB_READ_ACCESS_TOKEN=
 
 O cliente envia o token como Bearer, usa inicialmente `pt-BR` e região `BR`, e nunca entrega a credencial ao navegador. O Flickary não mantém um espelho completo do catálogo TMDB: quando coleção, agenda e histórico forem implementados, somente um snapshot mínimo associado a `source + source_id` será persistido para integridade e exibição básica.
 
+### Buscar + Descobrir
+
+`GET /buscar` possui dois modos server-rendered. Com `q`, preserva a pesquisa textual paginada em Todos, Filmes ou Séries. Sem `q`, apresenta Descoberta editorial/algorítmica do TMDB, selecionável por `descobrir=todos|filmes|series|anime`, com tendências diárias, títulos em cartaz no Brasil, populares, melhores do ano, Anime e próximos lançamentos. “Melhores” usa o ano corrente e volumes mínimos de votos — 100 para filmes, 50 para séries e 25 para Anime — sem sugerir avaliação IMDb ou premiação.
+
+A Descoberta não usa histórico, gêneros favoritos nem personalização. Os cards compactos continuam levando aos detalhes públicos reais, Anime mantém a heurística Animation + idioma original japonês e `/anime` permanece como exploração paginada específica.
+
+As coleções públicas usadas pela Descoberta e `/configuration` utilizam cache filesystem em `storage/cache/tmdb/`, fora de `public/` e do Git. Entradas têm janela fresh e stale por perfil; falhas transitórias podem usar stale, enquanto 401/403 e configuração ausente não são mascaradas. Um circuit breaker limitado ao request evita cascatas de timeout. Busca textual e detalhes não são cacheados nesta etapa.
+
 As rotas públicas `GET /buscar`, `GET /anime`, `GET /filmes/{id}`, `GET /series/{id}` e `GET /sobre` usam essa integração para pesquisar, descobrir e exibir detalhes básicos de filmes e séries, construir URLs de pôster e backdrop a partir da configuração real de imagens e apresentar os créditos obrigatórios.
 
 O TMDB permanece a única fonte de catálogo também para Anime. Anime não é um provider nem um `media_type`: o Flickary classifica visualmente como Anime o Movie ou TV cujo idioma original é japonês (`ja`) e que contém o gênero Animation. A rota `/anime` usa TMDB Discover e preserva os tipos técnicos `movie` e `series`, inclusive nos links de detalhes. O TMDB não fornece uma flag oficial `is_anime`, portanto essa política é transparente e deliberadamente conservadora.

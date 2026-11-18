@@ -2217,6 +2217,202 @@ code {
     color: var(--color-text);
 }
 
+.discovery-tabs {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+}
+
+.discovery-tabs > span {
+    color: var(--color-text-muted);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.discovery-tabs .search-filters {
+    margin-top: 0;
+}
+
+.discovery-page,
+.discovery-shelf {
+    display: grid;
+    min-width: 0;
+}
+
+.discovery-page {
+    gap: var(--space-7);
+}
+
+.discovery-page__intro {
+    max-width: 48rem;
+}
+
+.discovery-page__intro h2 {
+    margin-bottom: var(--space-2);
+    font-size: clamp(1.65rem, 5vw, 2.45rem);
+    letter-spacing: -.045em;
+}
+
+.discovery-page__intro > p:last-child,
+.discovery-shelf__header p {
+    margin: 0;
+    color: var(--color-text-secondary);
+}
+
+.discovery-shelf {
+    gap: var(--space-4);
+}
+
+.discovery-shelf__header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+}
+
+.discovery-shelf__header h2 {
+    margin: 0 0 .2rem;
+    font-size: clamp(1.25rem, 4.5vw, 1.8rem);
+    letter-spacing: -.035em;
+}
+
+.discovery-shelf__header p,
+.discovery-shelf__header > a {
+    font-size: .72rem;
+}
+
+.discovery-shelf__header > a {
+    flex: 0 0 auto;
+    color: var(--color-primary-hover);
+    font-weight: 700;
+}
+
+.discovery-row {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    gap: var(--space-3);
+    padding: .2rem .2rem var(--space-3);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: .2rem;
+    scroll-snap-type: x proximity;
+    scrollbar-color: rgb(96 165 250 / 42%) rgb(15 23 42 / 55%);
+    scrollbar-width: thin;
+}
+
+.discovery-row:focus-visible {
+    border-radius: var(--radius-small);
+    outline: .15rem solid var(--color-focus);
+    outline-offset: .2rem;
+}
+
+.discovery-card {
+    flex: 0 0 clamp(9.4rem, 39vw, 11.4rem);
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: linear-gradient(160deg, rgb(20 31 49 / 96%), rgb(7 13 24 / 98%));
+    scroll-snap-align: start;
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.discovery-card > a {
+    display: block;
+    height: 100%;
+    outline: 0;
+}
+
+.discovery-card:focus-within {
+    border-color: var(--color-focus);
+    box-shadow: 0 0 0 .16rem rgb(14 165 255 / 20%);
+}
+
+.discovery-card__poster {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    aspect-ratio: 2 / 3;
+    place-items: center;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 30%, rgb(14 165 255 / 24%), transparent 38%), linear-gradient(145deg, #1e3a8a, #070d18);
+}
+
+.discovery-card__poster::after {
+    position: absolute;
+    z-index: 2;
+    inset: auto 0 0;
+    height: 32%;
+    background: linear-gradient(transparent, rgb(7 13 24 / 84%));
+    content: "";
+}
+
+.discovery-card__poster img {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.discovery-card__fallback {
+    color: rgb(255 255 255 / 15%);
+    font-size: 4rem;
+    font-weight: 800;
+}
+
+.discovery-card__type {
+    position: absolute;
+    z-index: 3;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    left: var(--space-2);
+    width: max-content;
+    max-width: calc(100% - 1rem);
+    padding: .25rem .48rem;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: var(--radius-pill);
+    background: rgb(7 13 24 / 82%);
+    color: white;
+    font-size: .54rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.discovery-card__body {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+.discovery-card__body h3 {
+    min-height: 2.35em;
+    margin: 0;
+    overflow: hidden;
+    font-size: .82rem;
+    line-height: 1.18;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.discovery-card__body p {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: .62rem;
+}
+
 .search-summary {
     margin: 0;
     color: var(--color-text-secondary);
@@ -2762,6 +2958,11 @@ code {
 }
 
 @media (hover: hover) {
+    .discovery-card:hover {
+        border-color: rgb(14 165 255 / 42%);
+        transform: translateY(-.16rem);
+    }
+
     .media-card:hover {
         border-color: rgb(14 165 255 / 38%);
         box-shadow: 0 1rem 2.4rem rgb(0 0 0 / 26%);
@@ -2778,6 +2979,14 @@ code {
 @media (min-width: 42rem) {
     .search-form {
         max-width: 48rem;
+    }
+
+    .discovery-row {
+        gap: var(--space-4);
+    }
+
+    .discovery-card {
+        flex-basis: 11.4rem;
     }
 
     .media-grid {
@@ -2831,6 +3040,55 @@ code {
 }
 
 @media (max-width: 27rem) {
+    .search-page--discovery {
+        gap: var(--space-5);
+    }
+
+    .search-page--discovery .search-hero {
+        padding: var(--space-4);
+    }
+
+    .search-page--discovery .search-hero h1 {
+        margin-bottom: var(--space-2);
+        font-size: 1.8rem;
+    }
+
+    .search-page--discovery .search-form {
+        margin-top: var(--space-4);
+    }
+
+    .search-page--discovery .search-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: .2rem;
+    }
+
+    .search-page--discovery .search-filter {
+        min-height: 2.4rem;
+        flex: 0 0 auto;
+        padding: .4rem .75rem;
+    }
+
+    .search-page--discovery .discovery-page {
+        gap: var(--space-5);
+    }
+
+    .search-page--discovery .discovery-page__intro .eyebrow,
+    .search-page--discovery .discovery-page__intro > p:last-child {
+        display: none;
+    }
+
+    .search-page--discovery .discovery-page__intro h2 {
+        margin: 0;
+        font-size: 1.45rem;
+    }
+
+    .discovery-shelf__header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
     .search-form__field {
         grid-template-columns: auto minmax(0, 1fr);
     }

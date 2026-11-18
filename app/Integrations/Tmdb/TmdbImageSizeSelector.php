@@ -13,6 +13,12 @@ final class TmdbImageSizeSelector
     }
 
     /** @param list<string> $available */
+    public function compactPoster(array $available): ?string
+    {
+        return $this->firstAvailable($available, ['w342', 'w300', 'w185', 'w500', 'original']);
+    }
+
+    /** @param list<string> $available */
     public function backdrop(array $available): ?string
     {
         return $this->firstAvailable($available, ['w1280', 'w780', 'w300', 'original']);

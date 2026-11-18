@@ -50,6 +50,8 @@ use App\Messaging\MessageLayoutContextProvider;
 use App\Profiles\ProfileUpdateService;
 use App\Social\PrivateProfileAccessPolicy;
 use App\Integrations\Tmdb\TmdbClient;
+use App\Integrations\Tmdb\FileTmdbPayloadCache;
+use App\Discovery\ContentDiscoveryService;
 use Dotenv\Dotenv;
 
 $root = dirname(__DIR__);
@@ -118,6 +120,18 @@ $socialFeed = new SocialFeedRepository($database);
 $socialActivityLikes = new SocialActivityLikeRepository($database, $socialNotifications);
 $socialActivityComments = new SocialActivityCommentRepository($database, $socialNotifications);
 $facebookConfig = $authConfig['facebook'];
+$tmdbCache = new FileTmdbPayloadCache($root . '/storage/cache/tmdb', $tmdbConfig['max_response_bytes']);
+$tmdb = new TmdbClient(
+    readAccessToken: $tmdbConfig['read_access_token'],
+    apiBaseUrl: $tmdbConfig['api_base_url'],
+    language: $tmdbConfig['language'],
+    region: $tmdbConfig['region'],
+    connectTimeout: $tmdbConfig['connect_timeout'],
+    timeout: $tmdbConfig['timeout'],
+    maxResponseBytes: $tmdbConfig['max_response_bytes'],
+    cache: $tmdbCache,
+);
+$contentDiscovery = new ContentDiscoveryService($tmdb, $tmdb);
 
 return [
     'config' => $appConfig,
@@ -141,15 +155,9 @@ return [
         $facebookConfig['redirect_uri'],
         $facebookConfig['graph_version'],
     ),
-    'tmdb' => new TmdbClient(
-        $tmdbConfig['read_access_token'],
-        $tmdbConfig['api_base_url'],
-        $tmdbConfig['language'],
-        $tmdbConfig['region'],
-        $tmdbConfig['connect_timeout'],
-        $tmdbConfig['timeout'],
-        $tmdbConfig['max_response_bytes'],
-    ),
+    'tmdb' => $tmdb,
+    'tmdb_payload_cache' => $tmdbCache,
+    'content_discovery' => $contentDiscovery,
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,

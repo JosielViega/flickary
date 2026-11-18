@@ -49,7 +49,7 @@ $messageUnreadLabel = $messageUnreadCount === 1 ? '1 não lida' : $messageUnread
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/app.css?v=30.1">
 </head>
 <body>
     <a class="skip-link" href="#conteudo-principal">Ir para o conteúdo</a>

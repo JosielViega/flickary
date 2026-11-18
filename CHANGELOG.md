@@ -6,6 +6,12 @@ As versões `0.1.0` a `0.3.0` abaixo registram a evolução da fundação técni
 
 ## [Unreleased]
 
+### Content discovery
+
+- Busca pública agora alterna entre pesquisa textual e Descoberta, com filtros para Todos, Filmes, Séries e Anime.
+- Prateleiras TMDB de tendências, lançamentos, populares, melhores do ano, Anime e próximos lançamentos.
+- Cache filesystem fresh/stale para coleções públicas TMDB, com fallback transitório e circuit breaker por request.
+
 ### Reporting and moderation
 
 - Suspensões administrativas temporárias de 24h, 7d ou 30d, com invalidação da sessão e bloqueio de login OAuth.

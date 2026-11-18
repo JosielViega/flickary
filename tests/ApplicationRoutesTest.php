@@ -239,7 +239,8 @@ final class ApplicationRoutesTest extends TestCase
         $search = $this->router($searchRequest)->dispatch($searchRequest);
         self::assertSame(200, $search->status());
         self::assertStringContainsString('href="/buscar" aria-current="page"', $search->body());
-        self::assertStringContainsString('Seu próximo título começa aqui', $search->body());
+        self::assertStringContainsString('Descoberta de conteúdo', $search->body());
+        self::assertStringContainsString('Você ainda pode pesquisar um título', $search->body());
         self::assertStringContainsString('bottom-nav__item bottom-nav__item--search is-active', $search->body());
 
         $aboutRequest = $this->request('GET', '/sobre');

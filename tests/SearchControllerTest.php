@@ -22,8 +22,8 @@ final class SearchControllerTest extends TestCase
 
         self::assertSame(200, $response->status());
         self::assertSame([], $catalog->calls);
-        self::assertStringContainsString('Seu próximo título começa aqui', $response->body());
-        self::assertStringContainsString('autofocus', $response->body());
+        self::assertStringContainsString('Não foi possível carregar as sugestões agora', $response->body());
+        self::assertStringNotContainsString('autofocus', $response->body());
     }
 
     public function testRejectsShortLongAndControlQueriesWithoutCallingTmdb(): void

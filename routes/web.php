@@ -107,6 +107,7 @@ $search = new SearchController(
     $app['tmdb'],
     $app['auth'],
     $app['csrf'],
+    discovery: $app['content_discovery'] ?? null,
 );
 $anime = new AnimeController($app['view'], $app['tmdb'], $app['auth'], $app['csrf']);
 $mediaDetails = new MediaDetailsController(
