@@ -44,6 +44,8 @@ $home = new HomeController(
     $app['config'],
     $app['auth'],
     $app['csrf'],
+    $app['home_editorial'],
+    $app['home_personal'],
 );
 $health = new HealthController();
 $login = new LoginController(

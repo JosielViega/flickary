@@ -1,5 +1,11 @@
 # Changelog
 
+## Etapa 33 — Polimento visual da Home
+
+- A Home agora abre com destaque cinematográfico real, jornada visual e prateleiras de tendências e lançamentos do TMDB.
+- Contas autenticadas recebem atalhos compactos para itens em andamento, agenda e histórico usando apenas snapshots locais.
+- Falhas do catálogo são isoladas e preservam uma Home funcional, sem manifesto institucional ou grandes estados vazios.
+
 ## Etapa 32 — Polimento visual da experiência de mídia
 
 - Detalhes de filmes e séries ganharam hero cinematográfico, ações progressivas, temporadas visuais e uma prateleira contextual resiliente.

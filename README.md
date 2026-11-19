@@ -318,6 +318,10 @@ Mudar de público para privado preserva followers já aceitos. Mudar de privado 
 
 A migration cria notificações apenas para solicitações ainda pendentes. Follows aceitos, curtidas e comentários antigos não recebem backfill. Cancelar ou recusar uma solicitação remove sua notificação; descurtir remove a notificação da curtida; excluir comentário ou histórico limpa notificações relacionadas por cascade. A caixa não usa TMDB e não possui push, e-mail, polling, WebSocket ou SSE.
 
+## Home cinematográfica
+
+A Home combina um destaque real e prateleiras de tendências e lançamentos do TMDB com a jornada visual Passado · Presente · Futuro. Para contas autenticadas, itens em andamento, agenda e histórico usam snapshots locais e aparecem antes das seções editoriais secundárias. Visitantes recebem conteúdo editorial sem consultas pessoais; quando o TMDB fica indisponível, a página preserva um fallback compacto e navegável.
+
 ## Identidade visual
 
 A pasta `Designer/` contém a referência oficial da identidade visual do Flickary, incluindo o conceito **Cinematic Dark — Deep Blue**.

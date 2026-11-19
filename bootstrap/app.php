@@ -53,6 +53,9 @@ use App\Integrations\Tmdb\TmdbClient;
 use App\Integrations\Tmdb\FileTmdbPayloadCache;
 use App\Discovery\ContentDiscoveryService;
 use App\Discovery\MediaCompanionShelfService;
+use App\Home\HomeImageService;
+use App\Home\HomeEditorialService;
+use App\Home\HomePersonalService;
 use App\Navigation\PartialNavigationRequest;
 use Dotenv\Dotenv;
 
@@ -135,6 +138,9 @@ $tmdb = new TmdbClient(
 );
 $contentDiscovery = new ContentDiscoveryService($tmdb, $tmdb);
 $mediaCompanions = new MediaCompanionShelfService($tmdb, $tmdb);
+$homeImages = new HomeImageService($tmdb);
+$homeEditorial = new HomeEditorialService($tmdb, $homeImages);
+$homePersonal = new HomePersonalService($userMedia, $userSchedule, $watchHistory, $homeImages);
 $request = Request::capture();
 $partialNavigation = new PartialNavigationRequest($request);
 
@@ -165,6 +171,8 @@ return [
     'tmdb_payload_cache' => $tmdbCache,
     'content_discovery' => $contentDiscovery,
     'media_companions' => $mediaCompanions,
+    'home_editorial' => $homeEditorial,
+    'home_personal' => $homePersonal,
     'username_policy' => new UsernamePolicy(),
     'external_identities' => $externalIdentities,
     'profiles' => $profiles,
